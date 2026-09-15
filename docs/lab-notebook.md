@@ -145,6 +145,40 @@ mejorar la convergencia, (b) validar `ring_angle` contra la tabla real de
 Hulse et al. (2021), (c) migrar `extract_graph.py` a `caveclient` sobre
 MaleCNS v1.0 para obtener el ground truth de neurotransmisor real.
 
+## 2026-09-16 (5) — Chequeo de cordura + scheduler + mejor checkpoint
+
+**Por qué:** el entrenamiento estocástico (150 épocas) no convergía de forma
+limpia. Antes de seguir ajustando a ciegas, se hizo el chequeo estándar:
+¿puede el modelo sobreajustar UN solo ensayo fijo? Si no, el problema es de
+diseño; si sí, es de optimización/variancia entre ensayos.
+
+**Chequeo de cordura (`sanity_check.py`):** sobreajustando un ensayo fijo
+(500 pasos, lr 0.05), la pérdida baja de 0.93 a ~0.05-0.10 de forma estable.
+Confirma que arquitectura, tarea y pérdida están bien planteadas.
+
+**Diagnóstico del entrenamiento estocástico:** con más pasos de gradiente
+(500 épocas, lr 0.05) la pérdida baja bien al principio (mínimo 0.31 hacia
+la época 175) pero luego oscila y empeora -- señal de tasa de aprendizaje
+demasiado alta para la fase final, agravada por el ruido de usar ensayos
+aleatorios distintos en cada paso.
+
+**Corrección aplicada (práctica estándar):** `ReduceLROnPlateau` (reduce la
+tasa a la mitad cada vez que la pérdida deja de mejorar 30 épocas seguidas) +
+seguimiento del mejor checkpoint visto durante el entrenamiento (no el
+último, que es ruidoso).
+
+**Resultado final del piloto:** mejor pérdida = **0.29** (frente a ~0.85 de
+nivel-azar), alcanzada hacia la época 200; el modelo guardado (`model_pilot.pt`)
+corresponde a ese checkpoint, no al último. Confirma que el pipeline aprende
+una representación de rumbo mejor que el azar de forma consistente y
+reproducible.
+
+**Siguiente paso:** con el pipeline validado y estable, el paso de mayor
+valor ahora es migrar `extract_graph.py` a `caveclient` sobre MaleCNS v1.0
+para obtener el ground truth de neurotransmisor real y poder evaluar H1 por
+primera vez -- seguir afinando hiperparámetros sobre hemibrain (sin ground
+truth) tiene rendimiento decreciente en este punto.
+
 ## Plantilla para próximas entradas
 
 ```

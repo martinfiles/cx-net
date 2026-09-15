@@ -29,7 +29,12 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
 
     model = CXRingNetwork(graph["n_nodes"], graph["edge_index"], graph["synapse_weight"])
     optimizer = torch.optim.Adam([model.sign_param], lr=lr)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="min", factor=0.5, patience=30
+    )
 
+    best_loss = float("inf")
+    best_state = None
     loss_history = []
     for epoch in range(n_epochs):
         optimizer.zero_grad()
@@ -45,10 +50,17 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
 
         torch.nn.utils.clip_grad_norm_([model.sign_param], max_norm=1.0)
         optimizer.step()
+        scheduler.step(batch_loss)
 
         loss_history.append(batch_loss)
+        if batch_loss < best_loss:
+            best_loss = batch_loss
+            best_state = {k: v.clone() for k, v in model.state_dict().items()}
         if epoch % 25 == 0 or epoch == n_epochs - 1:
-            print(f"epoch {epoch:4d}  loss {batch_loss:.4f}")
+            current_lr = optimizer.param_groups[0]["lr"]
+            print(f"epoch {epoch:4d}  loss {batch_loss:.4f}  lr {current_lr:.4g}  best {best_loss:.4f}")
+
+    model.load_state_dict(best_state)
 
     os.makedirs(INTERIM_DIR, exist_ok=True)
     signs = model.learned_signs().numpy()
@@ -72,5 +84,5 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
 
 
 if __name__ == "__main__":
-    results = train(n_epochs=150)
+    results = train(n_epochs=500, lr=0.05)
     print(json.dumps(results, indent=2))
