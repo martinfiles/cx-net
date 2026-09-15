@@ -23,7 +23,8 @@ import numpy as np
 import pandas as pd
 import torch
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data", "raw")
+RAW_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data", "raw")
+DATA_DIR = os.path.join(RAW_DIR, "malecns")  # dataset real; usar RAW_DIR/hemibrain para el piloto
 
 COMPASS_TYPES = {"EPG", "EPGt"}
 DRIVE_TYPES = {"PEN_a(PEN1)", "PEN_b(PEN2)"}

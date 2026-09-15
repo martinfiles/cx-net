@@ -179,6 +179,75 @@ para obtener el ground truth de neurotransmisor real y poder evaluar H1 por
 primera vez -- seguir afinando hiperparámetros sobre hemibrain (sin ground
 truth) tiene rendimiento decreciente en este punto.
 
+## 2026-09-16 (6) — Migración a male-cns:v1.0: no hacía falta CAVE
+
+**Hallazgo:** antes de montar autenticación CAVE, se comprobó si neuprint ya
+servía el MaleCNS directamente. Sí: `male-cns:v1.0` está disponible en
+neuprint.janelia.org con el MISMO `NEUPRINT_TOKEN` que hemibrain -- cero
+fricción adicional, no hizo falta crear cuenta CAVE. `extract_graph.py` se
+parametrizó para aceptar `--dataset` (hemibrain para el piloto, male-cns:v1.0
+por defecto para el experimento real), cada uno en su propia subcarpeta de
+`data/raw/`.
+
+**Resultado de la extracción real:** mismo conjunto de 152 neuronas núcleo
+(EPG 46, Delta7 42, PEN_b 22, PEN_a 20, PEG 18, EPGt 4) -- consistente con
+hemibrain, razonable dado que este circuito es muy estereotipado entre
+individuos. 9.160 aristas (frente a 9.722 en hemibrain: ligera diferencia
+esperable entre dos reconstrucciones de individuos distintos).
+
+**Neurotransmisor real (ground truth, antes oculto):**
+- Delta7 -> **glutamato** (inhibidor en este circuito, vía canales de cloro).
+- EPG, EPGt, PEG, PEN_a, PEN_b -> **acetilcolina** (excitador).
+
+Coincide exactamente con lo que Turner-Evans et al. (2017) y Green et al.
+(2017) ya asumían a mano en sus modelos analíticos (Delta7 inhibidor,
+resto excitador) -- buena señal de que el ground truth es sólido.
+Consecuencia práctica para H1: como el neurotransmisor es una propiedad de
+la neurona (no de la sinapsis individual), el signo esperado de cada arista
+se define por el tipo de su neurona de ORIGEN, no por tipo de conexión.
+
+**Siguiente paso:** reentrenar el modelo de signo libre sobre el grafo real
+de male-cns:v1.0 (los bodyId no coinciden con hemibrain, hace falta grafo
+nuevo) y evaluar H1: % de acuerdo entre signo aprendido y signo esperado por
+neurotransmisor, contra un modelo nulo que preserva el grado (Dhiman, 2026).
+
+## 2026-09-16 (7) — Primer intento de H1: resultado prematuro, no válido
+
+**Qué se hizo:** con el checkpoint reentrenado sobre male-cns:v1.0 (mismo
+entrenamiento de la Fase 2, best loss 0.2968), se implementó `evaluate.py`:
+signo esperado por arista = neurotransmisor real de la neurona de ORIGEN
+(acetilcolina -> +1, glutamato -> -1); control estadístico = test de
+permutación de qué neurona tiene qué neurotransmisor (2000 permutaciones;
+nota: esto es distinto del modelo nulo de Dhiman 2026, que baraja topología
+para una pregunta sobre velocidad de aprendizaje -- aquí la pregunta es de
+acuerdo de signo, así que el control correcto es permutar la etiqueta de
+neurotransmisor, no la topología).
+
+**Resultado bruto:** acuerdo observado 0.506, acuerdo esperado por azar
+0.506, p=0.484 -- H1 no soportada.
+
+**Por qué NO se acepta este resultado todavía:** antes de concluir nada se
+comprobó cuán "decididos" estaban los signos aprendidos. Solo el 0.01% de
+las aristas tenía un signo fuertemente polarizado (|tanh|>0.9) y el 62%
+seguía prácticamente sin decidir (|tanh|<0.3) -- es decir, la mayoría de los
+signos apenas se habían movido de su inicialización aleatoria. El chequeo de
+cordura (sobreajuste de un ensayo, pérdida ~0.02-0.08) sí polariza con
+fuerza (71% de media, 21% totalmente decididos). Conclusión: el modelo no
+había entrenado lo suficiente como para que el test de H1 fuera informativo
+-- un resultado negativo con signos sin decidir es indistinguible del ruido,
+no es evidencia real en contra de H1.
+
+**Incidencia en el reentrenamiento largo (2500 épocas):** `ReduceLROnPlateau`
+sobre la pérdida cruda de cada época (muy ruidosa, cada época usa ensayos
+aleatorios distintos) confundió ruido con estancamiento y bajó la tasa de
+aprendizaje a ~1e-8 hacia la época 700 -- las 1800 épocas restantes no
+aprendieron nada (best loss quedó en 0.2441, apenas mejor, polarización
+igual de baja). Corrección: el scheduler ahora decide sobre una media móvil
+exponencial de la pérdida (`ema_alpha=0.05`), no sobre el valor crudo, con
+`patience=150` en vez de 30; además se subió `trials_per_step` a 16 para
+reducir el ruido de base. Repitiendo el entrenamiento (1500 épocas) con esta
+corrección -- resultado pendiente, se registra en la próxima entrada.
+
 ## Plantilla para próximas entradas
 
 ```

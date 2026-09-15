@@ -1,9 +1,8 @@
 """
 Fase 1 — Extracción del grafo del complejo central (CX).
 
-Descarga la conectividad de los neuropilos PB / EB / FB / NO desde el
-hemibrain (piloto, API de neuprint madura) y la exporta en dos archivos
-separados:
+Descarga la conectividad de los neuropilos PB / EB / FB / NO desde neuprint
+y la exporta en dos archivos separados:
 
   - graph_no_sign.csv   -> topología pura (source, target, weight), SIN signo.
                            Esto es lo único que verá el modelo durante el
@@ -12,13 +11,20 @@ separados:
                            predicted_nt). Se guarda aparte y NO se usa hasta
                            la fase de evaluación (fase 4).
 
-Requiere NEUPRINT_TOKEN en el entorno (ver .env.example). Antes de la
-primera ejecución real: confirmar contra la documentación viva de
-neuprint-python el nombre exacto de la columna de neurotransmisor
-predicho para el dataset/version en uso (ha cambiado de nombre entre
-versiones del hemibrain) -- está marcado más abajo con TODO.
+Soporta dos datasets, ambos vía neuprint.janelia.org con el MISMO
+NEUPRINT_TOKEN (no hace falta CAVE, confirmado en vivo el 2026-09-16):
+
+  - hemibrain:v1.2.1 -> piloto de la Fase 1/2. NO tiene neurotransmisor
+    anotado (ground_truth_nt.csv no se genera).
+  - male-cns:v1.0    -> dataset real del proyecto (Google/Janelia, sept.
+    2026). SÍ tiene neurotransmisor anotado (predictedNt/consensusNt/
+    celltypePredictedNt) -- aquí es donde se evalúa H1 de verdad.
+
+Cada dataset se guarda en su propia subcarpeta de data/raw/ para no
+mezclar los resultados del piloto con los del experimento real.
 """
 
+import argparse
 import os
 
 import pandas as pd
@@ -26,8 +32,12 @@ from dotenv import load_dotenv
 from neuprint import Client, NeuronCriteria as NC, fetch_adjacencies, fetch_neurons
 
 CX_ROIS = ["PB", "EB", "FB", "NO"]
-DATASET = "hemibrain:v1.2.1"
 SERVER = "neuprint.janelia.org"
+
+DATASET_SLUGS = {
+    "hemibrain:v1.2.1": "hemibrain",
+    "male-cns:v1.0": "malecns",
+}
 
 # Núcleo del sistema de dirección de cabeza (ring attractor), no todo el CX:
 # EPG (compás), PEN_a/PEN_b (integran velocidad angular), PEG (cierra el bucle
@@ -49,7 +59,7 @@ CORE_HEAD_DIRECTION_TYPES = [
 RAW_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data", "raw")
 
 
-def get_client() -> Client:
+def get_client(dataset: str) -> Client:
     load_dotenv()
     token = os.environ.get("NEUPRINT_TOKEN")
     if not token:
@@ -57,7 +67,7 @@ def get_client() -> Client:
             "Falta NEUPRINT_TOKEN. Copia .env.example a .env y añade tu token "
             "de https://neuprint.janelia.org (Account > Auth Token)."
         )
-    return Client(SERVER, dataset=DATASET, token=token)
+    return Client(SERVER, dataset=dataset, token=token)
 
 
 def fetch_cx_neurons(client: Client) -> pd.DataFrame:
@@ -108,12 +118,9 @@ def build_ground_truth_nt(neuron_df: pd.DataFrame) -> pd.DataFrame | None:
     Tabla oculta de neurotransmisor real por neurona. Se guarda aparte y no
     se toca hasta la evaluación (fase 4).
 
-    Confirmado en vivo (2026-09-16): el hemibrain (hemibrain:v1.2.1) NO
-    incluye neurotransmisor predicho entre las propiedades de Neuron en
-    neuprint -- esa anotación (Eckstein et al.) solo está integrada en el
-    MaleCNS v1.0 (2026), vía CAVE. Por tanto esta función devuelve None en
-    el piloto sobre hemibrain; el ground truth real se extraerá en la
-    migración a MaleCNS (ver docs/lab-notebook.md).
+    hemibrain:v1.2.1 no tiene esta anotación (devuelve None, esperado en el
+    piloto). male-cns:v1.0 sí la tiene bajo estos tres nombres candidatos
+    (confirmado en vivo 2026-09-16).
     """
     nt_column_candidates = ["predictedNt", "consensusNt", "celltypePredictedNt"]
     nt_column = next((c for c in nt_column_candidates if c in neuron_df.columns), None)
@@ -124,11 +131,12 @@ def build_ground_truth_nt(neuron_df: pd.DataFrame) -> pd.DataFrame | None:
     )
 
 
-def main() -> None:
-    os.makedirs(RAW_DIR, exist_ok=True)
-    client = get_client()
+def main(dataset: str) -> None:
+    out_dir = os.path.join(RAW_DIR, DATASET_SLUGS.get(dataset, dataset.replace(":", "_")))
+    os.makedirs(out_dir, exist_ok=True)
+    client = get_client(dataset)
 
-    print(f"Consultando neuronas del CX ({', '.join(CX_ROIS)}) en {DATASET}...")
+    print(f"Consultando neuronas del CX ({', '.join(CX_ROIS)}) en {dataset}...")
     neuron_df = fetch_cx_neurons(client)
     print(f"  {len(neuron_df)} neuronas encontradas.")
 
@@ -138,24 +146,24 @@ def main() -> None:
     topology = build_topology_only_graph(conn_df)
     ground_truth = build_ground_truth_nt(neuron_df)
 
-    topology_path = os.path.join(RAW_DIR, "graph_no_sign.csv")
+    topology_path = os.path.join(out_dir, "graph_no_sign.csv")
     topology.to_csv(topology_path, index=False)
     print(f"Grafo sin signo guardado en {topology_path} ({len(topology)} aristas, {len(neuron_df)} neuronas).")
 
-    nodes_path = os.path.join(RAW_DIR, "nodes.csv")
+    nodes_path = os.path.join(out_dir, "nodes.csv")
     neuron_df[["bodyId", "type", "instance"]].to_csv(nodes_path, index=False)
-    print(f"Metadatos de nodos guardados en {nodes_path} (necesarios para la Fase 2: lado e instancia anatómica).")
+    print(f"Metadatos de nodos guardados en {nodes_path}.")
 
     if ground_truth is None:
-        print(
-            "Aviso: este dataset (hemibrain) no incluye neurotransmisor predicho. "
-            "Ground truth pendiente de MaleCNS v1.0 (fase de migración a CAVE)."
-        )
+        print(f"Aviso: {dataset} no incluye neurotransmisor predicho (esperado si es hemibrain).")
     else:
-        gt_path = os.path.join(RAW_DIR, "ground_truth_nt.csv")
+        gt_path = os.path.join(out_dir, "ground_truth_nt.csv")
         ground_truth.to_csv(gt_path, index=False)
         print(f"Ground truth de neurotransmisor guardado en {gt_path} (uso restringido a evaluación).")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dataset", default="male-cns:v1.0", choices=list(DATASET_SLUGS.keys()))
+    args = parser.parse_args()
+    main(args.dataset)

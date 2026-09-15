@@ -46,6 +46,9 @@ def run(n_steps: int = 500, T: int = 200, lr: float = 0.05, tau: float = 5.0,
         if step % 50 == 0 or step == n_steps - 1:
             print(f"step {step:4d}  loss {loss.item():.4f}")
 
+    with torch.no_grad():
+        s = torch.tanh(model.sign_param)
+
     return {
         "tau": tau,
         "recurrent_gain": recurrent_gain,
@@ -53,6 +56,9 @@ def run(n_steps: int = 500, T: int = 200, lr: float = 0.05, tau: float = 5.0,
         "loss_first": loss_history[0],
         "loss_last": loss_history[-1],
         "loss_min": min(loss_history),
+        "mean_abs_sign": s.abs().mean().item(),
+        "frac_polarized_gt_0.9": (s.abs() > 0.9).float().mean().item(),
+        "frac_undecided_lt_0.3": (s.abs() < 0.3).float().mean().item(),
     }
 
 
