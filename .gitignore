@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data (connectome pulls can be large — no subir binarios pesados al repo)
+data/raw/
+data/interim/
+*.pt
+*.pth
+*.h5
+
+# Entornos / secretos
+.env
+
+# OS
+.DS_Store
+Thumbs.db
