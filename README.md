@@ -25,6 +25,27 @@ Si se entrena una red neuronal cuya única restricción es la topología sinápt
 | 4 | Evaluación y desglose por neuropilo/tipo celular | 8–10 |
 | 5 | Redacción y difusión (preprint + LinkedIn) | 10–12 |
 
+## Setup
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate      # Windows
+pip install -r requirements.txt
+cp .env.example .env        # añadir NEUPRINT_TOKEN (neuprint.janelia.org > Account > Auth Token)
+```
+
+## Uso
+
+```bash
+python -m src.cx_net.extract_graph
+```
+
+Genera `data/raw/graph_no_sign.csv` (topología pura, sin signo) y
+`data/raw/ground_truth_nt.csv` (neurotransmisor real, uso restringido a la
+fase de evaluación). Ambos quedan fuera del repositorio (`.gitignore`).
+
+Registro de decisiones y resultados: [`docs/lab-notebook.md`](docs/lab-notebook.md).
+
 ## Referencias clave
 
 - Lappalainen, J.K. et al. (2024). *Connectome-constrained networks predict neural activity across the fly visual system.* Nature.
