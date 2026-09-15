@@ -100,6 +100,51 @@ ROCm solo tiene soporte oficial en Linux; en Windows la vía sería
 grafo (probable que CPU sea suficiente); queda anotado como opción si el
 proyecto escala a un subcircuito mayor de MaleCNS más adelante.
 
+## 2026-09-16 (4) — Fase 2: arquitectura, tarea y primer entrenamiento piloto
+
+**Qué se construyó:**
+- `graph_utils.py`: carga el grafo de la Fase 1 y estima una posición angular
+  (`ring_angle`) por neurona a partir del número de glomérulo parseado del
+  campo `instance` real (p. ej. `EPG(PB08)_L3`). **Aviso:** es una
+  aproximación secuencial (glomérulo 1-8 por hemisferio -> 16 posiciones
+  equiespaciadas), NO la tabla de correspondencia glomérulo-cuña real de la
+  literatura (Turner-Evans et al. 2017; Hulse et al. 2021). Pendiente de
+  contrastar antes de confiar en resultados cuantitativos de decodificación.
+- `model.py`: red recurrente donde la MAGNITUD de cada peso es el número real
+  de sinapsis (fijo) y el SIGNO es el único parámetro entrenable (vía
+  `tanh(sign_param)`), tal como exige H1.
+- `task.py`: tarea de integración de rumbo — velocidad angular inyectada de
+  forma asimétrica en PEN_a/PEN_b (L/R con signo opuesto), rumbo decodificado
+  como vector poblacional sobre EPG/EPGt, pérdida circular `1 - cos(diff)`.
+- `train.py`: bucle de entrenamiento con Adam sobre `sign_param` únicamente.
+
+**Incidencia encontrada y corregida:** la suma de sinapsis entrantes por
+neurona en datos reales es enorme (media ~850, máximo ~1493) frente a lo que
+`tanh` puede procesar sin saturar (~±3). Sin corregirlo, la red se satura por
+completo y el gradiente se anula — el primer entrenamiento no mejoraba de
+forma consistente. Solución: normalizar cada peso por el total de sinapsis
+entrantes de su neurona destino (preserva las proporciones relativas reales
+entre inputs de una neurona, solo reescala la magnitud absoluta) y añadir una
+ganancia recurrente global entrenable como hiperparámetro.
+
+**Resultado del piloto (150 épocas, 8 ensayos/paso, hemibrain, sin ground
+truth de NT todavía):** pérdida baja de ~0.85 (nivel de azar) a un rango
+estable de ~0.5-0.6 (mínimo puntual 0.30). Mejor que azar de forma
+consistente, pero sin convergencia limpia — probable necesidad de ajustar
+τ (constante de tiempo), la ganancia de entrada externa, o entrenar más
+épocas con una tasa de aprendizaje menor.
+
+**Importante — alcance de este resultado:** esto valida que el pipeline
+(datos -> arquitectura -> tarea -> entrenamiento) funciona de extremo a
+extremo. NO evalúa H1 todavía: el hemibrain no tiene neurotransmisor real
+anotado, así que no hay nada con qué comparar el signo aprendido. Ese paso
+requiere migrar la extracción a MaleCNS v1.0 vía CAVE.
+
+**Siguiente paso:** (a) ajuste fino de hiperparámetros de la dinámica para
+mejorar la convergencia, (b) validar `ring_angle` contra la tabla real de
+Hulse et al. (2021), (c) migrar `extract_graph.py` a `caveclient` sobre
+MaleCNS v1.0 para obtener el ground truth de neurotransmisor real.
+
 ## Plantilla para próximas entradas
 
 ```

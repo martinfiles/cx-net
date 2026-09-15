@@ -142,6 +142,10 @@ def main() -> None:
     topology.to_csv(topology_path, index=False)
     print(f"Grafo sin signo guardado en {topology_path} ({len(topology)} aristas, {len(neuron_df)} neuronas).")
 
+    nodes_path = os.path.join(RAW_DIR, "nodes.csv")
+    neuron_df[["bodyId", "type", "instance"]].to_csv(nodes_path, index=False)
+    print(f"Metadatos de nodos guardados en {nodes_path} (necesarios para la Fase 2: lado e instancia anatómica).")
+
     if ground_truth is None:
         print(
             "Aviso: este dataset (hemibrain) no incluye neurotransmisor predicho. "
