@@ -248,6 +248,63 @@ exponencial de la pérdida (`ema_alpha=0.05`), no sobre el valor crudo, con
 reducir el ruido de base. Repitiendo el entrenamiento (1500 épocas) con esta
 corrección -- resultado pendiente, se registra en la próxima entrada.
 
+## 2026-09-16 (8) — Corte de sesión: estado y próximos pasos
+
+**Por qué se corta aquí:** fin de la jornada (apagado del equipo). El
+reentrenamiento largo (1500 épocas, `trials_per_step=16`, scheduler
+corregido con EMA) se lanzó en segundo plano pero se detuvo manualmente
+antes de terminar -- no se pierde nada irrecuperable porque `train.py` NO
+guardaba checkpoints intermedios en ese momento. **Se corrigió esto mismo:**
+ahora guarda cada 100 épocas en `data/interim/model_checkpoint_inprogress.pt`
++ `data/interim/training_progress.json` (época actual, mejor pérdida, lr),
+y los prints usan `flush=True` (antes no se veía nada en el log de un
+proceso en segundo plano hasta que terminaba, por buffering de Python).
+
+**ESTADO EXACTO al cortar:**
+- ✅ Fases 1-2 completas y validadas (extracción, arquitectura, chequeo de
+  cordura, entrenamiento con checkpoint-mejor + scheduler EMA corregido).
+- ✅ Ground truth real de male-cns:v1.0 extraído (`data/raw/malecns/`):
+  Delta7=glutamato (inhibidor), resto del núcleo=acetilcolina (excitador).
+- ✅ `evaluate.py` implementado y probado (test de permutación de etiqueta
+  de neurotransmisor, desglose H2 por tipo celular).
+- ❌ **NO hay todavía un modelo bien convergido sobre male-cns:v1.0 con el
+  scheduler corregido.** El único checkpoint guardado en
+  `data/interim/model_pilot.pt` es el de la corrida ANTERIOR al fix del
+  scheduler (best loss 0.2968, pero con señal de signo débil -- NO fiable
+  para evaluar H1, ver entrada anterior). El intento de 1500 épocas con la
+  corrección se detuvo a medias sin guardar nada útil (se cortó antes de
+  llegar a la época 100, primer punto de guardado).
+
+**PRÓXIMOS PASOS (en orden, para retomar mañana):**
+
+1. Activar entorno: `cd cx-net && .venv\Scripts\activate` (Windows) o
+   `source .venv/Scripts/activate` (Git Bash).
+2. Relanzar el entrenamiento corregido: `python -m src.cx_net.train`
+   (1500 épocas, ~20-25 min en CPU -- lanzar con tiempo de sobra, o en
+   segundo plano). Vigilar que `ema` en los logs baje de forma sostenida y
+   que la tasa de aprendizaje NO caiga a valores absurdos (~1e-8) antes de
+   la época 1000 -- si pasa otra vez, subir `patience` todavía más.
+3. Tras entrenar, comprobar polarización de signos ANTES de evaluar H1
+   (umbral orientativo: `mean_abs_sign` > 0.5 y `frac_polarized_gt_0.9` >
+   0.1, comparable al chequeo de cordura). Si sigue bajo, no evaluar H1
+   todavía -- seguir ajustando (más épocas, más `trials_per_step`, o revisar
+   si `recurrent_gain`/`tau` necesitan cambiar).
+4. Solo si la polarización es razonable: `python -m src.cx_net.evaluate` y
+   registrar el resultado (observed_agreement, p_value, desglose H2) tal
+   cual salga, sea cual sea -- un negativo bien fundamentado sigue siendo
+   publicable (ver propuesta original).
+5. Pendiente aparte, no bloqueante: validar `ring_angle` (posición angular
+   aproximada usada para decodificar el rumbo) contra la tabla real de
+   Hulse et al. (2021) antes de confiar en resultados cuantitativos de
+   decodificación -- está marcado como aproximación no verificada desde la
+   entrada (4).
+
+**Archivos que importan para retomar:** `docs/lab-notebook.md` (este
+archivo, léelo entero de arriba a abajo si retomas en otra sesión de
+Claude), `src/cx_net/*.py`, `data/raw/malecns/` (datos ya descargados, no
+hace falta re-extraer), `data/interim/` (vacío de resultados útiles ahora
+mismo, todo lo de ahí es de la corrida descartada).
+
 ## Plantilla para próximas entradas
 
 ```

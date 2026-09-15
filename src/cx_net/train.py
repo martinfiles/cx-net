@@ -70,7 +70,19 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
             best_state = {k: v.clone() for k, v in model.state_dict().items()}
         if epoch % 25 == 0 or epoch == n_epochs - 1:
             current_lr = optimizer.param_groups[0]["lr"]
-            print(f"epoch {epoch:4d}  loss {batch_loss:.4f}  ema {ema_loss:.4f}  lr {current_lr:.4g}  best {best_loss:.4f}")
+            print(f"epoch {epoch:4d}  loss {batch_loss:.4f}  ema {ema_loss:.4f}  lr {current_lr:.4g}  best {best_loss:.4f}", flush=True)
+
+        # Guardado periódico: si el proceso se interrumpe (apagado, corte de
+        # luz, timeout), no se pierde todo el entrenamiento -- se puede
+        # seguir evaluando/reanudando desde el último checkpoint intermedio.
+        if epoch % 100 == 0 or epoch == n_epochs - 1:
+            os.makedirs(INTERIM_DIR, exist_ok=True)
+            torch.save(best_state, os.path.join(INTERIM_DIR, "model_checkpoint_inprogress.pt"))
+            with open(os.path.join(INTERIM_DIR, "training_progress.json"), "w") as f:
+                json.dump({
+                    "epoch": epoch, "n_epochs": n_epochs, "best_loss": best_loss,
+                    "ema_loss": ema_loss, "current_lr": current_lr, "done": epoch == n_epochs - 1,
+                }, f, indent=2)
 
     model.load_state_dict(best_state)
 
