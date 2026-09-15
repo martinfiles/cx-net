@@ -75,6 +75,31 @@ sinapsis dentro de los ROIs del CX. Probablemente (a) es más defendible
 porque es exactamente el conjunto que la literatura ya trata como "el
 circuito".
 
+## 2026-09-16 (3) — Acotar a tipos celulares canónicos + inventario de hardware
+
+**Por qué:** `roi_req="any"` por sí solo daba 3.085 neuronas / 470.649 aristas —
+incluye fibras de paso sin relación funcional con el circuito de rumbo, y no
+encaja con el alcance de cómputo previsto (GPU de consumo, 12 semanas
+part-time). Se acota a los tipos celulares que la literatura (Hulse et al.
+2021; Turner-Evans et al. 2017; Green et al. 2017) reconoce como el núcleo
+del sistema de dirección de cabeza (ring attractor): `EPG`, `EPGt`,
+`PEN_a(PEN1)`, `PEN_b(PEN2)`, `PEG`, `Delta7`. Nombres de tipo verificados en
+vivo contra el esquema real de hemibrain:v1.2.1 (no asumidos de memoria).
+
+Quedan deliberadamente fuera de esta primera iteración: los ~30 subtipos de
+ring neurons (ER/ExR, entrada visual al EB) y los PFN/PFL/hDelta/vDelta del
+fan-shaped body — pertenecen al CX completo pero no al núcleo de heading, y
+son candidatos para una extensión futura si H1/H2 dan resultado.
+
+**Resultado:** `data/raw/graph_no_sign.csv` — 9.722 aristas, 152 neuronas.
+Tamaño en línea con lo previsto en la propuesta (~150-300 neuronas).
+
+**Hardware disponible:** GPU local AMD Radeon RX 7700 XT (RDNA3). PyTorch con
+ROCm solo tiene soporte oficial en Linux; en Windows la vía sería
+`torch-directml` o WSL2 + ROCm. No es bloqueante para el tamaño actual del
+grafo (probable que CPU sea suficiente); queda anotado como opción si el
+proyecto escala a un subcircuito mayor de MaleCNS más adelante.
+
 ## Plantilla para próximas entradas
 
 ```

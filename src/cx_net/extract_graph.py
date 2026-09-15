@@ -29,6 +29,23 @@ CX_ROIS = ["PB", "EB", "FB", "NO"]
 DATASET = "hemibrain:v1.2.1"
 SERVER = "neuprint.janelia.org"
 
+# Núcleo del sistema de dirección de cabeza (ring attractor), no todo el CX:
+# EPG (compás), PEN_a/PEN_b (integran velocidad angular), PEG (cierra el bucle
+# FB-EB-PB), Delta7 (inhibición lateral que mantiene un único "bump").
+# Nombres verificados en vivo contra hemibrain:v1.2.1 (ver docs/lab-notebook.md,
+# entrada 2026-09-16). Deja fuera a los ~30 subtipos de ring neurons (ER/ExR,
+# entrada visual) y a los PFN/PFL/hDelta/vDelta del fan-shaped body: son parte
+# del CX completo pero no del núcleo de heading, y multiplicarían el tamaño
+# del grafo sin aportar a H1/H2 en esta primera iteración.
+CORE_HEAD_DIRECTION_TYPES = [
+    "EPG",
+    "EPGt",
+    "PEN_a(PEN1)",
+    "PEN_b(PEN2)",
+    "PEG",
+    "Delta7",
+]
+
 RAW_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data", "raw")
 
 
@@ -44,15 +61,19 @@ def get_client() -> Client:
 
 
 def fetch_cx_neurons(client: Client) -> pd.DataFrame:
-    """Neuronas 'Traced' con presencia en cualquiera de los neuropilos del CX.
+    """Neuronas 'Traced' del núcleo del sistema de dirección de cabeza.
 
     roi_req="any" es imprescindible: por defecto NeuronCriteria exige
     presencia en TODOS los rois listados a la vez, lo que deja fuera a casi
     todas las neuronas del circuito (solo 30 de varios cientos esperadas).
+
+    El filtro por rois por sí solo es demasiado laxo (3.085 neuronas, incluye
+    fibras de paso sin relación con el circuito de rumbo) -- se acota además
+    por tipo celular canónico (CORE_HEAD_DIRECTION_TYPES).
     """
     criteria = NC(rois=CX_ROIS, roi_req="any", status="Traced")
     neuron_df, _roi_counts_df = fetch_neurons(criteria, client=client)
-    return neuron_df
+    return neuron_df[neuron_df["type"].isin(CORE_HEAD_DIRECTION_TYPES)].reset_index(drop=True)
 
 
 def fetch_cx_connectivity(client: Client, neuron_df: pd.DataFrame) -> pd.DataFrame:
