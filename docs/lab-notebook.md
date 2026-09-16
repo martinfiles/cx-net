@@ -499,6 +499,36 @@ resultado honesto con esa salvedad sigue siendo válido para la propuesta
 original; o (b) invertir en rediseñar la tarea para que exija más
 compromiso de signo antes de evaluar H1 (esfuerzo mayor, sesión aparte).
 
+## 2026-09-17 (2) — Evaluación de H1 sobre el mejor modelo del sweep limpio: no soportada, pero subpotenciada
+
+**Qué se hizo:** se corrió `evaluate.py` sobre `tps32_seed0` (la corrida con
+mayor `frac_polarized_gt_0.9` del sweep limpio de 6 corridas: 4.1%).
+
+**Resultado:** acuerdo observado 0.482, media del nulo (permutación de
+etiqueta de NT) 0.490, desvío del nulo 0.005, **p=0.93** -- H1 no soportada.
+El acuerdo observado ni siquiera queda por debajo del nulo de forma
+significativa (a ~1.4 desvíos, dentro del rango esperable por azar).
+Desglose H2 por tipo celular sin señal clara en ningún tipo (rango
+0.42-0.53, todo compatible con azar). Detalle completo en
+`data/interim/h1_evaluation_tps32_seed0.json`.
+
+**Salvedad importante (no es un resultado fuerte todavía):** como se
+documentó en la entrada anterior, este modelo tiene polarización de signo
+débil (`mean_abs_sign` 0.333, lejos del umbral 0.5 usado como referencia de
+"señal fiable" desde la entrada 8) -- la mayoría de los signos siguen cerca
+de su inicialización aleatoria en vez de haberse comprometido con un valor
+según el gradiente. Un test de acuerdo de signo sobre una red que apenas
+decidió sus signos es, por diseño, de bajo poder estadístico: no se puede
+distinguir todavía "H1 es falsa" de "el modelo no llegó a un punto donde
+evaluar H1 sea informativo". Este resultado queda registrado como
+preliminar/no concluyente, no como evidencia sólida contra H1.
+
+**Siguiente paso:** la vía más prometedora identificada hoy es rediseñar la
+tarea de entrenamiento para que exija más compromiso de signo por arista
+(ver hipótesis de la entrada anterior: la tarea actual probablemente
+subrestringe el signo individual) -- pendiente para una sesión futura con
+tiempo dedicado a ese diseño, no un ajuste rápido de hiperparámetros.
+
 ## Plantilla para próximas entradas
 
 ```
