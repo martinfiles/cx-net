@@ -7,16 +7,43 @@ regiones que no forman parte de este subcircuito acotado) y debe mantener,
 en la población "brújula" (EPG/EPGt), un patrón de actividad cuya posición
 (leída como vector poblacional sobre `ring_angle`) seguya el rumbo real
 obtenido al integrar esa velocidad angular en el tiempo.
+
+`hold_prob` (2026-09-17, ver lab-notebook entrada 2026-09-17): con
+`hold_prob=0`, la tarea original de Fase 2 permite que muchas asignaciones
+de signo distintas logren un desempeño agregado similar -- el barrido
+multi-semilla mostró polarización débil de forma consistente sin importar
+el hiperparámetro de entrenamiento, probablemente porque la tarea no
+restringe lo suficiente el signo de cada arista. Con `hold_prob > 0`, la
+traza de velocidad angular incluye tramos de "quietud" (av=0) intercalados
+-- durante esos tramos la red debe MANTENER el bump de rumbo sin ninguna
+entrada externa que la ayude, apoyándose solo en su propia dinámica
+recurrente (persistent activity de un ring attractor), lo que depende mucho
+más directamente de una estructura de signo correcta (en particular, de
+inhibición lateral tipo Delta7 para evitar que el bump se disperse) que la
+integración pura. Mismo `circular_loss` de siempre -- no se inventa un
+término de pérdida nuevo, solo se hace la tarea más exigente.
 """
 
 import numpy as np
 import torch
 
 
-def generate_trial(T: int = 200, max_av: float = 0.08, seed: int | None = None):
-    """Devuelve (velocidad_angular[T], rumbo_real[T]) en radianes."""
+def generate_trial(T: int = 200, max_av: float = 0.08, hold_prob: float = 0.0,
+                    hold_block: int = 20, seed: int | None = None):
+    """Devuelve (velocidad_angular[T], rumbo_real[T]) en radianes.
+
+    Con `hold_prob > 0`: se divide T en bloques de `hold_block` pasos: cada
+    bloque tiene probabilidad `hold_prob` de ser un tramo de quietud (av=0
+    forzado), simulando a la mosca parada -- el rumbo debe mantenerse sin
+    entrada externa. `hold_prob=0` (default) reproduce exactamente el
+    comportamiento original (compatibilidad con Fase 2)."""
     rng = np.random.default_rng(seed)
     av = rng.normal(0.0, max_av, size=T)
+    if hold_prob > 0:
+        n_blocks = T // hold_block
+        for b in range(n_blocks):
+            if rng.random() < hold_prob:
+                av[b * hold_block:(b + 1) * hold_block] = 0.0
     heading = np.cumsum(av)
     return av, heading
 
@@ -61,11 +88,11 @@ def circular_loss(decoded: torch.Tensor, target: torch.Tensor, warmup: int = 20)
 HELD_OUT_SEED_BASE = 900_000_000
 
 
-def generate_held_out_set(n_trials: int = 30, T: int = 200):
+def generate_held_out_set(n_trials: int = 30, T: int = 200, hold_prob: float = 0.0):
     """Conjunto FIJO de ensayos de validación: mismas semillas siempre, para
     poder comparar configuraciones/semillas de entrenamiento entre sí sin que
     la comparación esté confundida por qué ensayos le tocaron a cada una."""
-    return [generate_trial(T=T, seed=HELD_OUT_SEED_BASE + i) for i in range(n_trials)]
+    return [generate_trial(T=T, hold_prob=hold_prob, seed=HELD_OUT_SEED_BASE + i) for i in range(n_trials)]
 
 
 def evaluate_on_trials(model, nodes, trials) -> float:

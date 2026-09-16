@@ -19,7 +19,7 @@ from .task import build_external_input, circular_loss, decode_heading, generate_
 
 
 def run(n_steps: int = 500, T: int = 200, lr: float = 0.05, tau: float = 5.0,
-        recurrent_gain: float = 4.0, seed: int = 42) -> dict:
+        recurrent_gain: float = 4.0, seed: int = 42, hold_prob: float = 0.0) -> dict:
     torch.manual_seed(0)
     graph = load_cx_graph()
     nodes = graph["nodes"]
@@ -30,7 +30,7 @@ def run(n_steps: int = 500, T: int = 200, lr: float = 0.05, tau: float = 5.0,
     )
     optimizer = torch.optim.Adam([model.sign_param], lr=lr)
 
-    av, heading = generate_trial(T=T, seed=seed)
+    av, heading = generate_trial(T=T, hold_prob=hold_prob, seed=seed)
     ext_input = build_external_input(av, nodes)
 
     loss_history = []
@@ -53,6 +53,7 @@ def run(n_steps: int = 500, T: int = 200, lr: float = 0.05, tau: float = 5.0,
         "tau": tau,
         "recurrent_gain": recurrent_gain,
         "lr": lr,
+        "hold_prob": hold_prob,
         "loss_first": loss_history[0],
         "loss_last": loss_history[-1],
         "loss_min": min(loss_history),

@@ -33,6 +33,7 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
           trials_per_step: int = 16, ema_alpha: float = 0.05, patience: int = 150,
           tau: float = 5.0, recurrent_gain: float = 4.0,
           adam_betas: tuple[float, float] = (0.9, 0.999),
+          hold_prob: float = 0.0,
           run_label: str | None = None) -> dict:
     """
     ema_alpha / patience: el primer intento uso ReduceLROnPlateau directamente
@@ -72,7 +73,7 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
         optimizer.zero_grad()
         batch_loss = 0.0
         for i in range(trials_per_step):
-            av, heading = generate_trial(T=T, seed=seed * SEED_STRIDE + epoch * trials_per_step + i)
+            av, heading = generate_trial(T=T, hold_prob=hold_prob, seed=seed * SEED_STRIDE + epoch * trials_per_step + i)
             ext_input = build_external_input(av, nodes)
             states = model(ext_input)
             decoded = decode_heading(states, nodes)
@@ -112,7 +113,7 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
     # -- ver task.py) para poder comparar configuraciones/semillas de forma
     # limpia, sin que la comparación esté sesgada por qué ensayos de
     # ENTRENAMIENTO le tocaron a cada corrida (ver entrada 11 del cuaderno).
-    held_out_loss = evaluate_on_trials(model, nodes, generate_held_out_set(T=T))
+    held_out_loss = evaluate_on_trials(model, nodes, generate_held_out_set(T=T, hold_prob=hold_prob))
 
     os.makedirs(INTERIM_DIR, exist_ok=True)
     signs = model.learned_signs().numpy()
@@ -129,6 +130,7 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
         "lr": lr,
         "seed": seed,
         "trials_per_step": trials_per_step,
+        "hold_prob": hold_prob,
         "tau": tau,
         "recurrent_gain": recurrent_gain,
         "adam_betas": list(adam_betas),
