@@ -35,9 +35,9 @@ INTERIM_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data", "inter
 NT_SIGN = {"acetylcholine": 1.0, "glutamate": -1.0}
 
 
-def load_trained_model(graph: dict) -> CXRingNetwork:
+def load_trained_model(graph: dict, run_label: str = "pilot") -> CXRingNetwork:
     model = CXRingNetwork(graph["n_nodes"], graph["edge_index"], graph["synapse_weight"])
-    state = torch.load(os.path.join(INTERIM_DIR, "model_pilot.pt"))
+    state = torch.load(os.path.join(INTERIM_DIR, f"model_{run_label}.pt"))
     model.load_state_dict(state)
     return model
 
@@ -54,11 +54,11 @@ def attach_ground_truth(nodes: pd.DataFrame, data_dir: str) -> pd.DataFrame:
     return merged
 
 
-def run_evaluation(n_permutations: int = 2000, seed: int = 0) -> dict:
+def run_evaluation(n_permutations: int = 2000, seed: int = 0, run_label: str = "pilot") -> dict:
     rng = np.random.default_rng(seed)
     graph = load_cx_graph()
     nodes = attach_ground_truth(graph["nodes"], DATA_DIR)
-    model = load_trained_model(graph)
+    model = load_trained_model(graph, run_label=run_label)
 
     learned_sign = model.learned_signs().numpy()  # [E], +-1
     src = graph["edge_index"][0].numpy()
@@ -100,7 +100,7 @@ def run_evaluation(n_permutations: int = 2000, seed: int = 0) -> dict:
     }
 
     os.makedirs(INTERIM_DIR, exist_ok=True)
-    with open(os.path.join(INTERIM_DIR, "h1_evaluation.json"), "w") as f:
+    with open(os.path.join(INTERIM_DIR, f"h1_evaluation_{run_label}.json"), "w") as f:
         json.dump(results, f, indent=2)
 
     return results

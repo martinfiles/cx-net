@@ -51,3 +51,30 @@ def circular_loss(decoded: torch.Tensor, target: torch.Tensor, warmup: int = 20)
                                   torch.cos(torch.as_tensor(target, dtype=torch.float32)))
     diff = decoded[warmup:] - target_wrapped[warmup:]
     return (1 - torch.cos(diff)).mean()
+
+
+# Rango de semillas reservado para el set de validación held-out: disjunto de
+# cualquier semilla que pueda generarse durante entrenamiento (train.py usa
+# seed_run * SEED_STRIDE + epoch * trials_per_step + i, con SEED_STRIDE muy
+# por debajo de este rango), para que ningún ensayo de validación pueda
+# colarse como ensayo de entrenamiento por coincidencia de semilla.
+HELD_OUT_SEED_BASE = 900_000_000
+
+
+def generate_held_out_set(n_trials: int = 30, T: int = 200):
+    """Conjunto FIJO de ensayos de validación: mismas semillas siempre, para
+    poder comparar configuraciones/semillas de entrenamiento entre sí sin que
+    la comparación esté confundida por qué ensayos le tocaron a cada una."""
+    return [generate_trial(T=T, seed=HELD_OUT_SEED_BASE + i) for i in range(n_trials)]
+
+
+def evaluate_on_trials(model, nodes, trials) -> float:
+    """Pérdida media (sin gradiente) sobre un conjunto de ensayos fijo."""
+    with torch.no_grad():
+        total = 0.0
+        for av, heading in trials:
+            ext_input = build_external_input(av, nodes)
+            states = model(ext_input)
+            decoded = decode_heading(states, nodes)
+            total += circular_loss(decoded, heading).item()
+        return total / len(trials)

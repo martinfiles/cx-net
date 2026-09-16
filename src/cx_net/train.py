@@ -16,15 +16,24 @@ import torch
 
 from .graph_utils import load_cx_graph
 from .model import CXRingNetwork
-from .task import build_external_input, circular_loss, decode_heading, generate_trial
+from .task import (
+    build_external_input, circular_loss, decode_heading, evaluate_on_trials,
+    generate_held_out_set, generate_trial,
+)
 
 INTERIM_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data", "interim")
+
+# Ver aviso en task.py sobre HELD_OUT_SEED_BASE: debe quedar muy por debajo de
+# ese valor para cualquier (seed, n_epochs, trials_per_step) razonable, así
+# los ensayos de entrenamiento y validación nunca coinciden por semilla.
+SEED_STRIDE = 1_000_000
 
 
 def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
           trials_per_step: int = 16, ema_alpha: float = 0.05, patience: int = 150,
           tau: float = 5.0, recurrent_gain: float = 4.0,
-          adam_betas: tuple[float, float] = (0.9, 0.999)) -> dict:
+          adam_betas: tuple[float, float] = (0.9, 0.999),
+          run_label: str | None = None) -> dict:
     """
     ema_alpha / patience: el primer intento uso ReduceLROnPlateau directamente
     sobre la pérdida cruda de cada época, que es muy ruidosa (cada época usa
@@ -33,6 +42,16 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
     2500, dejando el resto del entrenamiento sin efecto (ver lab-notebook).
     Ahora el scheduler decide sobre una media móvil exponencial de la
     pérdida, no sobre el valor crudo por época.
+
+    `seed`: hasta la entrada (11) del cuaderno, `seed` solo controlaba la
+    inicialización de `sign_param` -- la secuencia de ensayos de
+    entrenamiento dependía únicamente de (epoch, trials_per_step), igual
+    para cualquier `seed`. Eso confundía "efecto del hiperparámetro" con
+    "qué ensayos le tocaron a esta corrida en particular" al comparar
+    configuraciones con una sola repetición. Ahora `seed` también desplaza
+    la secuencia de ensayos (vía SEED_STRIDE), así que correr el mismo config
+    con distintos `seed` da variación genuina de inicialización Y de datos,
+    útil para medir varianza entre corridas.
     """
     torch.manual_seed(seed)
     graph = load_cx_graph()
@@ -53,7 +72,7 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
         optimizer.zero_grad()
         batch_loss = 0.0
         for i in range(trials_per_step):
-            av, heading = generate_trial(T=T, seed=epoch * trials_per_step + i)
+            av, heading = generate_trial(T=T, seed=seed * SEED_STRIDE + epoch * trials_per_step + i)
             ext_input = build_external_input(av, nodes)
             states = model(ext_input)
             decoded = decode_heading(states, nodes)
@@ -89,27 +108,40 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
 
     model.load_state_dict(best_state)
 
+    # Pérdida sobre el set de validación FIJO (30 ensayos, semillas reservadas
+    # -- ver task.py) para poder comparar configuraciones/semillas de forma
+    # limpia, sin que la comparación esté sesgada por qué ensayos de
+    # ENTRENAMIENTO le tocaron a cada corrida (ver entrada 11 del cuaderno).
+    held_out_loss = evaluate_on_trials(model, nodes, generate_held_out_set(T=T))
+
     os.makedirs(INTERIM_DIR, exist_ok=True)
     signs = model.learned_signs().numpy()
-    torch.save(model.state_dict(), os.path.join(INTERIM_DIR, "model_pilot.pt"))
+    label = run_label or "pilot"
+    torch.save(model.state_dict(), os.path.join(INTERIM_DIR, f"model_{label}.pt"))
 
     with torch.no_grad():
         soft_sign = torch.tanh(model.sign_param)
 
     results = {
+        "run_label": label,
         "n_epochs": n_epochs,
         "T": T,
         "lr": lr,
         "seed": seed,
+        "trials_per_step": trials_per_step,
+        "tau": tau,
+        "recurrent_gain": recurrent_gain,
+        "adam_betas": list(adam_betas),
         "loss_first": loss_history[0],
         "loss_last": loss_history[-1],
         "loss_min": min(loss_history),
+        "held_out_loss": held_out_loss,
         "n_edges": len(signs),
         "frac_excitatory_learned": float((signs > 0).mean()),
         "mean_abs_sign": soft_sign.abs().mean().item(),
         "frac_polarized_gt_0.9": (soft_sign.abs() > 0.9).float().mean().item(),
     }
-    with open(os.path.join(INTERIM_DIR, "pilot_results.json"), "w") as f:
+    with open(os.path.join(INTERIM_DIR, f"results_{label}.json"), "w") as f:
         json.dump({"results": results, "loss_history": loss_history}, f, indent=2)
 
     return results
