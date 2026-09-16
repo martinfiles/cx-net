@@ -305,6 +305,144 @@ Claude), `src/cx_net/*.py`, `data/raw/malecns/` (datos ya descargados, no
 hace falta re-extraer), `data/interim/` (vacío de resultados útiles ahora
 mismo, todo lo de ahí es de la corrida descartada).
 
+## 2026-09-16 (9) — Retomando: scheduler EMA corregido funciona, pero polarización sigue por debajo del umbral
+
+**Qué se hizo:** se retomó la sesión, se confirmó el estado exacto descrito en la
+entrada (8) (ningún checkpoint útil del intento cortado) y se relanzó el
+entrenamiento con el scheduler EMA corregido, en dos configuraciones
+sucesivas sobre male-cns:v1.0:
+
+1. `n_epochs=1500, trials_per_step=16` (la config que ya estaba puesta por
+   defecto en `train.py`).
+2. `n_epochs=2500, trials_per_step=32` (doblar ensayos por paso para reducir
+   ruido de gradiente, ya que el LR ahora decae de forma sana pero la EMA
+   seguía oscilando ~0.48-0.51 sin bajar limpio).
+
+**Resultado:**
+
+| Corrida | best_loss | mean_abs_sign | frac_polarized_gt_0.9 |
+|---|---|---|---|
+| Descartada (2500ep/16, scheduler roto, entrada 7) | 0.2441 | 0.256 | 0.0002 |
+| 1500ep / 16 trials | 0.3128 | 0.321 | 0.021 |
+| 2500ep / 32 trials | 0.3978 | 0.351 | 0.060 |
+
+(Umbral orientativo definido en la entrada (8): `mean_abs_sign > 0.5` y
+`frac_polarized_gt_0.9 > 0.1`, comparable al chequeo de cordura de la
+entrada (5): ~71% / 21%.)
+
+**Lectura:** el scheduler EMA ya no colapsa el LR de forma prematura (bug de
+la entrada 7 corregido y confirmado). Doblar `trials_per_step` mejora la
+polarización de forma clara (~3x en `frac_polarized_gt_0.9`) aunque empeore
+el `best_loss` puntual -- el ruido de ensayos aleatorios sigue siendo el
+cuello de botella dominante, no la arquitectura (el chequeo de cordura de la
+entrada 5 ya prueba que puede polarizar fuerte con un solo ensayo fijo).
+Ninguna de las dos corridas cruza el umbral todavía. Resultados completos
+archivados en `data/interim/{pilot_results,train_log}_{1500ep_16trials,
+2500ep_32trials}.{json,txt}`.
+
+**Siguiente paso:** pendiente de decidir con Martín cuál de las vías
+priorizar (más `trials_per_step` todavía, más épocas, o revisar
+`recurrent_gain`/`tau` en `model.py`/`task.py` en vez de seguir escalando
+ruido por fuerza bruta) -- cada duplicación de `trials_per_step` duplica el
+coste por época, así que vale la pena decidir con criterio antes de lanzar
+una tercera corrida.
+
+## 2026-09-16 (10) — Tres hipótesis baratas descartadas: tau/gain, ring_angle, momentum
+
+**Qué se hizo:** antes de seguir escalando `trials_per_step` (caro), se probaron
+tres ajustes de bajo coste computacional sobre la config 2500ep/32trials:
+
+1. **Barrido `tau`/`recurrent_gain`** (4 configs, 400 épocas c/u): sin ganador
+   claro, todas en el mismo rango de ruido que el baseline
+   (`data/interim/tau_gain_sweep.json`).
+2. **Corrección de `ring_angle`** (desfase L/R intercalado a 22.5°, en vez de
+   180°, basado en Hulse et al. 2021 eLife 2021;10:e66039): **empeoró mucho**
+   la polarización (6.0% -> 0.05% en `frac_polarized_gt_0.9`, misma config
+   2500ep/32trials). Revertido -- la fuente solo confirma el desfase
+   agregado entre hemisferios, no el patrón de intercalado exacto dentro de
+   cada uno, y la versión probada probablemente rompió la continuidad
+   angular intra-hemisferio. Resultado archivado como referencia en
+   `data/interim/{pilot_results,train_log}_2500ep_32trials_ringfix_WORSE.{json,txt}`.
+   **Nota de proceso:** el checkpoint (.pt) de la mejor corrida hasta ahora
+   (2500ep/32trials, ring_angle original, 6.0%) no se preservó al lanzar las
+   corridas siguientes -- solo se archivaron json/log, no el `.pt`. Si hace
+   falta ese checkpoint exacto habría que re-entrenar esa config.
+3. **Barrido de `beta1` de Adam** (momentum temporal: 0.9 / 0.97 / 0.99, 400
+   épocas c/u, gratis en cómputo): tampoco mostró mejora consistente
+   (`data/interim/momentum_sweep.json`).
+
+**Lectura:** ninguna de las tres hipótesis baratas explica el techo de
+polarización. El único lever que sí mostró señal real hasta ahora sigue
+siendo escalar `trials_per_step` (16 -> 32: 2.1% -> 6.0%), con retornos
+decrecientes y coste creciente. `train.py` quedó parametrizado para aceptar
+`tau`, `recurrent_gain` y `adam_betas` (antes hardcodeados), útil para
+retomar cualquiera de estos experimentos sin tocar el código de nuevo.
+
+**Siguiente paso:** pendiente de decidir con Martín -- seguir escalando
+`trials_per_step` (64+, caro), probar una idea estructural distinta (p. ej.
+curriculum learning: empezar con ensayos más cortos/fáciles), o parar aquí
+por hoy y retomar con la cabeza fresca. El umbral de polarización (10%)
+sigue sin cruzarse tras ~4 corridas largas y 3 barridos cortos.
+
+## 2026-09-16 (11) — trials_per_step=64 rompe la tendencia; hallazgo metodológico y corte de sesión
+
+**Qué se hizo:** siguiendo la recomendación de escalar cómputo, se lanzó
+`trials_per_step=64` (2500 épocas, mismo resto de config que las corridas
+anteriores).
+
+**Resultado:** `frac_polarized_gt_0.9` = **0.79%** -- peor que la corrida de
+32 ensayos (6.0%), rompiendo la tendencia creciente que se venía observando
+(16 -> 2.1%, 32 -> 6.0%, 64 -> 0.79%). `mean_abs_sign` = 0.330, similar a la
+corrida de 32 (0.351). Archivado en
+`data/interim/{pilot_results,train_log}_2500ep_64trials.{json,txt}`.
+
+**Hallazgo metodológico (importante):** todas las corridas y barridos de hoy
+usaron `seed=0` fijo (misma inicialización de `sign_param` siempre) pero
+**una sola repetición por configuración** -- los ensayos aleatorios en sí
+sí cambian entre configs (la semilla de `generate_trial` depende de
+`epoch * trials_per_step + i`), así que cada config termina viendo una
+secuencia de ensayos distinta. Con n=1 por configuración, no se puede
+separar "efecto real del hiperparámetro" de "esta corrida en particular
+sacó una secuencia de ensayos más fácil/difícil por azar". Esto probablemente
+explica por qué la tendencia de `trials_per_step` se rompió al pasar de 32 a
+64: es muy posible que gran parte de las diferencias observadas hoy entre
+configuraciones (tau/gain, ring_angle, momentum, trials_per_step) sea ruido
+de comparación, no señal real.
+
+**Decisión:** cortar la sesión de experimentación aquí. Ya se gastó cómputo
+considerable (4 corridas largas + 3 barridos cortos) persiguiendo señales
+que probablemente están confundidas con este problema metodológico. Seguir
+ajustando hiperparámetros sin arreglar esto primero es de bajo valor.
+
+**PRÓXIMOS PASOS (en orden, para la próxima sesión):**
+1. Antes de seguir tocando hiperparámetros: fijar un conjunto de ensayos de
+   VALIDACIÓN held-out (misma secuencia de ensayos para todas las
+   configuraciones que se comparen, generados con semillas fijas e
+   independientes del entrenamiento) para poder medir polarización/pérdida
+   de forma comparable entre configs, no confundida con qué ensayos les
+   tocaron.
+2. Idealmente, correr cada configuración candidata con 2-3 semillas de
+   inicialización distintas antes de sacar conclusiones sobre qué
+   hiperparámetro "funciona mejor" -- un solo run no alcanza dado el nivel
+   de ruido visto hoy.
+3. Con esa metodología corregida, retomar la pregunta abierta: ¿qué hace
+   falta para cruzar el umbral de polarización (`mean_abs_sign > 0.5`,
+   `frac_polarized_gt_0.9 > 0.1`)? Candidatos ya explorados sin éxito claro:
+   tau/recurrent_gain, ring_angle (revertido, ver entrada 10), momentum de
+   Adam, escalar trials_per_step (16/32/64, no monótono). Sin explorar
+   todavía: curriculum learning (empezar con ensayos más cortos/fáciles).
+4. Pendiente aparte, no bloqueante: seguir sin verificar la tabla real
+   glomérulo-cuña de Hulse et al. (2021, Fig. 10) para `ring_angle` -- el
+   intento de corrección de hoy (entrada 10) se descartó por falta de
+   precisión, no por descartar que el problema exista.
+
+**Archivos que importan para retomar:** este cuaderno (léelo entero),
+`src/cx_net/train.py` (ahora acepta `tau`, `recurrent_gain`, `adam_betas`
+como parámetros, además de `trials_per_step`/`n_epochs`/`patience`),
+`data/interim/*_sweep*.json` y `data/interim/*_ep*trials*.{json,txt}`
+(resultados de todas las corridas/barridos de hoy, para no repetir
+experimentos ya hechos).
+
 ## Plantilla para próximas entradas
 
 ```

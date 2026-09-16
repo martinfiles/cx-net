@@ -13,6 +13,19 @@ L/R desplazados 180°, glomérulo 9 se pliega vía módulo. Es suficiente para
 validar que el pipeline de entrenamiento funciona, pero debe contrastarse
 contra la tabla real de Hulse et al. (2021, material suplementario) antes de
 interpretar cualquier resultado cuantitativo de decodificación de rumbo.
+
+INTENTO DE CORRECCIÓN DESCARTADO (2026-09-16): se probó un mapeo intercalado
+(L en índices pares, R en impares, desfase 22.5° confirmado vía Hulse et al.
+2021 eLife 2021;10:e66039 -- "22.5° offset between the right- and
+left-projecting wedges in the EB") asumiendo que preservaba mejor la
+continuidad angular real. Empíricamente empeoró mucho la polarización de
+signos en entrenamiento (6.0% -> 0.05% en frac_polarized_gt_0.9, mismo resto
+de config) -- indicio de que rompe la continuidad DENTRO de cada hemisferio,
+que importa más para que el "bump" se mueva de forma suave que la fase
+agregada entre hemisferios. Revertido. La fuente solo confirma el desfase
+agregado, no el patrón de intercalado exacto -- verificar contra la Fig. 10
+/ material suplementario del paper (no extraíble por texto plano) antes de
+volver a tocar esto.
 """
 
 import math

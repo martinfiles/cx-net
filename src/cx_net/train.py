@@ -22,7 +22,9 @@ INTERIM_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data", "inter
 
 
 def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
-          trials_per_step: int = 16, ema_alpha: float = 0.05, patience: int = 150) -> dict:
+          trials_per_step: int = 16, ema_alpha: float = 0.05, patience: int = 150,
+          tau: float = 5.0, recurrent_gain: float = 4.0,
+          adam_betas: tuple[float, float] = (0.9, 0.999)) -> dict:
     """
     ema_alpha / patience: el primer intento uso ReduceLROnPlateau directamente
     sobre la pérdida cruda de cada época, que es muy ruidosa (cada época usa
@@ -36,8 +38,9 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
     graph = load_cx_graph()
     nodes = graph["nodes"]
 
-    model = CXRingNetwork(graph["n_nodes"], graph["edge_index"], graph["synapse_weight"])
-    optimizer = torch.optim.Adam([model.sign_param], lr=lr)
+    model = CXRingNetwork(graph["n_nodes"], graph["edge_index"], graph["synapse_weight"],
+                           tau=tau, recurrent_gain=recurrent_gain)
+    optimizer = torch.optim.Adam([model.sign_param], lr=lr, betas=adam_betas)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="min", factor=0.5, patience=patience
     )
@@ -113,5 +116,5 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
 
 
 if __name__ == "__main__":
-    results = train(n_epochs=1500, lr=0.05, trials_per_step=16, patience=150)
+    results = train(n_epochs=2500, lr=0.05, trials_per_step=64, patience=150)
     print(json.dumps(results, indent=2))
