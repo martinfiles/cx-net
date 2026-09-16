@@ -443,6 +443,62 @@ como parámetros, además de `trials_per_step`/`n_epochs`/`patience`),
 (resultados de todas las corridas/barridos de hoy, para no repetir
 experimentos ya hechos).
 
+## 2026-09-17 — Metodología corregida: la varianza entre semillas explica la falsa tendencia; hipótesis nueva sobre la causa real
+
+**Qué se hizo:** se corrigió el problema metodológico de la entrada (11)
+(`seed` ahora también desplaza la secuencia de ensayos de entrenamiento, no
+solo la inicialización -- `train.py`) y se agregó un set de validación
+held-out fijo (`task.py: generate_held_out_set`, 30 ensayos, semillas
+reservadas y disjuntas de cualquier semilla de entrenamiento) para poder
+comparar configuraciones de forma limpia. Con esto, se repitió la
+comparación `trials_per_step` 16 vs 32 con 3 semillas cada uno (1000 épocas,
+presupuesto reducido respecto a las corridas de 2500 de ayer).
+
+**Resultado (media ± desvío sobre 3 semillas):**
+
+| | `frac_polarized_gt_0.9` | `mean_abs_sign` | `held_out_loss` |
+|---|---|---|---|
+| tps=16 | 0.72% ± 0.63% | 0.307 ± 0.006 | 0.502 ± 0.006 |
+| tps=32 | 2.32% ± 2.05% | 0.334 ± 0.047 | 0.498 ± 0.005 |
+
+La diferencia entre medias es menor que el desvío estándar dentro de cada
+grupo (especialmente en tps=32) -- **no hay evidencia estadística sólida de
+que `trials_per_step` 16 vs 32 cambie el resultado final.** Confirma la
+sospecha de la entrada (11): la tendencia creciente que se vio ayer
+(16->32->64: 2.1%->6.0%->0.79%) era mayormente ruido de comparar una sola
+corrida por configuración, no un efecto real y monótono de escalar el
+batch. Detalle completo en `data/interim/multiseed_sweep_summary.json`.
+
+**Hallazgo más importante (cambia el diagnóstico):** `held_out_loss` es
+prácticamente idéntico entre configs (~0.50) y muy por debajo del nivel de
+azar (~0.85-1.15 antes de entrenar) -- la red SÍ aprende a resolver la
+tarea de integración de rumbo razonablemente bien, de forma consistente.
+Pero el signo de las aristas individuales sigue débilmente decidido
+(`mean_abs_sign` ~0.31-0.33, lejos del umbral 0.5) **en absolutamente todas
+las configuraciones probadas hasta ahora** (tau/gain, momentum, batch size,
+~10 corridas/barridos en total entre ayer y hoy).
+
+**Hipótesis nueva (la más plausible con la evidencia acumulada):** la tarea
+de integración de rumbo, tal como está planteada, probablemente
+**subrestringe el signo de cada sinapsis individual** -- muchas
+asignaciones de signo distintas pueden lograr un desempeño agregado similar
+en la tarea (población de compás + integración), así que el gradiente no
+tiene presión real para comprometerse con un signo "decidido" por arista
+más allá de cierto punto, sin importar el hiperparámetro de entrenamiento.
+Esto NO es un problema de optimización (que es lo que se estuvo asumiendo
+y descartando en las entradas 9-11) sino, potencialmente, de diseño de
+tarea: se necesitaría una tarea más exigente/restrictiva (múltiples
+condiciones, ruido, quizás múltiples tareas simultáneas, más cercano a lo
+que la mosca real resuelve con este circuito) para forzar que el signo de
+cada arista importe individualmente.
+
+**Siguiente paso (pendiente de decidir con Martín):** (a) evaluar H1 ahora
+mismo con el mejor modelo disponible, documentando explícitamente que la
+polarización es débil y el test probablemente está subpotenciado -- un
+resultado honesto con esa salvedad sigue siendo válido para la propuesta
+original; o (b) invertir en rediseñar la tarea para que exija más
+compromiso de signo antes de evaluar H1 (esfuerzo mayor, sesión aparte).
+
 ## Plantilla para próximas entradas
 
 ```
