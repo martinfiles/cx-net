@@ -637,6 +637,81 @@ actual y reportarla como parte de la discusión metodológica del preprint
 para restringir el signo synáptico individual es, en sí mismo, un
 resultado científico válido y publicable).
 
+## 2026-09-17 (6) — Corte de sesión: estado y próximos pasos
+
+**Por qué se corta aquí:** fin de la sesión de dos días de debugging
+metodológico y rediseño de tarea. Todo el trabajo quedó commiteado
+localmente (8 commits, sin `git push` -- pendiente de decidir si publicar
+el repo o mantenerlo privado por ahora).
+
+**ESTADO EXACTO al cortar:**
+- ✅ Metodología de comparación corregida y validada: `seed` ahora varía
+  también la secuencia de ensayos de entrenamiento (no solo la
+  inicialización), y hay un set de validación held-out fijo
+  (`task.py: generate_held_out_set`, semillas ≥ 900.000.000, disjuntas de
+  cualquier semilla de entrenamiento). `train.py` acepta `run_label` --
+  cada corrida guarda `model_<label>.pt` / `results_<label>.json` sin
+  pisar corridas anteriores.
+- ✅ Se descartaron con evidencia sólida (multi-semilla, no una sola
+  corrida) como causa del techo de polarización de signo: `tau`,
+  `recurrent_gain`, momentum de Adam, y escalar `trials_per_step` (16 vs
+  32 vs 64 -- ninguna diferencia estadísticamente convincente).
+- ✅ **Único hallazgo positivo real de las dos sesiones:** `hold_prob`
+  (tramos de quietud forzada en la traza de entrenamiento, `task.py`) sube
+  `mean_abs_sign` de 0.307±0.006 a 0.349-0.364 de forma reproducible
+  (sin superposición entre semillas). No sigue tendencia dosis-respuesta
+  limpia (`hold_prob=0.5` no mejora sobre `0.3`, solo agrega varianza).
+- ❌ **H1 sigue sin poder evaluarse de forma concluyente.** Se evaluó dos
+  veces (sobre `tps32_seed0` y sobre `hold03_long_seed0`, el mejor modelo
+  disponible) -- ambas veces p>0.9, sin señal en ningún tipo celular. Pero
+  la polarización de signo en ambos modelos sigue por debajo del umbral de
+  referencia (`mean_abs_sign>0.5`, `frac_polarized_gt_0.9>10%`), así que
+  esto es un resultado preliminar/subpotenciado, NO evidencia sólida de que
+  H1 sea falsa.
+- 📝 Discusión aparte (no bloqueante para la investigación): estrategia de
+  difusión en LinkedIn/CV. Conclusión de esa charla: no esperar a cerrar H1
+  para publicar -- el ángulo con más alcance para audiencia general es la
+  pregunta científica en sí ("¿puede una IA adivinar la química de un
+  cerebro solo mirando el cableado?"), apalancando que el connectome
+  completo de MaleCNS se publicó hace apenas dos semanas (2026-09-03). El
+  ángulo metodológico (bug de semillas, validación multi-semilla) queda como
+  posible contenido secundario para audiencia técnica, no como gancho
+  principal. Pendiente: redactar el borrador si Martín quiere retomarlo.
+
+**PRÓXIMOS PASOS (en orden, para retomar):**
+1. Decisión de alcance pendiente (la más importante): ¿invertir en un
+   rediseño de tarea más sustancial (múltiples condiciones/comportamientos
+   simultáneos, no solo `hold_prob`) para intentar cruzar el umbral de
+   polarización, o aceptar la limitación actual y reportarla como hallazgo
+   metodológico en la discusión del preprint? Esto es una decisión de
+   alcance de proyecto, no un ajuste técnico -- requiere tiempo dedicado,
+   no un arranque rápido de sesión.
+2. Si se sigue con el rediseño de tarea: partir de `hold_prob=0.3` como
+   base validada (no repetir `tau`/`gain`/momentum, ya descartados con
+   evidencia sólida). Candidatos no probados todavía: múltiples tareas
+   simultáneas, perturbaciones sensoriales, entrenar sobre un rango más
+   amplio de condiciones de una sola vez.
+3. Pendiente aparte, técnico, de menor prioridad: vectorizar el `for` de
+   `trials_per_step` en `train.py` (ensayo por ensayo -> batch) para
+   acelerar el entrenamiento en CPU -- no se probó GPU porque la forma del
+   cómputo (RNN secuencial de tensores chicos) no encaja bien con GPU, y el
+   hardware disponible (AMD en Windows) tiene mal soporte para PyTorch de
+   todos modos.
+4. Pendiente aparte, no bloqueante desde la entrada (4) del 2026-09-16:
+   seguir sin verificar la tabla real glomérulo-cuña de Hulse et al. (2021,
+   Fig. 10) para `ring_angle` -- el intento de corrección del 2026-09-16
+   (entrada 10) se descartó por falta de precisión, no por descartar que
+   el problema exista.
+
+**Archivos que importan para retomar:** este cuaderno (léelo entero de
+arriba a abajo), `src/cx_net/*.py`, `data/interim/holdprob03_long_summary.json`
+(mejor resultado de entrenamiento hasta ahora), `data/interim/h1_evaluation_
+hold03_long_seed0.json` (última evaluación de H1). Los `.pt`/`.json` con
+prefijos `tps16_`/`tps32_`/`hold03_`/`hold05_`/`_seed{0,1,2}` en
+`data/interim/` son resultados de sweeps ya interpretados y registrados --
+no hace falta re-correrlos, solo consultarlos si hace falta el detalle
+crudo.
+
 ## Plantilla para próximas entradas
 
 ```
