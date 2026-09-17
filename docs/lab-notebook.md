@@ -712,6 +712,248 @@ prefijos `tps16_`/`tps32_`/`hold03_`/`hold05_`/`_seed{0,1,2}` en
 no hace falta re-correrlos, solo consultarlos si hace falta el detalle
 crudo.
 
+## 2026-09-17 (7) — Segunda condición simultánea (`perturb_amp`): primer resultado de H1 estadísticamente significativo
+
+**Qué se hizo:** siguiendo la decisión de alcance pendiente de la entrada (6)
+(invertir en un rediseño de tarea más sustancial en vez de aceptar la
+limitación actual), se implementó `perturb_amp` en `generate_trial`
+(`task.py`): ruido gaussiano iid de alta frecuencia y media cero añadido al
+canal de entrada externa (PEN_a/PEN_b) que NO cuenta para el `heading`
+objetivo -- la red debe integrar la señal real Y rechazar el ruido al mismo
+tiempo, lo que depende del filtrado temporal (`tau`) e inhibición lateral,
+un mecanismo distinto al de `hold_prob` (memoria persistente sin entrada).
+Se aplica en TODOS los pasos, incluidos los tramos de quietud de
+`hold_prob`, así que combinar ambos es la condición más exigente probada en
+el proyecto hasta ahora.
+
+**Incidencia de proceso (importante, ver memoria del proyecto):** el primer
+intento de chequeo de cordura dio NaN inmediato en el primer paso de
+gradiente, en TODAS las configuraciones probadas incluido el baseline
+original (`hold_prob=0`, ya validado muchas veces antes). Diagnóstico:
+se estaba invocando el `python` global del sistema (torch 2.4.1, instalación
+no relacionada) en vez de `.venv/Scripts/python.exe` (torch 2.14.0) -- el
+NaN era una interacción de ese torch ajeno con el punto exacto-cero de
+`atan2` en `decode_heading` (el estado de la población brújula en t=0 es
+matemáticamente cero siempre, por construcción), no un bug real del código.
+Con el `.venv` correcto, el baseline original entrena con normalidad. Queda
+anotado en memoria para no repetir la confusión: invocar siempre
+`.venv/Scripts/python.exe` explícitamente.
+
+**Chequeo de cordura (sobreajuste de un ensayo, `hold_prob=0.3` fijo,
+barriendo `perturb_amp`):** dosis-respuesta clara y monotónica en
+`mean_abs_sign`: 0.35 (amp=0.02) -> 0.42 (0.04) -> 0.47 (0.08) -> 0.66
+(0.12) -> 0.58 (0.16) -> 0.61 (0.2), todas por encima del baseline de
+`hold_prob=0.3` solo (0.50) salvo las amplitudes más bajas. Se eligió
+`perturb_amp=0.12` para el barrido completo (punto más alto y estable antes
+de que 0.16/0.2 empezaran a mostrar entrenamiento errático -- plateaus
+largos seguidos de caídas súbidas, señal de LR demasiado alto para esa
+dificultad).
+
+**Barrido completo (`hold_prob=0.3` + `perturb_amp=0.12`, protocolo
+idéntico al de la entrada anterior: 3 semillas, `tps=16`, 1000 épocas,
+`lr=0.05`):**
+
+| semilla | `mean_abs_sign` | `frac_polarized_gt_0.9` | `held_out_loss` |
+|---|---|---|---|
+| 0 | 0.327 | 1.5% | 0.864 |
+| 1 | 0.424 | 3.7% | 0.904 |
+| 2 | **0.645** | **12.8%** | 1.062 |
+| media ± dt | 0.465 ± 0.163 | 6.0% ± 6.0% | 0.943 ± 0.105 |
+
+La media sube claramente sobre cualquier configuración anterior (0.307
+baseline, 0.364 mejor `hold_prob` solo), pero con una varianza mucho mayor
+que cualquier sweep previo (dt 0.163 vs ~0.01-0.03 en sweeps anteriores) --
+la condición combinada parece tener un comportamiento más bimodal
+(polariza fuerte o no) que un efecto uniforme entre semillas.
+`held_out_loss` sube (tarea mucho más difícil, no comparable 1:1 con
+configs anteriores, esperable). Detalle completo en
+`data/interim/holdperturb_sweep_summary.json`.
+
+**Hito del proyecto: la semilla 2 es el PRIMER modelo en cruzar el umbral
+de referencia** (`mean_abs_sign>0.5`, `frac_polarized_gt_0.9>10%`) en las
+~15 configuraciones probadas desde la entrada (8) del 2026-09-16.
+
+**Evaluación de H1 sobre las 3 semillas:**
+
+| semilla | `observed_agreement` | `null_mean` | p | ¿pasa el umbral de polarización? |
+|---|---|---|---|---|
+| 0 | 0.483 | 0.494 | 0.988 | No |
+| 1 | 0.477 | 0.489 | 0.990 | No |
+| 2 | **0.547** | 0.519 | **0.0005** | **Sí** |
+
+Las semillas 0 y 1 (sin cruzar el umbral) dan el mismo patrón de ruido puro
+visto en todas las evaluaciones anteriores del proyecto -- consistente con
+la hipótesis de que el test de H1 no es informativo sin polarización
+suficiente. La semilla 2 (la única que cruza el umbral) da el **primer
+resultado de H1 estadísticamente significativo de todo el proyecto**:
+acuerdo observado 54.7% vs. 51.9% esperado por azar, p=0.0005. Desglose H2:
+señal más fuerte en PEN_b(PEN2) (65.8%) y PEN_a(PEN1) (60.3%), más débil en
+Delta7 (50.6%, sin señal) y EPGt (46.1%, por debajo del azar pero con solo
+152 aristas). Detalle completo en
+`data/interim/h1_evaluation_holdperturb_seed{0,1,2}.json`.
+
+**Por qué este resultado NO se acepta todavía como evidencia sólida de
+H1:** es una sola semilla de tres, y esa semilla fue también la que más se
+alejó del resto en polarización (0.645 vs. 0.327/0.424) -- exactamente el
+patrón de varianza alta entre semillas que el proyecto ya identificó como
+razón para no confiar en corridas únicas (entrada 11 del 2026-09-16). El
+tamaño del efecto además es modesto (2.8 puntos porcentuales sobre el
+azar), aunque estadísticamente muy significativo gracias al gran número de
+aristas (9.160). Que las dos semillas SIN polarización suficiente den
+ruido puro (p~0.99) mientras que la única con polarización suficiente dé
+señal fuerte es alentador -- coincide con la teoría del proyecto de que el
+umbral de polarización es el filtro correcto -- pero con n=1 "réplica
+exitosa" no se puede distinguir todavía "efecto real reproducible que
+necesita la semilla correcta" de "una coincidencia de una corrida entre
+tres".
+
+**Siguiente paso (decisión pendiente, no bloqueante):** correr semillas
+adicionales (p. ej. 3-7) en la misma configuración (`hold_prob=0.3`,
+`perturb_amp=0.12`) para ver qué fracción cruza el umbral de polarización
+de forma consistente y si el signo del efecto de H1 se repite en las que sí
+cruzan -- antes de escribir cualquier conclusión sobre H1 en el preprint.
+
+## 2026-09-18 — Réplica con 5 semillas más: el hallazgo de H1 de la semilla 2 no se sostiene
+
+**Qué se hizo:** se corrieron 5 semillas adicionales (3-7) con la misma
+configuración de la entrada anterior (`hold_prob=0.3`, `perturb_amp=0.12`,
+protocolo idéntico) para ver si la única semilla que había cruzado el
+umbral de polarización (semilla 2, con el primer resultado de H1
+significativo del proyecto) representaba un efecto real o una corrida
+atípica.
+
+**Resultado (8 semillas en total, 0-7):**
+
+| | `mean_abs_sign` | `frac_polarized_gt_0.9` |
+|---|---|---|
+| valores individuales | 0.327, 0.424, **0.645**, 0.343, 0.370, 0.462, 0.361, 0.388 |
+| media ± dt | 0.415 ± 0.103 | 4.4% ± 4.4% |
+| **semillas que cruzan el umbral** | **1 de 8** (solo la semilla 2) | |
+
+Comparado contra `hold_prob=0.3` solo (0.349 ± 0.010, sin solapamiento
+individual entre semillas -- el criterio que el proyecto ya usó para
+aceptar un efecto como real, ver entrada 2026-09-17 (3)): aquí SÍ hay
+solapamiento amplio -- 5 de las 8 semillas nuevas (0.327, 0.343, 0.370,
+0.361, 0.388) caen dentro o por debajo del rango que ya daba `hold_prob`
+solo. Solo 3 de 8 (0.424, 0.462, 0.645) superan claramente ese rango, y
+únicamente la más extrema (0.645) llega a cruzar el umbral de referencia.
+Detalle completo en `data/interim/holdperturb_sweep_summary_8seeds.json`.
+
+**Conclusión (aplicando el mismo estándar de rigor que el proyecto ya usó
+para aceptar el hallazgo de `hold_prob`):** `perturb_amp=0.12` combinado
+con `hold_prob=0.3` NO pasa la prueba de "sin solapamiento entre grupos" --
+a diferencia de `hold_prob` solo (que sí la pasó y se aceptó como hallazgo
+real), aquí el efecto medio está confundido con un aumento grande de la
+varianza entre semillas (dt 0.103 vs. 0.01 de `hold_prob` solo). En
+consecuencia, **el resultado de H1 significativo de la semilla 2 (entrada
+anterior, p=0.0005) se retracta como evidencia de H1**: con 8 semillas
+probadas y solo 1 cruzando el umbral de forma aislada, es indistinguible
+de una corrida que polarizó fuerte por azar de optimización, no de un
+efecto reproducible de la condición de tarea. No se promueve a resultado
+del preprint.
+
+**Balance acumulado de los dos días de rediseño de tarea (`hold_prob`,
+`perturb_amp`, ~20 configuraciones distintas probadas entre las dos
+sesiones):** un solo hallazgo pasa el estándar de rigor del proyecto
+(`hold_prob` sube `mean_abs_sign` de 0.307 a 0.349-0.364 de forma limpia,
+sin solapamiento) y por sí solo es insuficiente para cruzar el umbral de
+polarización necesario para un test de H1 informativo. Ninguna otra
+variante probada (tau/gain, momentum, `trials_per_step`, `perturb_amp`,
+combinaciones) mejora sobre eso de forma reproducible -- en el mejor de los
+casos (`perturb_amp`) solo aumenta la varianza, sin desplazar la media de
+forma confiable.
+
+**Siguiente paso (decisión de alcance, la misma que quedó pendiente en la
+entrada 2026-09-17 (6), ahora con más evidencia para decidirla):** dado
+que ~20 configuraciones a lo largo de dos sesiones no lograron un efecto
+de diseño de tarea que cruce el umbral de forma reproducible, la
+recomendación es cerrar la fase de rediseño de tarea aquí y reportar la
+limitación como hallazgo metodológico legítimo -- pendiente de decidir con
+Martín si evaluar H1 con el mejor modelo consistente disponible
+(`hold03_long_seed0` o el mejor de `hold_prob` solo) documentando
+explícitamente la subpotencia, o cerrar la fase experimental sin una
+evaluación final de H1 y pasar directamente a redactar la discusión
+metodológica del preprint.
+
+## 2026-09-18 (2) — Corte de sesión: estado y próximos pasos
+
+**Por qué se corta aquí:** cierre de la sesión de dos días de rediseño de
+tarea (`hold_prob`, `perturb_amp`). Todo el código y el cuaderno quedan
+guardados y commiteados localmente antes de cortar (ver commits de hoy).
+
+**ESTADO EXACTO al cortar:**
+- ✅ `perturb_amp` implementado y documentado en `task.py`/`train.py`/
+  `sanity_check.py` (ruido de alta frecuencia en el canal de entrada,
+  excluido del `heading` objetivo -- ver entrada 2026-09-17 (7) para el
+  razonamiento completo).
+- ✅ **Hallazgo positivo confirmado y aceptado (el único que pasa el
+  estándar de rigor del proyecto):** `hold_prob=0.3` solo sube
+  `mean_abs_sign` de 0.307±0.006 a 0.349-0.364, sin solapamiento entre
+  semillas -- sigue siendo la mejor configuración validada del proyecto.
+- ❌ **`perturb_amp=0.12` (combinado con `hold_prob=0.3`) NO se acepta
+  como hallazgo real** tras la réplica con 8 semillas totales (0-7): solo
+  1 de 8 cruza el umbral de polarización, y hay solapamiento amplio con el
+  rango de `hold_prob` solo -- el resultado de H1 significativo de la
+  semilla 2 (p=0.0005) queda retractado, indistinguible de una corrida que
+  polarizó fuerte por azar de optimización. Detalle completo en
+  `data/interim/holdperturb_sweep_summary_8seeds.json` y
+  `data/interim/h1_evaluation_holdperturb_seed{0-2}.json`.
+- ❌ **H1 sigue sin poder evaluarse de forma concluyente** con ninguna
+  configuración probada hasta ahora (3 evaluaciones en total a lo largo del
+  proyecto: `tps32_seed0`, `hold03_long_seed0`, `holdperturb_seed2` --
+  todas p>0.9 o retractadas, ninguna sobrevive como evidencia sólida).
+- 🐛 **Gotcha de entorno encontrado y corregido en memoria** (no en el
+  código, es un problema de invocación): un `python`/`pip` sin calificar en
+  este entorno puede resolver a un torch ajeno (2.4.1) en vez del `.venv`
+  del proyecto (2.14.0), produciendo un NaN de gradiente reproducible que
+  parece un bug real pero no lo es. Invocar siempre
+  `.venv/Scripts/python.exe` explícitamente -- ver memoria de proyecto
+  (`project_cx_net.md`) y entrada 2026-09-17 (7).
+- 📌 **Decisión de alcance pendiente, la más importante para la próxima
+  sesión:** con ~20 configuraciones de rediseño de tarea probadas en dos
+  sesiones y solo un hallazgo modesto que no alcanza el umbral, la
+  recomendación registrada es cerrar la fase de rediseño de tarea y
+  reportar la limitación como hallazgo metodológico legítimo del preprint,
+  en vez de seguir buscando una tercera variante de tarea. Falta decidir
+  con Martín: (a) evaluar H1 una última vez con el mejor modelo consistente
+  disponible (`hold03_long_seed0`, o repetir esa config con más semillas
+  para elegir el mejor de forma limpia) documentando la subpotencia
+  explícitamente, o (b) cerrar la fase experimental sin una evaluación
+  final de H1 y pasar directamente a redactar la discusión metodológica del
+  preprint.
+
+**PRÓXIMOS PASOS (en orden, para retomar):**
+1. Decidir con Martín la decisión de alcance de arriba (evaluar H1 una
+   última vez vs. cerrar sin evaluación final) -- no es un ajuste técnico,
+   es una decisión sobre qué va en el preprint.
+2. Si se decide evaluar H1 una última vez: usar `hold_prob=0.3` (sin
+   `perturb_amp`, ya descartado) como base, posiblemente con más semillas
+   que las 3 ya corridas (`hold03_seed{0,1,2}` en
+   `data/interim/holdprob_sweep_summary.json`) para elegir el modelo con
+   mejor polarización de forma honesta (no cherry-picking post-hoc como
+   pasó con la semilla 2 de `perturb_amp`).
+3. Si se decide cerrar sin más experimentos: redactar la sección de
+   discusión metodológica del preprint documentando que la tarea de
+   heading-integration, incluso reforzada con memoria-sin-entrada y
+   filtrado de ruido, no restringe lo suficiente el signo sináptico
+   individual para un test de H1 informativo -- con las tablas de este
+   cuaderno como evidencia (20 configuraciones, un solo efecto reproducible
+   y aun así insuficiente).
+4. Pendiente aparte, no bloqueante, arrastrado desde el 2026-09-16 (4):
+   validar `ring_angle` contra la tabla real glomérulo-cuña de Hulse et al.
+   (2021, Fig. 10) antes de confiar en resultados cuantitativos de
+   decodificación -- sigue sin abordarse.
+5. Pendiente aparte, técnico, de baja prioridad (arrastrado desde
+   2026-09-17 (6)): vectorizar el `for` de `trials_per_step` en `train.py`
+   para acelerar el entrenamiento en CPU.
+
+**Archivos que importan para retomar:** este cuaderno (léelo entero de
+arriba a abajo), memoria de proyecto `project_cx_net.md` (nota sobre el
+gotcha de `.venv`), `src/cx_net/task.py` (`perturb_amp`),
+`data/interim/holdperturb_sweep_summary_8seeds.json` (resultado que se
+retracta, para no repetir el barrido), `data/interim/holdprob_sweep_summary.json`
+(el hallazgo que sí se mantiene en pie).
+
 ## Plantilla para próximas entradas
 
 ```
