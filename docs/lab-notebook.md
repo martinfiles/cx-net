@@ -571,6 +571,35 @@ la primera dirección con evidencia sólida de funcionar.
 protocolo, para ver si el efecto sigue una tendencia dosis-respuesta o si
 satura pronto.
 
+## 2026-09-17 (4) — hold_prob=0.5 no mejora más: la tendencia no es monótona
+
+**Qué se hizo:** mismo protocolo limpio (3 semillas, tps=16, 1000 épocas)
+con `hold_prob=0.5`, para ver si el efecto positivo de `hold_prob=0.3`
+seguía una tendencia dosis-respuesta.
+
+**Resultado:**
+
+| | `mean_abs_sign` | `frac_polarized_gt_0.9` |
+|---|---|---|
+| hold_prob=0.3 | 0.349 ± 0.010 | 1.28% ± 0.55% |
+| hold_prob=0.5 | 0.351 ± 0.076 | 0.88% ± 1.21% |
+
+Media prácticamente igual, pero el desvío se disparó (0.076 vs 0.010;
+valores individuales 0.430/0.344/0.278) -- no hay ganancia sistemática al
+subir más `hold_prob`, solo más varianza entre semillas. Detalle en
+`data/interim/holdprob05_sweep_summary.json`.
+
+**Lectura:** `hold_prob=0.3` parece un punto razonable dentro de lo
+explorado; seguir subiendo la dificultad de la tarea no es la vía de
+mejora obvia. La ganancia real está en haber pasado de "sin tramos de
+quietud" a "con tramos de quietud", no en cuánta quietud exactamente.
+
+**Siguiente paso:** en vez de seguir buscando variantes de `hold_prob`,
+usar la configuración ya validada (`hold_prob=0.3`, tps=16) con un
+presupuesto de entrenamiento mayor (2500 épocas, como las corridas
+exploratorias de ayer) para obtener el mejor modelo posible bajo este
+diseño de tarea y evaluar H1 sobre él.
+
 ## Plantilla para próximas entradas
 
 ```
