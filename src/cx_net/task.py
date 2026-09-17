@@ -22,6 +22,23 @@ más directamente de una estructura de signo correcta (en particular, de
 inhibición lateral tipo Delta7 para evitar que el bump se disperse) que la
 integración pura. Mismo `circular_loss` de siempre -- no se inventa un
 término de pérdida nuevo, solo se hace la tarea más exigente.
+
+`perturb_amp` (2026-09-17, segunda condición simultánea a `hold_prob`,
+ver lab-notebook): `hold_prob` sube `mean_abs_sign` de 0.307 a 0.364 pero
+no alcanza el umbral -- la entrada del cuaderno del mismo día concluye que
+hace falta un eje de exigencia distinto, no otra variante del mismo
+(`hold_prob=0.5` no mejora sobre 0.3). `perturb_amp` añade ruido de alta
+frecuencia y media cero al canal de entrada externa (PEN_a/PEN_b) que NO
+forma parte del rumbo objetivo (el `heading` para la pérdida se integra
+solo a partir de la velocidad angular "verdadera", limpia). La red debe
+seguir integrando la señal real Y, simultáneamente, rechazar el ruido para
+que el bump no se desvíe ni se disperse -- eso depende de que la dinámica
+recurrente (filtrado temporal vía `tau` + inhibición lateral correcta) esté
+bien puesta, distinto del mecanismo que ejercita `hold_prob` (memoria
+persistente sin entrada). El ruido se aplica en TODOS los pasos, incluidos
+los tramos de quietud de `hold_prob` -- combinar ambos exige sostener el
+bump sin ayuda Y filtrando ruido al mismo tiempo, la condición más
+exigente probada hasta ahora.
 """
 
 import numpy as np
@@ -29,23 +46,34 @@ import torch
 
 
 def generate_trial(T: int = 200, max_av: float = 0.08, hold_prob: float = 0.0,
-                    hold_block: int = 20, seed: int | None = None):
-    """Devuelve (velocidad_angular[T], rumbo_real[T]) en radianes.
+                    hold_block: int = 20, perturb_amp: float = 0.0,
+                    seed: int | None = None):
+    """Devuelve (velocidad_angular_de_manejo[T], rumbo_real[T]) en radianes.
 
     Con `hold_prob > 0`: se divide T en bloques de `hold_block` pasos: cada
     bloque tiene probabilidad `hold_prob` de ser un tramo de quietud (av=0
     forzado), simulando a la mosca parada -- el rumbo debe mantenerse sin
     entrada externa. `hold_prob=0` (default) reproduce exactamente el
-    comportamiento original (compatibilidad con Fase 2)."""
+    comportamiento original (compatibilidad con Fase 2).
+
+    Con `perturb_amp > 0`: se añade ruido gaussiano iid (media 0, desvío
+    `perturb_amp`) a la velocidad angular DESPUÉS de calcular `heading` --
+    el ruido llega a la red (vía `build_external_input`) pero NO cuenta para
+    el rumbo objetivo, así que la red debe integrarlo sin dejarse arrastrar
+    por él. `perturb_amp=0` (default) reproduce el comportamiento original.
+    """
     rng = np.random.default_rng(seed)
-    av = rng.normal(0.0, max_av, size=T)
+    av_true = rng.normal(0.0, max_av, size=T)
     if hold_prob > 0:
         n_blocks = T // hold_block
         for b in range(n_blocks):
             if rng.random() < hold_prob:
-                av[b * hold_block:(b + 1) * hold_block] = 0.0
-    heading = np.cumsum(av)
-    return av, heading
+                av_true[b * hold_block:(b + 1) * hold_block] = 0.0
+    heading = np.cumsum(av_true)
+    av_drive = av_true
+    if perturb_amp > 0:
+        av_drive = av_true + rng.normal(0.0, perturb_amp, size=T)
+    return av_drive, heading
 
 
 def build_external_input(av: np.ndarray, nodes, gain: float = 3.0) -> torch.Tensor:
@@ -88,11 +116,13 @@ def circular_loss(decoded: torch.Tensor, target: torch.Tensor, warmup: int = 20)
 HELD_OUT_SEED_BASE = 900_000_000
 
 
-def generate_held_out_set(n_trials: int = 30, T: int = 200, hold_prob: float = 0.0):
+def generate_held_out_set(n_trials: int = 30, T: int = 200, hold_prob: float = 0.0,
+                           perturb_amp: float = 0.0):
     """Conjunto FIJO de ensayos de validación: mismas semillas siempre, para
     poder comparar configuraciones/semillas de entrenamiento entre sí sin que
     la comparación esté confundida por qué ensayos le tocaron a cada una."""
-    return [generate_trial(T=T, hold_prob=hold_prob, seed=HELD_OUT_SEED_BASE + i) for i in range(n_trials)]
+    return [generate_trial(T=T, hold_prob=hold_prob, perturb_amp=perturb_amp, seed=HELD_OUT_SEED_BASE + i)
+            for i in range(n_trials)]
 
 
 def evaluate_on_trials(model, nodes, trials) -> float:
