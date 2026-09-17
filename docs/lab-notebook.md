@@ -600,6 +600,43 @@ presupuesto de entrenamiento mayor (2500 épocas, como las corridas
 exploratorias de ayer) para obtener el mejor modelo posible bajo este
 diseño de tarea y evaluar H1 sobre él.
 
+## 2026-09-17 (5) — Escalado de hold_prob=0.3 a 2500 épocas + evaluación H1: mejora real pero insuficiente
+
+**Qué se hizo:** se escaló la config validada (`hold_prob=0.3`, `tps=16`) de
+1000 a 2500 épocas, mismas 3 semillas, y se evaluó H1 sobre la mejor
+(seed0).
+
+**Resultado entrenamiento:** `mean_abs_sign` 0.364 ± 0.029 (mejor semilla:
+0.398), `frac_polarized_gt_0.9` 2.05% ± 1.21% (mejor: 3.14%) -- mejora
+modesta sobre las 1000 épocas (0.349 ± 0.010) pero sigue lejos del umbral
+(0.5 / 10%). Detalle en `data/interim/holdprob03_long_summary.json`.
+
+**Resultado H1** (sobre `hold03_long_seed0`): acuerdo observado 0.483,
+media del nulo 0.495, **p=0.99** -- no soportada, mismo patrón que la
+evaluación anterior (entrada 2026-09-17 (2)): sin señal en ningún tipo
+celular del desglose H2. Detalle en
+`data/interim/h1_evaluation_hold03_long_seed0.json`.
+
+**Balance del rediseño de tarea (hold_prob):** primera mejora real y
+reproducible de toda la sesión de dos días (0.307 -> 0.364 en
+`mean_abs_sign`, confirmada con metodología limpia de múltiples semillas),
+pero la magnitud del efecto es insuficiente por sí sola para cruzar el
+umbral de polarización necesario para que un test de H1 sea informativo.
+Se necesitaría un salto de diseño más grande (no una variante más de
+`hold_prob`, ya se probó que subir la dificultad no sigue una tendencia
+dosis-respuesta limpia -- ver entrada (4)) para cerrar la brecha.
+
+**Siguiente paso (decisión de alcance, no ajuste técnico menor):**
+considerar un rediseño de tarea más sustancial en una sesión dedicada --
+por ejemplo, múltiples tareas/condiciones simultáneas (no solo mantener el
+bump, sino también responder a perturbaciones, señales visuales, o
+distintos regímenes de velocidad) que se acerque más a la variedad de
+demandas que el circuito real resuelve. Alternativa: aceptar la limitación
+actual y reportarla como parte de la discusión metodológica del preprint
+(un hallazgo de que la tarea de heading-integration por sí sola no alcanza
+para restringir el signo synáptico individual es, en sí mismo, un
+resultado científico válido y publicable).
+
 ## Plantilla para próximas entradas
 
 ```
