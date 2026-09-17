@@ -529,6 +529,48 @@ tarea de entrenamiento para que exija más compromiso de signo por arista
 subrestringe el signo individual) -- pendiente para una sesión futura con
 tiempo dedicado a ese diseño, no un ajuste rápido de hiperparámetros.
 
+## 2026-09-17 (3) — Rediseño de tarea (hold_prob): primera mejora real y reproducible
+
+**Qué se hizo:** implementado `hold_prob` en `generate_trial` (`task.py`):
+intercala tramos de velocidad angular cero (quietud forzada) en la traza de
+entrenamiento -- durante esos tramos la red debe sostener el bump de rumbo
+solo con su propia dinámica recurrente, sin ayuda de entrada externa
+(persistent activity de ring attractor), lo que depende más directamente de
+inhibición lateral tipo Delta7 que la integración pura. `hold_prob=0`
+reproduce exactamente el comportamiento original. Chequeo de cordura previo
+(`hold_prob=0.3`, un ensayo) convergió limpio a loss 0.0057, confirmando
+que la tarea más difícil sigue siendo resoluble antes de invertir en
+entrenamiento estocástico completo.
+
+Se corrió el mismo protocolo limpio de la entrada anterior (3 semillas,
+`trials_per_step=16`, 1000 épocas) con `hold_prob=0.3`, comparable
+directamente contra el baseline (`hold_prob=0`) ya medido.
+
+**Resultado:**
+
+| | `mean_abs_sign` | `frac_polarized_gt_0.9` | `held_out_loss` |
+|---|---|---|---|
+| baseline (hold_prob=0) | 0.307 ± 0.006 | 0.72% ± 0.63% | 0.502 ± 0.006 |
+| hold_prob=0.3 | **0.349 ± 0.010** | 1.28% ± 0.55% | 0.603 ± 0.009 |
+
+`mean_abs_sign` mejora de forma clara y **sin superposición** entre los
+valores individuales de los dos grupos (0.339-0.358 vs 0.300-0.312) --
+primera mejora de la sesión (entre las ~12 configuraciones probadas ayer y
+hoy) que es estadísticamente convincente, no ruido de comparación.
+`frac_polarized_gt_0.9` mejora también pero con más superposición, señal
+más débil. `held_out_loss` sube (tarea intrínsecamente más difícil,
+esperable, no comparable 1:1 con el baseline). Detalle completo en
+`data/interim/holdprob_sweep_summary.json`.
+
+**Lectura:** confirma la hipótesis de la entrada anterior -- exigir que la
+red sostenga el bump sin entrada externa fuerza más compromiso de signo que
+la integración pura. Sigue lejos del umbral (0.35 vs objetivo 0.5), pero es
+la primera dirección con evidencia sólida de funcionar.
+
+**Siguiente paso:** probar `hold_prob` más alto (0.5) con el mismo
+protocolo, para ver si el efecto sigue una tendencia dosis-respuesta o si
+satura pronto.
+
 ## Plantilla para próximas entradas
 
 ```
