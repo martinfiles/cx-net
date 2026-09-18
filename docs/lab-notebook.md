@@ -1051,6 +1051,54 @@ problema de polarización) el caso para cerrar la fase experimental y
 reportar la limitación metodológica en el preprint queda más sólido, no
 menos.
 
+## 2026-09-18 (4) — Decisión de alcance resuelta: se cierra la fase experimental de rediseño de tarea/regularización
+
+**Decisión:** con `sign_reg` resolviendo el problema de polarización de
+forma limpia en 7/8 semillas y H1 seguir sin evidencia reproducible (ver
+entrada anterior), se cierra aquí la fase de búsqueda de una condición de
+entrenamiento que haga a H1 evaluable, y se pasa a redactar la discusión
+metodológica del preprint documentando el resultado negativo. No se
+evaluará H1 "una última vez" con más configuraciones -- ya se probaron dos
+mecanismos ortogonales (rediseño de tarea: `hold_prob`/`perturb_amp;
+regularización directa: `sign_reg`) y ambos, aun cuando uno de ellos
+resuelve la polarización por completo, dan el mismo patrón de ausencia de
+señal.
+
+**Resumen de la fase completa (tres sesiones, 2026-09-16 a 2026-09-18,
+~30 configuraciones distintas probadas):**
+
+| mecanismo | mejor `mean_abs_sign` | ¿pasa "sin solapamiento"? | ¿H1 reproducible? |
+|---|---|---|---|
+| tarea original (`hold_prob=0`) | 0.307±0.006 | -- (baseline) | No (p~0.99, subpotenciado) |
+| `hold_prob=0.3` | 0.349±0.010 | Sí, vs. baseline | No evaluado a fondo (bajo el umbral) |
+| `hold_prob=0.3`+`perturb_amp=0.12` | 0.465±0.163 (bimodal) | No, solapa con `hold_prob` solo | No -- 1/8 semillas, retractado |
+| `hold_prob=0.3`+`sign_reg=0.05` | 0.687±0.123 | Sí, vs. todo lo anterior | No -- 1/8 semillas, mismo patrón |
+
+**Qué queda establecido para el preprint:** la topología real del
+subcircuito CX, combinada con una tarea de integración de rumbo (incluso
+reforzada con memoria-sin-entrada y filtrado de ruido) y/o con
+regularización directa del signo, permite entrenar redes que resuelven la
+tarea y opcionalmente polarizan con fuerza -- pero el signo que aprenden,
+esté polarizado o no, no coincide con el neurotransmisor real anotado más
+de lo esperable por azar (test de permutación, 2000 permutaciones,
+n_aristas=9160). La ausencia de señal no puede atribuirse ya a potencia
+estadística insuficiente por falta de polarización -- se descarta
+explícitamente con `sign_reg`.
+
+**PRÓXIMOS PASOS (en orden):**
+1. ✅ ~~Decisión de alcance~~ -- resuelta arriba.
+2. Redactar la sección de discusión metodológica del preprint (siguiente
+   tarea, ver `docs/preprint-discussion.md` cuando exista).
+3. Pendiente aparte, no bloqueante, arrastrado desde el 2026-09-16 (4):
+   validar `ring_angle` contra la tabla real glomérulo-cuña de Hulse et al.
+   (2021, Fig. 10) antes de confiar en resultados cuantitativos de
+   decodificación.
+4. Pendiente aparte, técnico, de baja prioridad (arrastrado desde
+   2026-09-17 (6)): vectorizar el `for` de `trials_per_step` en `train.py`
+   para acelerar el entrenamiento en CPU (ya no es crítico si no hay más
+   barridos grandes planeados, pero facilitaría cualquier verificación
+   futura).
+
 ## Plantilla para próximas entradas
 
 ```
