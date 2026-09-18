@@ -954,6 +954,103 @@ gotcha de `.venv`), `src/cx_net/task.py` (`perturb_amp`),
 retracta, para no repetir el barrido), `data/interim/holdprob_sweep_summary.json`
 (el hallazgo que sí se mantiene en pie).
 
+## 2026-09-18 (3) — `sign_reg`: regularización directa del signo, polariza con éxito pero H1 sigue sin evidencia
+
+**Qué se hizo:** en vez de seguir buscando una variante de TAREA que fuerce
+polarización de forma emergente (agotado tras `hold_prob`/`perturb_amp`,
+ver entradas anteriores), se probó una palanca distinta: una penalización
+añadida directamente al gradiente de `sign_param`, independiente de los
+ensayos y de la dinámica de la red --
+`model.sign_confidence_penalty() = (1 - tanh(sign_param)^2).mean()`, el
+término que hace de la derivada de `tanh` -- mínimo cuando cada arista está
+polarizada (`|tanh(sign_param)| -> 1`), máximo cuando está indecisa (cerca
+de 0). No favorece qué signo tomar, solo penaliza la indecisión, así que la
+dirección la sigue decidiendo el gradiente de tarea. Implementado en
+`model.py` (`sign_confidence_penalty`), `train.py`/`sanity_check.py`
+(`sign_reg`, se suma al gradiente de tarea antes del clipping).
+
+**Chequeo de dosis-respuesta (sobreajuste de un ensayo, `hold_prob=0.3`
+fijo, barriendo `sign_reg`):** efecto muy limpio y monotónico, y a
+diferencia de `perturb_amp`, casi sin coste en la pérdida de entrenamiento:
+
+| `sign_reg` | `mean_abs_sign` | `frac_polarized_gt_0.9` | `loss_last` |
+|---|---|---|---|
+| 0 (baseline) | 0.505 | 2.3% | 0.0057 |
+| 0.001 | 0.576 | 9.2% | 0.0057 |
+| 0.005 | 0.688 | 29.3% | 0.0058 |
+| 0.01 | 0.758 | 44.2% | 0.0059 |
+| 0.05 | 0.878 | 74.7% | 0.0064 |
+| 0.1 | 0.908 | 80.4% | 0.0076 |
+
+Se eligió `sign_reg=0.05` para el barrido completo: polarización muy alta
+con la pérdida de overfit de un ensayo apenas por encima del baseline.
+
+**Barrido completo (`hold_prob=0.3` + `sign_reg=0.05`, protocolo idéntico:
+`tps=16`, 1000 épocas, `lr=0.05`, 8 semillas 0-7 corridas de una vez dado
+lo prometedor del chequeo previo):**
+
+| semilla | `mean_abs_sign` | `frac_polarized_gt_0.9` | `held_out_loss` | `h1_p` |
+|---|---|---|---|---|
+| 0 | 0.794 | 57.8% | 0.592 | 0.618 |
+| 1 | 0.718 | 37.0% | 0.723 | **0.0055** |
+| 2 | 0.606 | 26.8% | 0.603 | 0.294 |
+| 3 | 0.439 | 8.8% | 0.582 | 0.152 |
+| 4 | 0.593 | 22.4% | 0.715 | 0.686 |
+| 5 | 0.739 | 52.0% | 0.639 | 0.999 |
+| 6 | 0.838 | 69.1% | 0.596 | 0.913 |
+| 7 | 0.769 | 51.7% | 0.599 | 0.742 |
+| media ± dt | 0.687 ± 0.123 | 40.7% ± 19.1% | 0.631 ± 0.053 | -- |
+
+Detalle completo en `data/interim/signreg05_sweep_summary_8seeds.json` y
+`data/interim/h1_evaluation_signreg05_seed{0-7}.json`.
+
+**Hallazgo 1 (aceptado, el mecanismo de polarización más fuerte y limpio
+del proyecto):** `mean_abs_sign` NO se solapa ni una vez con el baseline de
+`hold_prob=0.3` solo (0.339-0.358) -- incluso la semilla más débil de
+`sign_reg` (0.439, semilla 3) casi duplica la semilla más alta del baseline.
+7 de 8 semillas cruzan el umbral de polarización de referencia
+(`frac_polarized_gt_0.9>10%`), la única excepción (semilla 3, 8.8%) queda
+justo por debajo. A diferencia de `perturb_amp`, este efecto pasa el
+estándar de "sin solapamiento" del proyecto de forma consistente en las 8
+semillas, no en 1 de 8. El coste en `held_out_loss` es real pero moderado y
+desigual entre semillas: la media sube de 0.603±0.009 (baseline) a
+0.631±0.053, con dos semillas (1 y 4) claramente peores (~0.72) y las otras
+seis indistinguibles del baseline -- en la mayoría de semillas, mucha más
+polarización no cuesta desempeño de tarea.
+
+**Hallazgo 2 (la parte que no se sostiene): con polarización ya sobrada en
+7 de 8 semillas, H1 sigue sin evidencia reproducible.** Solo 1 de 8
+semillas (la 1) da un resultado significativo (p=0.0055) -- exactamente el
+mismo patrón "1 de N" que se retractó para `perturb_amp` en la entrada
+anterior, y perfectamente compatible con el ruido esperado de correr 8
+tests de permutación independientes a alfa=0.05 (falso positivo esperado
+~0.4 de 8 por puro azar). El resto (7 de 8) da p>0.15, la mayoría p>0.6.
+No hay relación aparente entre `held_out_loss` alto y significancia de H1:
+la semilla 4 tiene un `held_out_loss` similar al de la semilla 1 (0.715 vs.
+0.723) pero p=0.686, así que el resultado de la semilla 1 no se explica por
+"peor ajuste de tarea -> más parecido al azar biológico por casualidad" de
+forma sistemática -- parece simplemente el resultado significativo aislado
+que cualquier barrido de 8 semillas produce por azar.
+
+**Por qué este resultado es más concluyente que los anteriores para la
+pregunta de alcance:** todos los intentos previos (`hold_prob`,
+`perturb_amp`) dejaban abierta la duda de si la falta de señal de H1 se
+debía a polarización insuficiente. Con `sign_reg=0.05`, la polarización ya
+no es el cuello de botella (7/8 semillas muy por encima del umbral,
+`mean_abs_sign` medio 0.687 frente a 0.349 del mejor hallazgo anterior) y
+el patrón de H1 sigue siendo indistinguible de ruido puro. Esto es
+evidencia bastante más fuerte que antes de que el problema no es "no hemos
+polarizado lo suficiente" sino que el signo aprendido -- polarizado o no --
+simplemente no coincide con el neurotransmisor real más de lo esperado por
+azar en esta arquitectura/tarea.
+
+**Siguiente paso:** decisión de alcance del cuaderno (ver entrada
+2026-09-18 (2)) -- con esta prueba adicional (regularización directa,
+mecanismo distinto a los de tarea, sin encontrar señal pese a resolver el
+problema de polarización) el caso para cerrar la fase experimental y
+reportar la limitación metodológica en el preprint queda más sólido, no
+menos.
+
 ## Plantilla para próximas entradas
 
 ```

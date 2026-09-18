@@ -20,7 +20,7 @@ from .task import build_external_input, circular_loss, decode_heading, generate_
 
 def run(n_steps: int = 500, T: int = 200, lr: float = 0.05, tau: float = 5.0,
         recurrent_gain: float = 4.0, seed: int = 42, hold_prob: float = 0.0,
-        perturb_amp: float = 0.0) -> dict:
+        perturb_amp: float = 0.0, sign_reg: float = 0.0) -> dict:
     torch.manual_seed(0)
     graph = load_cx_graph()
     nodes = graph["nodes"]
@@ -41,6 +41,8 @@ def run(n_steps: int = 500, T: int = 200, lr: float = 0.05, tau: float = 5.0,
         decoded = decode_heading(states, nodes)
         loss = circular_loss(decoded, heading)
         loss.backward()
+        if sign_reg > 0:
+            (sign_reg * model.sign_confidence_penalty()).backward()
         torch.nn.utils.clip_grad_norm_([model.sign_param], max_norm=1.0)
         optimizer.step()
         loss_history.append(loss.item())
@@ -56,6 +58,7 @@ def run(n_steps: int = 500, T: int = 200, lr: float = 0.05, tau: float = 5.0,
         "lr": lr,
         "hold_prob": hold_prob,
         "perturb_amp": perturb_amp,
+        "sign_reg": sign_reg,
         "loss_first": loss_history[0],
         "loss_last": loss_history[-1],
         "loss_min": min(loss_history),

@@ -70,3 +70,12 @@ class CXRingNetwork(nn.Module):
         """+1 / -1 por arista, para comparar más adelante con el neurotransmisor real."""
         with torch.no_grad():
             return torch.sign(self.sign_param)
+
+    def sign_confidence_penalty(self) -> torch.Tensor:
+        """Término de regularización directa sobre el signo (no depende de la
+        tarea): mínimo (0) cuando |tanh(sign_param)| -> 1 en toda arista,
+        máximo (1) cuando sign_param = 0. Es 1 - tanh(x)^2, la derivada de
+        tanh -- empuja cada arista hacia un signo confiado sin preferir cuál
+        de los dos, así que la dirección la sigue decidiendo el gradiente de
+        tarea; esto solo penaliza quedarse indeciso cerca de cero."""
+        return (1 - torch.tanh(self.sign_param) ** 2).mean()

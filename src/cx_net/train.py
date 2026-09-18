@@ -33,7 +33,7 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
           trials_per_step: int = 16, ema_alpha: float = 0.05, patience: int = 150,
           tau: float = 5.0, recurrent_gain: float = 4.0,
           adam_betas: tuple[float, float] = (0.9, 0.999),
-          hold_prob: float = 0.0, perturb_amp: float = 0.0,
+          hold_prob: float = 0.0, perturb_amp: float = 0.0, sign_reg: float = 0.0,
           run_label: str | None = None) -> dict:
     """
     ema_alpha / patience: el primer intento uso ReduceLROnPlateau directamente
@@ -53,6 +53,17 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
     la secuencia de ensayos (vía SEED_STRIDE), así que correr el mismo config
     con distintos `seed` da variación genuina de inicialización Y de datos,
     útil para medir varianza entre corridas.
+
+    `sign_reg` (2026-09-18): en vez de seguir buscando una variante de
+    TAREA que fuerce polarización de forma emergente (agotado tras
+    `hold_prob`/`perturb_amp`, ver lab-notebook), esto añade una presión
+    directa sobre el PARÁMETRO -- `model.sign_confidence_penalty()` -- que
+    no depende de los ensayos ni de la dinámica de la red. Se suma al
+    gradiente de tarea en cada paso, así que compite con él: si `sign_reg`
+    es demasiado alto, puede fijar el signo de una arista en su dirección
+    de inicialización (ruido) antes de que el gradiente de tarea tenga
+    ocasión de corregirla -- por eso se sigue el mismo protocolo de
+    dosis-respuesta que con `perturb_amp` antes de aceptar cualquier valor.
     """
     torch.manual_seed(seed)
     graph = load_cx_graph()
@@ -81,6 +92,12 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
             loss = circular_loss(decoded, heading)
             (loss / trials_per_step).backward()
             batch_loss += loss.item() / trials_per_step
+
+        reg_loss = 0.0
+        if sign_reg > 0:
+            reg = sign_reg * model.sign_confidence_penalty()
+            reg.backward()
+            reg_loss = reg.item()
 
         torch.nn.utils.clip_grad_norm_([model.sign_param], max_norm=1.0)
         optimizer.step()
@@ -134,6 +151,7 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
         "trials_per_step": trials_per_step,
         "hold_prob": hold_prob,
         "perturb_amp": perturb_amp,
+        "sign_reg": sign_reg,
         "tau": tau,
         "recurrent_gain": recurrent_gain,
         "adam_betas": list(adam_betas),
