@@ -12,6 +12,7 @@ ground truth real.
 import json
 import os
 
+import numpy as np
 import pandas as pd
 import torch
 
@@ -39,7 +40,8 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
           run_label: str | None = None, anchor: bool = False, max_av: float = 0.08,
           ring_source: str = "glomerulus", ring_sign: float = 1.0,
           activation: str = "tanh", type_params: bool = False, real_sign_control: bool = False,
-          in_gain: float = 3.0, cue_gain: float = 3.0) -> dict:
+          in_gain: float = 3.0, cue_gain: float = 3.0,
+          control_shuffle_seed: int | None = None) -> dict:
     """
     ema_alpha / patience: el primer intento uso ReduceLROnPlateau directamente
     sobre la pérdida cruda de cada época, que es muy ruidosa (cada época usa
@@ -95,7 +97,10 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
         if not type_params:
             raise ValueError("real_sign_control sin type_params no entrena nada")
         gt = attach_ground_truth(nodes, DATA_DIR)
-        real_edge_sign = gt["expected_sign"].to_numpy()[graph["edge_index"][0].numpy()]
+        node_sign = gt["expected_sign"].to_numpy()
+        if control_shuffle_seed is not None:  # control: mismo recuento 110/42, reparto barajado entre neuronas
+            node_sign = np.random.default_rng(control_shuffle_seed).permutation(node_sign)
+        real_edge_sign = node_sign[graph["edge_index"][0].numpy()]
         with torch.no_grad():
             model.sign_param.copy_(torch.as_tensor(real_edge_sign, dtype=torch.float32) * 10.0)
         model.sign_param.requires_grad_(False)
@@ -195,6 +200,7 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
         "activation": activation,
         "type_params": type_params,
         "real_sign_control": real_sign_control,
+        "control_shuffle_seed": control_shuffle_seed,
         "in_gain": in_gain,
         "cue_gain": cue_gain,
         "diagnostics": diagnostics,

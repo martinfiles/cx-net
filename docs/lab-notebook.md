@@ -1417,6 +1417,61 @@ parámetro de arista) y repetir la comprobación de realizabilidad con signos
 reales, cuidando que las ganancias no se ajusten con los signos reales para
 luego dárselas al aprendiz (filtraría información).
 
+## 2026-09-19 (8) — Parámetros por tipo celular: con signos reales la tarea SÍ es realizable y discrimina la química
+
+**Decisión previa (usuario):** último intento con la opción 2 de la entrada (7):
+ganancias por tipo celular entrenables. Protocolo en dos pasos, fijado antes de
+correr nada, para no filtrar información del neurotransmisor al aprendiz:
+1. **Realizabilidad** (solo control): signos reales fijos, se entrenan SOLO los
+   parámetros por tipo. Pregunta de sí/no; sus valores no se reutilizan.
+2. **H1**: signos por arista y parámetros por tipo se entrenan conjuntamente
+   desde un inicio neutro (ganancias 1, sesgos 0, signos ~0), sin nada del paso 1.
+
+**Qué se añadió** (`model.py`, `learn_type_params=True`): ganancia positiva por
+cada par de tipos origen->destino (6x6, `exp(log_pair_gain)`), un sesgo por tipo y
+una escala global de la entrada: ~43 parámetros compartidos por tipo, nunca por
+arista. `train()`: `activation`, `type_params`, `in_gain`, `cue_gain`,
+`real_sign_control`, `control_shuffle_seed`. `integration_diagnostics`: pérdida,
+error de anclaje y pendiente. Hiperparámetros fijos: `recurrent_gain=2`, `tau=10`,
+`in_gain=10`, `cue_gain=10` (zona de las mejores pérdidas de la búsqueda (7), elegida
+con ayuda de los signos reales -> **grado de libertad declarable**), 600 épocas.
+
+**Aviso de entorno:** el `python` del sistema tiene torch 2.4.1, donde el gradiente
+de `atan2(0,0)` es `nan`; el `.venv` (torch 2.14) da 0. Los entrenamientos por
+defecto DEBEN usar `.venv/Scripts/python.exe` (verificado: reproduce exactamente
+epoch 0/25 de `signreg05_seed0`). Los pilotos anclados de la entrada (6) usaron el
+Python del sistema; la pista deja a los EPG != 0 en t=0, así que no fue afectado.
+
+**Resultado paso 1 (held-out fijo, referencia "recordar theta0" = 0.466):**
+
+| variante | held-out | pendiente | anclaje |
+|---|---|---|---|
+| tanh, ring_sign=+1, signos reales | 0.108 | 0.82 | 4° |
+| tanh, ring_sign=-1, signos reales | 0.125 | 0.87 | 7° |
+| rectificada, ring_sign=-1, signos reales | 0.172 | 0.73 | 4° |
+| rectificada, ring_sign=+1, signos reales | 0.467 | 0.00 | 3° |
+
+**Control decisivo: signos barajados** (mismo recuento 110/42, 4 permutaciones por
+sentido, tanh, idéntico protocolo): held-out 0.450-0.598 (ring_sign=+1) y
+0.430-0.469 (ring_sign=-1), pendiente entre -0.05 y 0.20: todos en "memoria sin
+integrar". Los 2 con signos reales: 0.108 y 0.125.
+
+**Conclusión:** con ganancias por tipo entrenables, la red con la química real
+integra el rumbo y la red con neurotransmisores barajados no. La tarea es
+realizable Y discrimina la química (8/8 barajados fallan, 2/2 reales funcionan,
+ambos sentidos de giro). Por primera vez un H1 nulo sería informativo y un H1
+positivo, interpretable. Ambos sentidos de giro funcionan igual con tanh, así que
+`ring_sign` deja de ser un grado de libertad relevante para esta conclusión.
+Límite: los parámetros por tipo se ajustaron CON los signos reales, así que esto
+prueba realizabilidad, no que un aprendiz de signos los encuentre.
+
+**Siguiente paso:** paso 2. Piloto de 1 semilla, 4 variantes (ring_sign +-1 x
+sign_reg {0.05, 0}), 1000 épocas, `type_params=True`, inicio neutro
+(`joint_sr*_{p,m}`). Criterio: held-out claramente por debajo de 0.466 con
+pendiente ~1. Si el aprendiz no encuentra la solución, el resultado es "el
+descenso de gradiente no recupera una solución que existe", distinto de "la
+tarea no la impone".
+
 ## Plantilla para próximas entradas
 
 ```
