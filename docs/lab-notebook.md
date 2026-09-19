@@ -1099,6 +1099,88 @@ explícitamente con `sign_reg`.
    barridos grandes planeados, pero facilitaría cualquier verificación
    futura).
 
+## 2026-09-19 — Revisión del borrador de discusión y corte de sesión
+
+**Qué se hizo:** revisión crítica de `docs/preprint-discussion.md`
+contrastándolo con este cuaderno, los `h1_evaluation_signreg05_seed*.json` y
+`task.py`. Cambios aplicados al borrador (sin commit todavía):
+
+- **Sección 3:** el argumento "1 de 8 es indistinguible del 5% esperado" era
+  débil. Con p=0.0055 la probabilidad de que el mínimo de 8 p-valores baje de
+  ese valor bajo la nula es ≈4.3%, y 0.0055 < 0.00625 (Bonferroni, 8 tests).
+  Lo que sí sostiene el resultado nulo: efecto diminuto en la semilla 1
+  (acuerdo 0.519 vs. nula 0.507), semilla 5 con desviación opuesta y mayor
+  (z=−3.16, p una cola=0.999, no señalada por el test de una cola), y
+  agregado sin señal (z medio −0.22; Stouffer z=−0.62, p=0.73; Fisher
+  p=0.26). Se añadió la tabla por semilla con z.
+- La retractación de `perturb_amp` (p=0.0005, que también pasaría
+  Bonferroni) se hizo por criterio de polarización/replicación, no por
+  comparaciones múltiples; el borrador lo dice explícitamente ahora.
+- "Convergencia de dos mecanismos ortogonales" sobreestimada: `perturb_amp`
+  solo polarizó 1/8, así que la evidencia con potencia es solo `sign_reg`.
+- Sección 7 contradecía a la 4 ("no basta" vs. "sin poder para
+  confirmar/refutar"); reescrita como "no encontramos evidencia de…".
+- "Muy por encima del azar" corregido: held-out ≈0.6 vs. ≈0.85 de azar.
+- `ring_angle` SÍ afecta a H1 indirectamente (`task.py` lo usa para el
+  objetivo de entrenamiento); el borrador decía lo contrario.
+- Aclarado que "8/8" en la tabla es no-solapamiento de `mean_abs_sign`; el
+  cruce del umbral es 7/8. (Sin inconsistencia real con el mensaje del
+  commit `10b7102`.)
+- Limitaciones nuevas: sin control positivo de potencia; grados de libertad
+  del investigador (~30 configuraciones, umbrales sin análisis previo);
+  solución de tarea solo moderada.
+
+**PRÓXIMOS PASOS (en orden; retomar aquí en la siguiente sesión):**
+1. **Control positivo de potencia** (decidido: se hace al empezar la
+   próxima sesión). Sembrar signos con acuerdo predefinido (p. ej. 52%,
+   55%, 60%) sobre las 9.160 aristas reales, con el mismo procedimiento de
+   test de permutación (2000 permutaciones, una cola) y las etiquetas reales
+   de neurotransmisor, y medir con qué frecuencia el test lo detecta (curva
+   potencia vs. acuerdo sembrado, idealmente con la polarización real de los
+   modelos `sign_reg`, `mean_abs_sign`≈0.69). Objetivo: sustituir "potencia
+   suficiente" (hoy una inferencia) por una medición. Los resultados y su
+   efecto sobre la redacción van a `docs/preprint-discussion.md` (secciones 2
+   y 5). Variante más costosa, opcional: entrenar sobre una red con signos
+   conocidos.
+2. Releer el borrador completo tras incorporar el control positivo y
+   comprobar coherencia entre secciones 1, 3, 4, 5 y 7.
+3. Commit de `docs/preprint-discussion.md` y de esta entrada.
+4. Actualizar `README.md` (dice "Fase de diseño / extracción de datos",
+   desactualizado).
+5. Pendientes previos, no bloqueantes: validar `ring_angle` contra Hulse et
+   al. (2021, Fig. 10) (ahora con más peso, ver arriba); vectorizar el `for`
+   de `trials_per_step` en `train.py`.
+
+## 2026-09-19 (2) — Control positivo de potencia del test de H1
+
+**Qué se hizo:** `src/cx_net/power_control.py`. Sobre los signos aprendidos
+de los 8 modelos `signreg05`, se siembra el signo de una "verdad" en una
+fracción q de neuronas de origen (o de aristas independientes) y se aplica
+el mismo test de permutación (2000 perm., una cola, alfa=0.05), 200
+repeticiones por modelo y q. Resultados en `data/interim/power_control.json`.
+
+**Corrección de diseño en el camino:** la primera versión usaba solo las
+etiquetas reales; con q=0 las 200 repeticiones eran idénticas
+(permutaciones fijas) y salió "potencia 0.125" = 1/8 = la semilla 1, no una
+tasa de falsos positivos. Se añadió la variante `decoy` (etiquetas barajadas
+sorteadas de nuevo en cada repetición): q=0 da 0.049-0.052, calibrado.
+
+**Resultado / número clave (siembra por neurona, `decoy`):** potencia 0.11
+(q=0.01, acuerdo 0.503), 0.26 (0.508), 0.43 (0.513), 0.69 (0.523), 0.98
+(0.548). ≈50% en acuerdo ≈0.516 (+1.6 pp), ≈80% en ≈0.533 (+3.3 pp). Con
+siembra por aristas independientes la potencia es mayor (80% ≈ +1.6 pp).
+Acuerdos reales observados: 0.476-0.519, media 0.497. Conclusión: un efecto
+≥+3.3 pp se habría detectado; efectos de +1-2 pp no. Variante `real`
+similar (hasta ≈0.07 más de potencia en q bajo).
+
+**Límites:** señal sembrada idealizada; mide la potencia del test, no la
+capacidad del entrenamiento de recuperar signos (variante "entrenar sobre
+red con signos conocidos" no realizada).
+
+**Siguiente paso:** borrador actualizado (secciones 2, 4, 5, 7). Quedan:
+releer coherencia completa (1, 3, 4, 5, 7; la sección 1 aún dice que la
+potencia "se descartó" como explicación), commit, actualizar `README.md`.
+
 ## Plantilla para próximas entradas
 
 ```

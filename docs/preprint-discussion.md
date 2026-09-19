@@ -1,7 +1,7 @@
 # Discusión metodológica (borrador) — CX-Net
 
 > Borrador de trabajo para la sección de discusión del preprint. Fuente:
-> `docs/lab-notebook.md` (registro completo, 2026-09-16 a 2026-09-18). Este
+> `docs/lab-notebook.md` (registro completo, 2026-09-16 a 2026-09-19). Este
 > documento reorganiza esa cronología en una narrativa argumentativa; el
 > cuaderno sigue siendo la fuente primaria de datos y decisiones.
 
@@ -16,8 +16,10 @@ La magnitud de cada peso queda fija al número real de sinapsis; el signo
 gradiente sobre una tarea de integración de rumbo, sin acceso nunca al
 neurotransmisor real de cada neurona.
 
-La red aprende a resolver la tarea de forma consistente y muy por encima del
-azar en todas las variantes probadas. Sin embargo, **el signo sináptico
+La red aprende la tarea de forma consistente y mejor que el azar en todas
+las variantes probadas (pérdida held-out ≈0.6 frente a ≈0.85 de nivel de
+azar; es una mejora real pero no una solución ajustada, ver sección 5). Sin
+embargo, **el signo sináptico
 aprendido no coincide con el neurotransmisor real anotado más de lo
 esperable por azar** (test de permutación de etiqueta de neurotransmisor,
 2000 permutaciones). De todas las evaluaciones de H1 realizadas a lo largo
@@ -26,7 +28,10 @@ del proyecto, ninguna sobrevive como evidencia reproducible a favor de H1.
 Este resultado negativo no depende de una sola corrida: se llegó a él tras
 descartar sistemáticamente, con metodología multi-semilla, la explicación
 más obvia, que la falta de señal se debiera simplemente a una potencia
-estadística insuficiente por polarización de signo débil.
+estadística insuficiente por polarización de signo débil. Un control
+positivo de potencia (sección 2) acota además el resultado: el test habría
+detectado un acuerdo de +3.3 pp o más con ≥80% de probabilidad, pero no
+efectos menores.
 
 ## 2. El problema de potencia estadística y cómo se resolvió
 
@@ -40,7 +45,7 @@ no era concluyente: un modelo que apenas decidió sus signos no permite
 distinguir entre "H1 es falsa" y "el test no tuvo ocasión de detectar
 nada".
 
-Se probaron tres vías distintas para forzar más compromiso de signo, cada
+Se probaron cuatro vías distintas para forzar más compromiso de signo, cada
 una con protocolo multi-semilla (3 a 8 semillas, set de validación
 held-out fijo, comparación por solapamiento entre grupos) para evitar
 repetir el error metodológico temprano del proyecto: una sola corrida por
@@ -51,7 +56,7 @@ configuración (entrada 2026-09-16 (11) del cuaderno).
 | Hiperparámetros de dinámica (`tau`, `recurrent_gain`, momentum, `trials_per_step`) | Optimización | ~0.31-0.35, sin diferencia consistente | No aplica: no hubo efecto |
 | `hold_prob` (rediseño de tarea: tramos de quietud forzada, memoria sin entrada) | Diseño de tarea | 0.349-0.364 | Sí, pero insuficiente para cruzar el umbral |
 | `hold_prob` + `perturb_amp` (rediseño de tarea: ruido de entrada a filtrar) | Diseño de tarea | 0.465 ± 0.163 (bimodal) | No, solapa con `hold_prob` solo |
-| `hold_prob` + `sign_reg` (regularización directa sobre el parámetro de signo) | Optimización, independiente de la tarea | **0.687 ± 0.123** | **Sí, en 8 de 8 semillas, por un margen amplio** |
+| `hold_prob` + `sign_reg` (regularización directa sobre el parámetro de signo) | Optimización, independiente de la tarea | **0.687 ± 0.123** | **Sí: `mean_abs_sign` de las 8 semillas queda por encima del máximo del baseline** (7 de 8 cruzan además el umbral de referencia) |
 
 Solo las dos últimas vías modifican de forma significativa la
 polarización, y solo `sign_reg` (penalización `1 - tanh(sign_param)^2`,
@@ -62,27 +67,105 @@ moderado y desigual en el desempeño de la tarea (`held_out_loss` sube de
 0.603±0.009 a 0.631±0.053, aunque la mayoría de las semillas quedan
 indistinguibles del baseline).
 
+### Control positivo de potencia del test (medido)
+
+Que la red esté polarizada es condición necesaria, no suficiente, para que
+el test sea informativo. Para medir la potencia en vez de inferirla
+(`src/cx_net/power_control.py`, `data/interim/power_control.json`) se
+sembró señal conocida sobre los signos reales de los 8 modelos `sign_reg`:
+una fracción q de las neuronas de origen (o, en la variante de aristas
+independientes, de las aristas) pasa a tener el signo de la "verdad", y el
+resto conserva el signo aprendido. Se aplicó el mismo test que en H1 (2000
+permutaciones, una cola, alfa=0.05), 200 repeticiones por modelo y valor
+de q. Como "verdad" se usó una asignación de etiquetas barajada, sorteada
+de nuevo en cada repetición (`decoy`), de modo que q=0 mide el falso
+positivo y no hereda la señal residual de la semilla 1. Con las etiquetas
+reales (`real`) la potencia es similar (hasta ≈0.07 mayor con q bajo, por la
+señal residual de la semilla 1).
+
+| q (neuronas sembradas) | acuerdo medio | potencia (neuronas) | potencia (aristas indep.) |
+|---|---|---|---|
+| 0 (falso positivo) | 0.498 | 0.052 | 0.049 |
+| 0.01 | 0.503 | 0.11 | 0.19 |
+| 0.02 | 0.508 | 0.26 | 0.47 |
+| 0.03 | 0.513 | 0.43 | 0.74 |
+| 0.05 | 0.523 | 0.69 | 0.97 |
+| 0.10 | 0.548 | 0.98 | 1.00 |
+| 0.20 | 0.598 | 1.00 | 1.00 |
+
+El test está calibrado (falso positivo ≈5%). Con siembra a nivel de
+neurona, que es la variante realista porque el neurotransmisor es una
+propiedad de la neurona y la permutación baraja a ese nivel, la potencia
+alcanza ≈50% con un acuerdo de ≈0.516 (+1.6 pp sobre el azar) y ≈80% con
+≈0.533 (+3.3 pp); un acuerdo de 0.55 o más se detecta prácticamente
+siempre. Los acuerdos observados en los modelos reales (0.476-0.519, media
+0.497) quedan todos por debajo del punto de 80% de potencia y solo la semilla
+1 supera el de 50%.
+
+Esto sustituye la inferencia por una medición y acota el resultado nulo:
+**un acuerdo de signo de +3.3 pp o más sobre el azar se habría detectado
+con ≥80% de probabilidad; el diseño no excluye efectos menores** (del
+orden de +1-2 pp sobre el azar; la única desviación nominal observada, la
+semilla 1 con acuerdo 0.519, cae justo en la zona de ≈50% de potencia). Limitaciones del control: la señal sembrada es un modelo
+idealizado (neuronas enteras con el signo correcto, sin ruido intermedio)
+y mide la potencia del test de permutación, no la capacidad del
+entrenamiento de recuperar signos; esa segunda pregunta requeriría entrenar
+sobre una red con signos conocidos (variante no realizada).
+
 ## 3. Con la polarización resuelta, H1 sigue sin evidencia
 
 Este es el punto argumentativo central de la discusión: con `sign_reg`, la
 falta de polarización deja de ser una explicación viable para la ausencia
 de señal. Sobre las 8 semillas de `hold_prob=0.3` + `sign_reg=0.05` (7 de
-ellas muy por encima del umbral de referencia), solo 1 de 8 evaluaciones
-de H1 da p<0.05 (p=0.0055), una tasa de resultado positivo indistinguible
-del ~5% esperado por azar al correr 8 tests de permutación independientes.
-El mismo patrón, un resultado significativo aislado que no se replica, ya
-había aparecido con `perturb_amp` (1 de 8 semillas, entrada 2026-09-18 del
-cuaderno) y se retractó explícitamente como evidencia de H1 tras la
-réplica.
+ellas por encima del umbral de referencia), el acuerdo de signo con el
+neurotransmisor real es prácticamente el del azar en todas:
 
-El hecho de que dos mecanismos ortogonales converjan en el mismo
-resultado es una evidencia más fuerte que cualquiera de los dos por
-separado. Uno actúa sobre el diseño de la tarea conductual; el otro actúa
-directamente sobre el parámetro de signo, sin pasar por la tarea. Ambos
-logran polarizar la red (uno de forma parcial, el otro de forma casi
-completa) y en ambos casos el acuerdo con el neurotransmisor real sigue
-sin superar el azar. Esa convergencia hace mucho menos plausible que la
-ausencia de señal sea un artefacto del método elegido.
+| semilla | acuerdo observado | media nula | z | p (una cola) |
+|---|---|---|---|---|
+| 0 | 0.4965 | 0.4978 | −0.28 | 0.618 |
+| 1 | 0.5193 | 0.5071 | +2.49 | 0.0055 |
+| 2 | 0.5029 | 0.4999 | +0.57 | 0.294 |
+| 3 | 0.5038 | 0.4987 | +1.05 | 0.152 |
+| 4 | 0.4957 | 0.4987 | −0.44 | 0.686 |
+| 5 | 0.4758 | 0.4938 | −3.16 | 0.999 |
+| 6 | 0.4855 | 0.4929 | −1.33 | 0.913 |
+| 7 | 0.4932 | 0.4963 | −0.65 | 0.742 |
+
+Tres puntos que el resumen "solo 1 de 8 sale significativo" oculta y que
+conviene decir de forma explícita:
+
+- **La semilla 1 (p=0.0055) no es descartable por simple recuento de
+  falsos positivos al 5%.** Bajo la nula, la probabilidad de que el mínimo de
+  8 p-valores baje de 0.0055 es ≈4.3%, y 0.0055 queda por debajo del umbral
+  de Bonferroni (0.05/8=0.00625). Lo que la hace no concluyente es que su
+  efecto es diminuto (acuerdo 0.519 frente a 0.507, +1.2 puntos porcentuales),
+  que no se replica en las otras semillas y que la semilla 5 muestra la
+  desviación opuesta, de mayor magnitud (z=−3.16), que un test de una cola
+  (p=0.999) no señala. Las desviaciones a ambos lados son coherentes con
+  ruido de optimización, no con un acuerdo sistemático. El control de
+  potencia (sección 2) explica además por qué un efecto de este tamaño no
+  es decisivo en ningún sentido: se detecta solo la mitad de las veces si
+  existe, de modo que verlo en 1 de 8 semillas es compatible tanto con
+  ruido como con un efecto pequeño real.
+- **Agregado, no hay señal:** z medio −0.22; Stouffer z=−0.62
+  (p=0.73, una cola); Fisher p=0.26. Además, los 8 modelos se evalúan contra
+  las mismas etiquetas reales, así que no son 8 pruebas independientes de
+  H1 sino 8 muestras del mismo procedimiento de entrenamiento.
+- **El mismo patrón, un resultado significativo aislado que no se replica,
+  ya había aparecido con `perturb_amp`** (1 de 8 semillas, p=0.0005 en el
+  mínimo posible con 2000 permutaciones; entrada 2026-09-18 del cuaderno). Ese
+  resultado se retractó por un criterio distinto (la semilla polarizaba por
+  azar de optimización, no por efecto de la condición), no por un análisis de
+  comparaciones múltiples, y debe reportarse así.
+
+La evidencia decisiva es solo la de `sign_reg`. `hold_prob` y
+`hold_prob`+`perturb_amp` no lograron polarizar de forma suficiente y
+reproducible (esta última solo en 1 de 8 semillas), de modo que no
+constituyen pruebas independientes con potencia adecuada de H1; son
+intentos fallidos de alcanzarla. Presentarlos como "dos mecanismos
+ortogonales que convergen" sobreestima el peso de la convergencia: lo que
+convergen es la ausencia de señal, pero solo uno de los dos mecanismos
+llega a tener potencia para detectarla.
 
 ## 4. Interpretación
 
@@ -109,10 +192,11 @@ proyecto no puede distinguir entre sí con el diseño actual:
    donde no.
 
 Ninguna de las tres lecturas implica que H1 sea falsa en general. Lo que
-sí implican es que **este diseño experimental concreto no tiene el poder
-para confirmarla ni para refutarla de forma concluyente**, incluso después
-de resolver el cuello de botella de la polarización. Ese es el hallazgo
-metodológico que se reporta.
+sí implican es que **este diseño experimental concreto solo excluye
+efectos de acuerdo de signo de +3.3 pp o más (potencia ≥80%, sección 2) y
+no puede refutar ni confirmar de forma concluyente efectos menores**,
+incluso después de resolver el cuello de botella de la polarización. Ese es
+el hallazgo metodológico que se reporta.
 
 ## 5. Limitaciones explícitas
 
@@ -121,10 +205,12 @@ metodológico que se reporta.
   posición equiespaciada), no la tabla de correspondencia glomérulo-cuña
   real de Hulse et al. (2021, Fig. 10). Un intento de corrección
   (2026-09-16, entrada 10) empeoró la polarización y fue revertido; sigue
-  sin resolverse. Esto afecta la fiabilidad cuantitativa de la
-  decodificación de rumbo (no directamente el test de H1, que no depende
-  de `ring_angle`), pero sí la interpretación de si la tarea se resuelve
-  de forma biológicamente correcta.
+  sin resolverse. El test de permutación de H1 no usa `ring_angle`, pero
+  `task.py` sí lo usa para construir el objetivo de decodificación durante
+  el entrenamiento, así que un mapeo erróneo cambia la tarea que la red
+  aprende y, con ella, los signos aprendidos. Es por tanto una fuente
+  potencial de sesgo sobre H1, no solo sobre la interpretación biológica de
+  la tarea.
 - **Alcance del subcircuito**: 152 neuronas núcleo del sistema de
   dirección de cabeza, sin las ring neurons de entrada visual ni el
   fan-shaped body completo. Un circuito más amplio podría comportarse de
@@ -137,6 +223,24 @@ metodológico que se reporta.
   6 tipos (`Delta7`=42, `EPGt`=4). Los tipos con menos neuronas tienen
   pocas aristas de origen, así que cualquier señal, o ausencia de señal,
   en ellos debe leerse con esa salvedad.
+- **Solución de tarea moderada**: la pérdida held-out (≈0.6) queda lejos
+  de la de entrenamiento en sobreajuste de un ensayo (≈0.006) y solo
+  moderadamente por debajo del nivel de azar (≈0.85). No se ha
+  demostrado que la red implemente un integrador de rumbo con la
+  estructura biológica; solo que reduce el error. Si la solución no se
+  parece al mecanismo real, no hay razón para esperar que sus signos
+  coincidan con los reales.
+- **Control positivo de potencia parcial**: se midió la potencia del test
+  de permutación sembrando señal conocida sobre los signos reales (sección
+  2): ≈80% de detección para +3.3 pp de acuerdo, sin poder para efectos de
+  +1-2 pp. Lo que no se hizo es el control más exigente: entrenar sobre una
+  red con signos conocidos para comprobar que el *entrenamiento* recupera
+  el signo cuando existe. Sin él, un resultado nulo también es compatible
+  con que el entrenamiento no recupere señal que sí está presente.
+- **Grados de libertad del investigador**: ~30 configuraciones y umbrales
+  de referencia (`mean_abs_sign>0.5`, `frac_polarized_gt_0.9>10%`) fijados
+  sin análisis previo de potencia. Es coherente con un resultado nulo, pero
+  hace que ningún p-valor aislado deba leerse como confirmatorio.
 - **`sign_reg` es una intervención posterior al diseño original**: se
   añadió específicamente para resolver la duda de potencia estadística
   tras observar el techo de polarización. Es un control metodológico
@@ -162,18 +266,24 @@ metodológico que se reporta.
 
 > Entrenar una red cuya única variable libre es el signo sináptico, sobre
 > la topología real de un circuito de navegación bien caracterizado,
-> produce soluciones funcionalmente competentes para la tarea de
-> integración de rumbo, sin que el signo aprendido reproduzca la identidad
-> química real más allá del azar. Descartamos sistemáticamente la
-> explicación más simple, que la falta de señal se debiera a una potencia
-> estadística insuficiente por falta de compromiso de signo, mediante dos
-> mecanismos independientes: un rediseño de la tarea conductual y una
-> regularización aplicada directamente sobre el parámetro de signo. Esta
-> última resuelve el problema de polarización de forma robusta
-> (polarización fuerte en 7 de 8 semillas) sin alterar el resultado: el
-> acuerdo con el neurotransmisor real permanece indistinguible del
-> esperado por azar. Interpretamos esto como evidencia de que, al menos
-> para este subcircuito y esta tarea, la topología sináptica por sí sola,
-> sin información adicional sobre el repertorio funcional completo del
-> circuito, no basta para que una red entrenada por gradiente recupere la
-> química real de sus sinapsis.
+> reduce el error en una tarea de integración de rumbo por debajo del nivel
+> de azar, sin que el signo aprendido reproduzca la identidad química real
+> más allá del azar. Un primer intento de rediseñar la tarea no consiguió
+> que la red se comprometiera con un signo por arista, lo que dejaba abierta
+> la duda de si el test tenía potencia. Una regularización aplicada
+> directamente sobre el parámetro de signo resolvió ese cuello de botella
+> (polarización por encima del umbral de referencia en 7 de 8 semillas)
+> sin alterar el resultado: el acuerdo con el neurotransmisor real
+> permaneció indistinguible del esperado por azar, tanto por semilla
+> (una semilla nominalmente significativa, con un efecto de +1.2 puntos
+> porcentuales y otra con desviación opuesta de mayor magnitud) como en
+> agregado (Stouffer z=−0.62). En este subcircuito y con esta tarea, por
+> tanto, no encontramos evidencia de que la topología sináptica por sí
+> sola baste para que un entrenamiento por gradiente recupere la química
+> real de las sinapsis. Un control positivo de potencia (señal
+> sembrada sobre los signos reales) muestra que el test detecta con ≥80% de
+> probabilidad un acuerdo de +3.3 puntos porcentuales o más sobre el azar,
+> pero no efectos menores. Dado que la solución de tarea es solo moderada y
+> que no se comprobó que el entrenamiento recupere signos conocidos, este
+> resultado no permite descartar que la señal exista, con menor magnitud, o
+> bajo una tarea o una arquitectura distintas.

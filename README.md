@@ -8,7 +8,16 @@ Si se entrena una red neuronal cuya única restricción es la topología sinápt
 
 ## Estado
 
-🚧 Fase de diseño / extracción de datos. Ver hoja de ruta más abajo.
+Fase experimental cerrada (2026-09-18); en redacción del preprint.
+Resultado principal (negativo): la red aprende la tarea de integración de
+rumbo, pero el signo aprendido no coincide con el neurotransmisor real más
+de lo esperable por azar, ni siquiera con regularización que fuerza la
+polarización del signo (8 semillas). Un control positivo de potencia indica
+que el test detectaría un acuerdo de ≈+3.3 pp o más sobre el azar con ≥80%
+de probabilidad. Detalle en
+[`docs/preprint-discussion.md`](docs/preprint-discussion.md) y
+[`docs/lab-notebook.md`](docs/lab-notebook.md).
+Ver hoja de ruta más abajo.
 
 ## Datos
 
@@ -43,6 +52,19 @@ python -m src.cx_net.extract_graph
 Genera `data/raw/graph_no_sign.csv` (topología pura, sin signo) y
 `data/raw/ground_truth_nt.csv` (neurotransmisor real, uso restringido a la
 fase de evaluación). Ambos quedan fuera del repositorio (`.gitignore`).
+
+Fases posteriores (módulos en `src/cx_net/`; los resultados se escriben en
+`data/interim/`, fuera del repositorio):
+
+```bash
+python -m src.cx_net.train          # entrena el modelo de signo libre
+python -m src.cx_net.evaluate       # H1 (test de permutación) y H2 (por tipo celular)
+python -m src.cx_net.power_control  # control positivo de potencia del test de H1
+```
+
+Los barridos multi-semilla y las variantes (`hold_prob`, `perturb_amp`,
+`sign_reg`) se lanzaron llamando a `train()` con distintos argumentos; ver
+el cuaderno para las configuraciones exactas.
 
 Registro de decisiones y resultados: [`docs/lab-notebook.md`](docs/lab-notebook.md).
 
