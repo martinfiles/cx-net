@@ -39,6 +39,19 @@ persistente sin entrada). El ruido se aplica en TODOS los pasos, incluidos
 los tramos de quietud de `hold_prob` -- combinar ambos exige sostener el
 bump sin ayuda Y filtrando ruido al mismo tiempo, la condición más
 exigente probada hasta ahora.
+
+Tarea anclada (2026-09-19, ver lab-notebook entrada (6)): la tarea original
+pide el rumbo ABSOLUTO empezando en 0, sin ninguna pista de dónde está el 0.
+Con heading0=0 y velocidades pequeñas, un decodificador constante en 0 daba
+pérdida 0.18 (3-4 veces mejor que los modelos entrenados) y un integrador
+perfecto con fase inicial arbitraria daba ~1.0: la tarea no medía integración.
+`generate_anchored_trial` sortea una fase inicial theta0 ~ U(-pi, pi) por
+ensayo; `build_external_input(..., cue_phase=theta0)` la inyecta como pulso
+breve sobre las neuronas de compás (EPG/EPGt) en los primeros `cue_steps`
+pasos, y el objetivo pasa a ser theta0 + integral de la velocidad. Ahora el
+decodificador constante da ~1.0 y "recordar theta0 sin integrar" da una
+pérdida que depende de `max_av` (0.55 con 0.15); la red tiene que anclar,
+mantener e integrar.
 """
 
 import numpy as np
@@ -76,12 +89,38 @@ def generate_trial(T: int = 200, max_av: float = 0.08, hold_prob: float = 0.0,
     return av_drive, heading
 
 
-def build_external_input(av: np.ndarray, nodes, gain: float = 3.0) -> torch.Tensor:
+ANCHOR_SEED_OFFSET = 500_000_000
+
+
+def generate_anchored_trial(T: int = 200, max_av: float = 0.15, hold_prob: float = 0.0,
+                             hold_block: int = 20, perturb_amp: float = 0.0,
+                             seed: int = 0):
+    """(velocidad_angular, rumbo_real, theta0). Igual que `generate_trial` pero
+    el rumbo parte de una fase inicial aleatoria theta0 (sorteada con una
+    semilla derivada, para no alterar la secuencia de `generate_trial`)."""
+    av, heading = generate_trial(T=T, max_av=max_av, hold_prob=hold_prob,
+                                  hold_block=hold_block, perturb_amp=perturb_amp, seed=seed)
+    theta0 = float(np.random.default_rng(ANCHOR_SEED_OFFSET + seed).uniform(-np.pi, np.pi))
+    return av, heading + theta0, theta0
+
+
+def build_external_input(av: np.ndarray, nodes, gain: float = 3.0,
+                         cue_phase: float | None = None, cue_steps: int = 20,
+                         cue_gain: float = 3.0) -> torch.Tensor:
     """[T, n_nodes]: la velocidad angular solo entra por PEN_a/PEN_b, con signo
-    opuesto entre hemisferios (L empuja el bump en un sentido, R en el otro)."""
+    opuesto entre hemisferios (L empuja el bump en un sentido, R en el otro).
+
+    Con `cue_phase` (tarea anclada): durante los primeros `cue_steps` pasos se
+    suma a las neuronas de compás (EPG/EPGt con `ring_angle`) la entrada
+    cue_gain * max(0, cos(ring_angle - cue_phase)), un pulso con forma de bump
+    centrado en la fase inicial."""
     T = len(av)
     n_nodes = len(nodes)
     ext = torch.zeros(T, n_nodes)
+    if cue_phase is not None:
+        compass = nodes["type"].isin(["EPG", "EPGt"]).to_numpy() & nodes["ring_angle"].notna().to_numpy()
+        ang = torch.tensor(nodes.loc[compass, "ring_angle"].to_numpy(), dtype=torch.float32)
+        ext[:cue_steps, compass] = cue_gain * torch.clamp(torch.cos(ang - cue_phase), min=0.0)
     drive_mask_L = ((nodes["type"].isin(["PEN_a(PEN1)", "PEN_b(PEN2)"])) & (nodes["hemisphere"] == "L")).to_numpy()
     drive_mask_R = ((nodes["type"].isin(["PEN_a(PEN1)", "PEN_b(PEN2)"])) & (nodes["hemisphere"] == "R")).to_numpy()
     av_t = torch.tensor(av, dtype=torch.float32).unsqueeze(1)  # [T, 1]
@@ -117,10 +156,13 @@ HELD_OUT_SEED_BASE = 900_000_000
 
 
 def generate_held_out_set(n_trials: int = 30, T: int = 200, hold_prob: float = 0.0,
-                           perturb_amp: float = 0.0):
+                           perturb_amp: float = 0.0, anchor: bool = False, max_av: float = 0.08):
     """Conjunto FIJO de ensayos de validación: mismas semillas siempre, para
     poder comparar configuraciones/semillas de entrenamiento entre sí sin que
     la comparación esté confundida por qué ensayos le tocaron a cada una."""
+    if anchor:
+        return [generate_anchored_trial(T=T, max_av=max_av, hold_prob=hold_prob, perturb_amp=perturb_amp,
+                                        seed=HELD_OUT_SEED_BASE + i) for i in range(n_trials)]
     return [generate_trial(T=T, hold_prob=hold_prob, perturb_amp=perturb_amp, seed=HELD_OUT_SEED_BASE + i)
             for i in range(n_trials)]
 
@@ -129,8 +171,10 @@ def evaluate_on_trials(model, nodes, trials) -> float:
     """Pérdida media (sin gradiente) sobre un conjunto de ensayos fijo."""
     with torch.no_grad():
         total = 0.0
-        for av, heading in trials:
-            ext_input = build_external_input(av, nodes)
+        for trial in trials:
+            av, heading = trial[0], trial[1]
+            theta0 = trial[2] if len(trial) > 2 else None  # tarea anclada: (av, rumbo, theta0)
+            ext_input = build_external_input(av, nodes, cue_phase=theta0)
             states = model(ext_input)
             decoded = decode_heading(states, nodes)
             total += circular_loss(decoded, heading).item()

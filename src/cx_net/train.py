@@ -18,7 +18,7 @@ from .graph_utils import load_cx_graph
 from .model import CXRingNetwork
 from .task import (
     build_external_input, circular_loss, decode_heading, evaluate_on_trials,
-    generate_held_out_set, generate_trial,
+    generate_anchored_trial, generate_held_out_set, generate_trial,
 )
 
 INTERIM_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data", "interim")
@@ -34,7 +34,8 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
           tau: float = 5.0, recurrent_gain: float = 4.0,
           adam_betas: tuple[float, float] = (0.9, 0.999),
           hold_prob: float = 0.0, perturb_amp: float = 0.0, sign_reg: float = 0.0,
-          run_label: str | None = None) -> dict:
+          run_label: str | None = None, anchor: bool = False, max_av: float = 0.08,
+          ring_source: str = "glomerulus", ring_sign: float = 1.0) -> dict:
     """
     ema_alpha / patience: el primer intento uso ReduceLROnPlateau directamente
     sobre la pérdida cruda de cada época, que es muy ruidosa (cada época usa
@@ -64,9 +65,14 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
     de inicialización (ruido) antes de que el gradiente de tarea tenga
     ocasión de corregirla -- por eso se sigue el mismo protocolo de
     dosis-respuesta que con `perturb_amp` antes de aceptar cualquier valor.
+
+    `anchor` / `max_av` / `ring_source` / `ring_sign` (2026-09-19, entradas
+    (4)-(6) del cuaderno; `max_av` solo se usa con `anchor=True`): tarea anclada (fase inicial aleatoria + pista breve) y
+    `ring_angle` medido en el EB. Con los valores por defecto se reproduce
+    exactamente el comportamiento anterior.
     """
     torch.manual_seed(seed)
-    graph = load_cx_graph()
+    graph = load_cx_graph(ring_source=ring_source, ring_sign=ring_sign)
     nodes = graph["nodes"]
 
     model = CXRingNetwork(graph["n_nodes"], graph["edge_index"], graph["synapse_weight"],
@@ -84,9 +90,14 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
         optimizer.zero_grad()
         batch_loss = 0.0
         for i in range(trials_per_step):
-            av, heading = generate_trial(T=T, hold_prob=hold_prob, perturb_amp=perturb_amp,
-                                          seed=seed * SEED_STRIDE + epoch * trials_per_step + i)
-            ext_input = build_external_input(av, nodes)
+            trial_seed = seed * SEED_STRIDE + epoch * trials_per_step + i
+            if anchor:
+                av, heading, theta0 = generate_anchored_trial(
+                    T=T, max_av=max_av, hold_prob=hold_prob, perturb_amp=perturb_amp, seed=trial_seed)
+            else:
+                av, heading = generate_trial(T=T, hold_prob=hold_prob, perturb_amp=perturb_amp, seed=trial_seed)
+                theta0 = None
+            ext_input = build_external_input(av, nodes, cue_phase=theta0)
             states = model(ext_input)
             decoded = decode_heading(states, nodes)
             loss = circular_loss(decoded, heading)
@@ -132,7 +143,8 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
     # limpia, sin que la comparación esté sesgada por qué ensayos de
     # ENTRENAMIENTO le tocaron a cada corrida (ver entrada 11 del cuaderno).
     held_out_loss = evaluate_on_trials(
-        model, nodes, generate_held_out_set(T=T, hold_prob=hold_prob, perturb_amp=perturb_amp))
+        model, nodes, generate_held_out_set(T=T, hold_prob=hold_prob, perturb_amp=perturb_amp,
+                                            anchor=anchor, max_av=max_av))
 
     os.makedirs(INTERIM_DIR, exist_ok=True)
     signs = model.learned_signs().numpy()
@@ -152,6 +164,10 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
         "hold_prob": hold_prob,
         "perturb_amp": perturb_amp,
         "sign_reg": sign_reg,
+        "anchor": anchor,
+        "max_av": max_av,
+        "ring_source": ring_source,
+        "ring_sign": ring_sign,
         "tau": tau,
         "recurrent_gain": recurrent_gain,
         "adam_betas": list(adam_betas),
