@@ -16,10 +16,11 @@ La magnitud de cada peso queda fija al número real de sinapsis; el signo
 gradiente sobre una tarea de integración de rumbo, sin acceso nunca al
 neurotransmisor real de cada neurona.
 
-La red aprende la tarea de forma consistente y mejor que el azar en todas
-las variantes probadas (pérdida held-out ≈0.6 frente a ≈0.85 de nivel de
-azar; es una mejora real pero no una solución ajustada, ver sección 5). Sin
-embargo, **el signo sináptico
+La red reduce de forma consistente el error de la tarea respecto a una fase
+aleatoria (pérdida held-out ≈0.6 frente a ≈1.0), pero no la resuelve: un
+decodificador constante en 0 obtiene 0.18, así que los modelos entrenados son
+unas 3-4 veces peores que la solución trivial (ver sección 5). Además,
+**el signo sináptico
 aprendido no coincide con el neurotransmisor real anotado más de lo
 esperable por azar** (test de permutación de etiqueta de neurotransmisor,
 2000 permutaciones). De todas las evaluaciones de H1 realizadas a lo largo
@@ -182,20 +183,26 @@ proyecto no puede distinguir entre sí con el diseño actual:
    mismas restricciones funcionales** que dieron forma a la asignación
    real de neurotransmisor a lo largo de la evolución. Por bien resuelta
    que esté, una sola tarea es una ventana estrecha sobre las demandas
-   funcionales reales del circuito. **Una comprobación sin entrenamiento
-   apoya esta lectura** (`src/cx_net/real_sign_task_check.py`): al fijar los
-   signos reales del neurotransmisor (magnitudes de sinapsis y resto del
-   modelo iguales), la pérdida held-out es 1.006, no mejor que la de 500
-   asignaciones de neurotransmisor barajadas entre neuronas (media 0.983 ±
-   0.103; p=0.58 de que una asignación barajada sea igual o mejor). En este
-   modelo y con esta tarea, por tanto, la química real no resuelve la tarea
-   ni mejor que el azar. Los 8 modelos `sign_reg` entrenados (0.58-0.72,
-   mejores que el percentil 1 de las asignaciones barajadas, 0.76) hallaron
-   una solución que queda fuera de la región donde estaría la química real.
-   Matiz: esto no prueba que la biología no resuelva la tarea; solo que el
-   modelo simplificado (sin ring neurons ni fan-shaped body, entrada de
-   velocidad angular inyectada a mano, `recurrent_gain` y normalización por
-   nodo elegidos por nosotros) no la reproduce con los signos reales.
+   funcionales reales del circuito. **Dos comprobaciones sin entrenamiento
+   apoyan que la tarea no discrimina la química** (`real_sign_task_check.py`,
+   `real_sign_offset_check.py`). (i) Con la pérdida original, los signos
+   reales fijos dan 1.006 frente a 0.983 ± 0.103 de 500 asignaciones de
+   neurotransmisor barajadas (p=0.58). Esa no es una prueba justa: la
+   pérdida exige el rumbo absoluto sin dar pista de dónde está el 0, así que
+   ni un integrador perfecto con fase inicial arbitraria baja de ≈1.0.
+   (ii) Con una pérdida invariante al desfase constante y tres mapeos de
+   `ring_angle` (el actual y dos intercalados, conformes a Hulse et al.
+   2021), los signos reales tampoco superan a los barajados (p=0.98, 0.77 y
+   0.55; 150 asignaciones por mapeo) y quedan por encima del suelo trivial
+   (0.06, decodificador constante): 0.115-0.459. Es decir, en este modelo
+   los signos reales no producen una red que integre el rumbo, y el 5%
+   inferior de las asignaciones barajadas (≈0.067) es indistinguible de una
+   red estática. Matiz: esto no prueba que la biología no resuelva la tarea;
+   solo que el modelo simplificado (sin ring neurons ni fan-shaped body,
+   entrada de velocidad angular inyectada a mano, `recurrent_gain` y
+   normalización por nodo elegidos por nosotros) no la reproduce con los
+   signos reales. Los modelos entrenados se evaluaron solo con el mapeo
+   actual.
 3. **Limitaciones de la arquitectura**: la magnitud de cada peso queda fija
    al conteo de sinapsis (una decisión deliberada, para que el signo sea
    la única variable libre y H1 sea una prueba limpia, ver `model.py`).
@@ -208,22 +215,30 @@ Ninguna de las tres lecturas implica que H1 sea falsa en general. Lo que
 sí implican es que **este diseño experimental concreto solo excluye
 efectos de acuerdo de signo de +3.3 pp o más (potencia ≥80%, sección 2) y
 no puede refutar ni confirmar de forma concluyente efectos menores**,
-incluso después de resolver el cuello de botella de la polarización. Ese es
-el hallazgo metodológico que se reporta.
+incluso después de resolver el cuello de botella de la polarización. Más
+importante aún: como los modelos no resuelven la tarea mejor que una
+solución trivial (sección 5), es dudoso que los signos aprendidos reflejen
+alguna restricción funcional; el resultado nulo informa sobre este montaje
+(tarea y decodificador) más que sobre la biología. Ese es el hallazgo
+metodológico que se reporta.
 
 ## 5. Limitaciones explícitas
 
-- **`ring_angle` sin validar**: la posición angular usada para decodificar
-  el rumbo es una aproximación secuencial (glomérulo asignado a una
-  posición equiespaciada), no la tabla de correspondencia glomérulo-cuña
-  real de Hulse et al. (2021, Fig. 10). Un intento de corrección
-  (2026-09-16, entrada 10) empeoró la polarización y fue revertido; sigue
-  sin resolverse. El test de permutación de H1 no usa `ring_angle`, pero
-  `task.py` sí lo usa para construir el objetivo de decodificación durante
-  el entrenamiento, así que un mapeo erróneo cambia la tarea que la red
-  aprende y, con ella, los signos aprendidos. Es por tanto una fuente
-  potencial de sesgo sobre H1, no solo sobre la interpretación biológica de
-  la tarea.
+- **`ring_angle` inconsistente con la anatomía**: el mapeo del proyecto
+  (`actual`) coloca los 8 glomérulos de L en media circunferencia y los de R
+  en la otra media. Hulse et al. (2021, texto de EPG y Fig. 16) describen que
+  cada hemisferio del PB muestrea el anillo completo a ≈45° (8 glomérulos por
+  lado), con un desfase L/R de 22.5°, y que EPGt (glomérulo 9) equivale en fase
+  al glomérulo 1. El mapeo intercalado que se descartó el 2026-09-16 (entrada
+  10) es el conforme al artículo; se revirtió por su efecto sobre la
+  polarización, no por un criterio anatómico. La tabla exacta (Fig. 10) no
+  pudo extraerse del texto y el sentido de giro no está verificado. Todos los
+  modelos entrenados de este trabajo usan el mapeo `actual` y no se
+  reentrenó con el corregido. El test de permutación de H1 no usa
+  `ring_angle`, pero `task.py` sí lo usa para el objetivo de decodificación
+  durante el entrenamiento, así que un mapeo erróneo cambia la tarea que la
+  red aprende y, con ella, los signos aprendidos: es una fuente potencial de
+  sesgo sobre H1.
 - **Alcance del subcircuito**: 152 neuronas núcleo del sistema de
   dirección de cabeza, sin las ring neurons de entrada visual ni el
   fan-shaped body completo. Un circuito más amplio podría comportarse de
@@ -236,24 +251,26 @@ el hallazgo metodológico que se reporta.
   6 tipos (`Delta7`=42, `EPGt`=4). Los tipos con menos neuronas tienen
   pocas aristas de origen, así que cualquier señal, o ausencia de señal,
   en ellos debe leerse con esa salvedad.
-- **Solución de tarea moderada**: la pérdida held-out (≈0.6) queda lejos
-  de la de entrenamiento en sobreajuste de un ensayo (≈0.006) y solo
-  moderadamente por debajo del nivel de azar (≈0.85). No se ha
-  demostrado que la red implemente un integrador de rumbo con la
-  estructura biológica; solo que reduce el error. Si la solución no se
-  parece al mecanismo real, no hay razón para esperar que sus signos
-  coincidan con los reales.
-- **El modelo con signos reales no resuelve la tarea** (ver sección 4,
-  lectura 2): con los signos reales fijos la pérdida es 1.006, igual que
-  con signos barajados. Esto es un hallazgo sobre el modelo, no solo sobre
-  H1: hasta que un modelo con signos reales resuelva la tarea, esta no es un
-  banco de pruebas válido para preguntar si el entrenamiento recupera la
-  química. Además, forzar a ±1 los signos de los modelos entrenados degrada
-  su pérdida (0.58-0.72 → 0.70-0.79): la solución aprendida usa valores
-  graduados de `tanh(sign_param)`, es decir, cierta magnitud efectiva, así
-  que "signo libre, magnitud fija" no se cumple estrictamente en la
-  solución y el acuerdo de signo (`sign(sign_param)`) descarta información
-  que la red usa.
+- **La red no resuelve la tarea**: la pérdida held-out (≈0.6) es 3-4 veces
+  peor que la de un decodificador constante en 0 (0.18; el rumbo tiene
+  desviación final ≈1 rad, así que no moverse ya da pérdida baja). La mejora
+  "sobre el azar" se mide contra una fase aleatoria (≈1.0), una referencia
+  que no es pertinente. Con la pérdida invariante al desfase, los modelos
+  entrenados dan 0.08-0.36 frente a 0.06 del decodificador constante. No se
+  ha demostrado que la red implemente un integrador de rumbo, biológico o no.
+  Si la solución no se parece al mecanismo real, no hay razón para esperar
+  que sus signos coincidan con los reales.
+- **El modelo con signos reales tampoco integra el rumbo** (ver sección 4,
+  lectura 2): con signos reales fijos la pérdida invariante al desfase es
+  0.115-0.459 según el mapeo, frente a 0.06 del decodificador constante, y no
+  mejor que con signos barajados. Hasta que un modelo con signos reales
+  resuelva la tarea, esta no es un banco de pruebas válido para preguntar si
+  el entrenamiento recupera la química. Además, forzar a ±1 los signos de
+  los modelos entrenados degrada su pérdida original (0.58-0.72 → 0.70-0.79):
+  la solución aprendida usa valores graduados de `tanh(sign_param)`, es decir,
+  cierta magnitud efectiva, así que "signo libre, magnitud fija" no se cumple
+  estrictamente en la solución y el acuerdo de signo (`sign(sign_param)`)
+  descarta información que la red usa.
 - **Control positivo de potencia parcial**: se midió la potencia del test
   de permutación sembrando señal conocida sobre los signos reales (sección
   2): ≈80% de detección para +3.3 pp de acuerdo, sin poder para efectos de
@@ -290,8 +307,8 @@ el hallazgo metodológico que se reporta.
 
 > Entrenar una red cuya única variable libre es el signo sináptico, sobre
 > la topología real de un circuito de navegación bien caracterizado,
-> reduce el error en una tarea de integración de rumbo por debajo del nivel
-> de azar, sin que el signo aprendido reproduzca la identidad química real
+> reduce el error en una tarea de integración de rumbo respecto a una fase
+> aleatoria, aunque sin alcanzar el de una solución trivial, y sin que el signo aprendido reproduzca la identidad química real
 > más allá del azar. Un primer intento de rediseñar la tarea no consiguió
 > que la red se comprometiera con un signo por arista, lo que dejaba abierta
 > la duda de si el test tenía potencia. Una regularización aplicada
@@ -307,7 +324,7 @@ el hallazgo metodológico que se reporta.
 > real de las sinapsis. Un control positivo de potencia (señal
 > sembrada sobre los signos reales) muestra que el test detecta con ≥80% de
 > probabilidad un acuerdo de +3.3 puntos porcentuales o más sobre el azar,
-> pero no efectos menores. Dado que la solución de tarea es solo moderada y
-> que no se comprobó que el entrenamiento recupere signos conocidos, este
+> pero no efectos menores. Dado que la red no resuelve la tarea mejor que una
+> solución trivial y que no se comprobó que el entrenamiento recupere signos conocidos, este
 > resultado no permite descartar que la señal exista, con menor magnitud, o
 > bajo una tarea o una arquitectura distintas.

@@ -1214,6 +1214,54 @@ resuelva la tarea no es informativa con esta tarea. Queda la validación de
 `ring_angle` (Hulse 2021, Fig. 10): si `ring_angle` es incorrecto, el
 decodificador podría ser la causa de que los signos reales den pérdida ≈1.
 
+## 2026-09-19 (4) — Corrección: referencia de "azar" errónea, `ring_angle` y prueba de signos reales
+
+**Qué se hizo:** búsqueda del mapeo glomérulo-cuña en Hulse et al. (2021)
+(texto de eLife; la Fig. 10 no es extraíble como tabla) y repetición de la
+prueba de signos reales (entrada (3)) con `src/cx_net/real_sign_offset_check.py`:
+pérdida invariante al desfase constante, tres mapeos de `ring_angle`, 150
+asignaciones barajadas por mapeo. Salida: `data/interim/real_sign_offset_check.json`.
+
+**Qué dice el artículo:** 16 cuñas del EB alternan entre PB izquierdo y
+derecho; cada hemisferio muestrea el anillo completo a ≈45° (8 glomérulos),
+L y R desfasados 22.5° (con el bump en L5, el otro queda entre R5 y R4); EPGt
+(glomérulo 9) ≈ glomérulo 1. El mapeo del proyecto (L en media circunferencia,
+R en la otra) lo contradice. El intercalado descartado el 2026-09-16 es el
+conforme; el argumento de "continuidad dentro del hemisferio" de aquella
+reversión no se sostiene (dentro de cada hemisferio quedan consecutivos a
+45°). No verificado: el sentido de giro.
+
+**Errores propios detectados (afectan a lo ya escrito):**
+1. La referencia "azar ≈0.85" (y "held-out 0.6 = mejora real") compara con una
+   fase aleatoria (≈1.0). Un decodificador constante en 0 da **0.179** en el
+   held-out (hold_prob=0.3): los modelos entrenados (0.58-0.72) son 3-4 veces
+   peores que la solución trivial. Un integrador perfecto con fase inicial
+   arbitraria da 0.999: la tarea pide rumbo absoluto sin pista de dónde está
+   el 0.
+2. La entrada (3) (signos reales: 1.006 vs. barajados 0.983) no era una prueba
+   justa por el punto anterior. El commit d1b2e05 contiene esa lectura.
+
+**Resultado (pérdida invariante al desfase; decodificador constante = 0.060):**
+
+| mapeo | signos reales | barajados (media±std, p1) | p(barajado ≤ real) |
+|---|---|---|---|
+| actual | 0.459 | 0.155±0.100, 0.064 | 0.98 |
+| interl+ (R=L+22.5°) | 0.139 | 0.130±0.077, 0.066 | 0.77 |
+| interl- | 0.115 | 0.125±0.057, 0.063 | 0.55 |
+
+Modelos entrenados (mapeo actual): 0.08-0.36. Ninguno baja claramente del
+suelo trivial. La conclusión "los signos reales no dan mejor tarea que los
+barajados" se mantiene con la métrica justa y con los tres mapeos, pero ahora
+es un hallazgo sobre el montaje: la red no integra rumbo ni con signos
+entrenados ni con reales.
+
+**Siguiente paso (decisión pendiente):** el resultado nulo de H1 informa poco
+sobre la biología mientras la tarea sea resoluble trivialmente. Opciones:
+(a) rediseñar la tarea con pista de fase inicial y pérdida invariante o
+penalización de solución constante, con `ring_angle` intercalado, y
+reentrenar; (b) cerrar el preprint como informe metodológico de estas
+limitaciones. (a) reabre la fase experimental cerrada el 2026-09-18 (4).
+
 ## Plantilla para próximas entradas
 
 ```
