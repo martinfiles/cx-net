@@ -16,8 +16,16 @@ import torch.nn as nn
 
 class CXRingNetwork(nn.Module):
     def __init__(self, n_nodes: int, edge_index: torch.Tensor, synapse_weight: torch.Tensor,
-                 tau: float = 5.0, dt: float = 1.0, recurrent_gain: float = 4.0):
+                 tau: float = 5.0, dt: float = 1.0, recurrent_gain: float = 4.0,
+                 activation: str = "tanh"):
+        """`activation="tanh"` (defecto, reproduce todo lo anterior): tasas en
+        (-1, 1); una neurona inhibidora con tasa negativa excitaría a sus
+        dianas, lo que no es fisiológico. `activation="rectified"`:
+        relu(tanh(x)), tasas en [0, 1) (2026-09-19, entrada (7) del cuaderno)."""
         super().__init__()
+        if activation not in ("tanh", "rectified"):
+            raise ValueError(f"activation desconocida: {activation}")
+        self.activation = activation
         self.n_nodes = n_nodes
         self.tau = tau
         self.dt = dt
@@ -53,6 +61,8 @@ class CXRingNetwork(nn.Module):
         messages = w * r[self.edge_src]
         incoming = torch.zeros_like(r).index_add(0, self.edge_dst, messages)
         drive = torch.tanh(incoming + ext_input)
+        if self.activation == "rectified":
+            drive = torch.relu(drive)
         dr = (-r + drive) * (self.dt / self.tau)
         return r + dr
 

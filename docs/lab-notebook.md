@@ -1358,6 +1358,65 @@ régimen con ayuda del neurotransmisor (no filtra información al aprendiz, que
 solo ve hiperparámetros, pero es un grado de libertad que hay que declarar).
 Alternativa: elegirlo solo con redes entrenadas / barajadas.
 
+## 2026-09-19 (7) — Búsqueda de régimen (criterio A): con signos reales la red no integra en ningún régimen probado
+
+**Decisión previa (usuario):** criterio A -- elegir el régimen dinámico de modo
+que la tarea sea realizable con los signos reales. El aprendiz nunca ve el
+neurotransmisor (solo los hiperparámetros elegidos), pero el régimen se
+selecciona con ayuda del ground truth: **grado de libertad que debe declararse
+en el preprint.**
+
+**Qué se hizo:** `src/cx_net/regime_search.py`, sin entrenar, signos reales
+fijos, ambos sentidos de giro, conjunto de AJUSTE (semillas 800M, 20 ensayos;
+el held-out 900M queda reservado). Métricas: pérdida absoluta y pendiente
+(cambio decodificado / cambio real desde t=20; 1 = integra a la velocidad
+correcta). Referencia del conjunto de ajuste: recordar theta0 = 0.537,
+constante = 0.932. Tres rondas (la 2 y la 3 diseñadas tras ver la anterior):
+1. `recurrent_gain` {0.5..16} x `tau` {2,5,10} x ganancia de entrada {1..30} x
+   ganancia de pista {3,10} (144 configs por sentido).
+2. `recurrent_gain` {0.75..3} x `tau` {10,20} x ganancia de entrada {3..300}
+   (50 por sentido).
+3. Activación rectificada `relu(tanh(x))` (tasas >= 0; opción nueva
+   `CXRingNetwork(activation="rectified")`, defecto sin cambios) con
+   `recurrent_gain` {1..16} x `tau` {2..20} x ganancia de entrada {1..100}
+   (100 por sentido). Motivo: con `tanh` las tasas pueden ser negativas y una
+   neurona inhibidora con tasa negativa excitaría a sus dianas.
+
+**Resultado:**
+- Ronda 1: mejor pérdida 0.493 (pendiente -0.08); las configs con pendiente
+  0.6-1.4 (recurrencia débil, tau=2) tienen pérdida 0.76-0.93: siguen la
+  velocidad pero pierden el ancla (el bump no persiste).
+- Ronda 2: mejor pérdida 0.477 (pendiente 0.03); ninguna con pendiente 0.6-1.4.
+- Ronda 3: mejor pérdida 0.470 (pendiente 0.05); la única con pendiente en
+  rango tiene pérdida 1.02.
+- En ninguna ronda hay una configuración que combine ancla (pérdida por
+  debajo de la referencia) y pendiente ~1. Las mejores pérdidas (~0.47-0.49)
+  son solo memoria con un beneficio marginal sobre 0.537.
+- Tensión observada: mantener el bump exige recurrencia fuerte; moverlo con
+  velocidad proporcional exige régimen casi lineal.
+
+**Conclusión:** en este montaje (152 neuronas del núcleo, magnitudes fijas
+normalizadas por neurona destino, dinámica de una sola constante de tiempo,
+entrada de velocidad inyectada en PEN) la red con los signos reales NO
+integra el rumbo en ningún régimen probado (~440 evaluaciones). Por tanto la
+tarea no es realizable con la química real en este modelo y un H1 nulo no
+informa sobre la biología. Se detiene la búsqueda: más rondas serían más
+grados de libertad sin base.
+
+**Hipótesis de por qué (sin verificar):** la normalización por neurona
+destino borra la ganancia relativa entre entradas de tipos distintos (EPG,
+PEN, Delta7) que en el circuito real sí importa; falta la entrada de ring
+neurons/ExR; la entrada de velocidad sintética (antisimétrica por hemisferio,
+en PEN) puede no ser el mecanismo real; dinámica de una sola tau.
+
+**Siguiente paso (decisión pendiente):** (1) cerrar y reformular el preprint
+como informe metodológico con esta comprobación de realizabilidad como
+resultado central; (2) ampliar el modelo con ganancias por TIPO celular
+entrenables (pocos parámetros; el signo por arista sigue siendo el único
+parámetro de arista) y repetir la comprobación de realizabilidad con signos
+reales, cuidando que las ganancias no se ajusten con los signos reales para
+luego dárselas al aprendiz (filtraría información).
+
 ## Plantilla para próximas entradas
 
 ```
