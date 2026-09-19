@@ -1553,6 +1553,64 @@ corrida con las etiquetas de esa corrida, así que la comparación real-vs-baraj
 es de "mejor ajuste alcanzable", no de un ajuste único compartido; (c) el
 `seed` de entrenamiento coincide (0) entre barajados, salvo las réplicas reales.
 
+## 2026-09-19 (11) — Resultados del refuerzo; el neurotransmisor está determinado por el tipo celular
+
+**Resultados** (diseño y criterio de la entrada (10); `src/cx_net/analyze_dose.py`,
+`data/interim/dose_analysis.json`; ninguna corrida excluida):
+
+| grupo | n | held-out | pendiente | integran (<0.466 y pendiente>0.5) |
+|---|---|---|---|---|
+| signos reales (seeds 0,1,2) | 3 | 0.108, 0.124, 0.106 | 0.82, 0.75, 0.84 | 3/3 |
+| barajados (aristas cambiadas 35-50%) | 12 | 0.444-0.598, media 0.496 | max 0.04 | 0/12 |
+| intercambio 10% nominal (aristas cambiadas 3.9-4.4%) | 3 | 0.474-0.507 | -0.03 a 0.01 | 0/3 |
+| intercambio 25% (7.5-11%) | 3 | 0.463-0.491 | -0.01 a 0.01 | 0/3 |
+| intercambio 50% (18-23%) | 3 | 0.475-0.491 | -0.02 a 0.07 | 0/3 |
+
+- **Estadístico preespecificado:** p = (1 + #{barajados <= media real}) / (12 + 1) =
+  **0.077**, que es el mínimo alcanzable con 12 barajados (1/13). NO llega a <0.05;
+  harían falta >= 19. **Aclaración importante:** las 3 corridas reales comparten
+  UNA sola asignación de etiquetas (difieren solo en la semilla de entrenamiento);
+  demuestran reproducibilidad del entrenamiento, no 3 asignaciones distintas. Un
+  test exacto "los 3 reales ocupan los 3 primeros puestos de 15" (p = 1/455) sería
+  incorrecto y NO se usa.
+- **Dosis-respuesta abrupta, no gradual:** con solo ~4% de aristas cambiadas
+  (~6 neuronas) ya no integra ninguna de las 3 réplicas. La solución es muy frágil.
+  Cautela: puede reflejar que el circuito real esté finamente ajustado en este
+  modelo O que el optimizador de 43 parámetros por tipo no pueda compensar
+  perturbaciones pequeñas (sensibilidad del paisaje); no se distinguen.
+
+**Hallazgo estructural (comprobado):** en este subcircuito el neurotransmisor
+está determinado por completo por el tipo celular:
+
+| tipo | neuronas | neurotransmisor |
+|---|---|---|
+| Delta7 | 42 | glutamato (100%) |
+| EPG, EPGt, PEG, PEN_a, PEN_b | 46+4+18+20+22 = 110 | acetilcolina (100%) |
+
+El cuaderno lo sabía (entradas de diseño: "Delta7=glutamato, resto=acetilcolina"),
+pero no se extrajeron las consecuencias:
+1. La "química real" son ~6 bits a nivel de tipo, en la práctica UNO: "Delta7
+   inhibe, el resto excita" (el motivo clásico de inhibición lateral del ring
+   attractor). Aristas con origen Delta7: 2846 de 9160.
+2. **El control positivo de potencia (entrada 2026-09-19 (2)) sobreestima la
+   potencia:** sembró señal por neurona (152 unidades independientes) o por
+   arista; una señal real estaría estructurada por tipo (6 unidades, una de ellas
+   con 42 neuronas). Las cifras "80% de detección a +3.3 pp" no son aplicables a
+   una señal a nivel de tipo y deben rehacerse (o retirarse) en el borrador.
+3. Barajar etiquetas entre neuronas rompe la estructura por tipo; el espacio de
+   hipótesis natural a nivel de tipo es 2^6 = 64 patrones de signo por tipo, y
+   la asignación real es uno de ellos. Con enumeración exhaustiva el p-valor
+   sería exacto (rango entre 64), sin muestreo.
+4. Los "barajados" son alternativas muy heterogéneas (35-50% de aristas con signo
+   distinto); no responde qué parte de la estructura real es necesaria.
+
+**Siguiente paso (decisión pendiente):** enumerar los 64 patrones de signo por
+tipo (mismo protocolo, 600 épocas, ~2.5 h con ~20 corridas en paralelo) para saber
+cuáles integran; con eso el resultado de suficiencia funcional queda exacto y se
+ve qué tipos importan (¿basta "Delta7 inhibe"?, ¿importa el signo de los PEN?).
+Después, reescribir el borrador con estos resultados y rehacer/retirar el control
+de potencia.
+
 ## Plantilla para próximas entradas
 
 ```
