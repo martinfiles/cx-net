@@ -12,13 +12,15 @@ ground truth real.
 import json
 import os
 
+import pandas as pd
 import torch
 
-from .graph_utils import load_cx_graph
+from .evaluate import attach_ground_truth
+from .graph_utils import DATA_DIR, load_cx_graph
 from .model import CXRingNetwork
 from .task import (
     build_external_input, circular_loss, decode_heading, evaluate_on_trials,
-    generate_anchored_trial, generate_held_out_set, generate_trial,
+    generate_anchored_trial, generate_held_out_set, generate_trial, integration_diagnostics,
 )
 
 INTERIM_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data", "interim")
@@ -35,7 +37,9 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
           adam_betas: tuple[float, float] = (0.9, 0.999),
           hold_prob: float = 0.0, perturb_amp: float = 0.0, sign_reg: float = 0.0,
           run_label: str | None = None, anchor: bool = False, max_av: float = 0.08,
-          ring_source: str = "glomerulus", ring_sign: float = 1.0) -> dict:
+          ring_source: str = "glomerulus", ring_sign: float = 1.0,
+          activation: str = "tanh", type_params: bool = False, real_sign_control: bool = False,
+          in_gain: float = 3.0, cue_gain: float = 3.0) -> dict:
     """
     ema_alpha / patience: el primer intento uso ReduceLROnPlateau directamente
     sobre la pérdida cruda de cada época, que es muy ruidosa (cada época usa
@@ -70,14 +74,34 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
     (4)-(6) del cuaderno; `max_av` solo se usa con `anchor=True`): tarea anclada (fase inicial aleatoria + pista breve) y
     `ring_angle` medido en el EB. Con los valores por defecto se reproduce
     exactamente el comportamiento anterior.
+
+    `activation` / `type_params` / `in_gain` / `cue_gain` (entrada (8)):
+    activación rectificada, parámetros por tipo celular (ver `model.py`) y
+    ganancias de la entrada de velocidad y de la pista. `real_sign_control=True`
+    es SOLO un control de realizabilidad: fija los signos al neurotransmisor
+    real y entrena únicamente los parámetros por tipo; nunca debe usarse para
+    obtener nada que se le pase a un aprendiz de signos.
     """
     torch.manual_seed(seed)
     graph = load_cx_graph(ring_source=ring_source, ring_sign=ring_sign)
     nodes = graph["nodes"]
 
+    type_ids = torch.as_tensor(pd.factorize(nodes["type"])[0]) if type_params else None
+    type_names = list(pd.factorize(nodes["type"])[1]) if type_params else None
     model = CXRingNetwork(graph["n_nodes"], graph["edge_index"], graph["synapse_weight"],
-                           tau=tau, recurrent_gain=recurrent_gain)
-    optimizer = torch.optim.Adam([model.sign_param], lr=lr, betas=adam_betas)
+                           tau=tau, recurrent_gain=recurrent_gain, activation=activation,
+                           type_ids=type_ids, learn_type_params=type_params)
+    if real_sign_control:
+        if not type_params:
+            raise ValueError("real_sign_control sin type_params no entrena nada")
+        gt = attach_ground_truth(nodes, DATA_DIR)
+        real_edge_sign = gt["expected_sign"].to_numpy()[graph["edge_index"][0].numpy()]
+        with torch.no_grad():
+            model.sign_param.copy_(torch.as_tensor(real_edge_sign, dtype=torch.float32) * 10.0)
+        model.sign_param.requires_grad_(False)
+        sign_reg = 0.0
+    trainable = ([] if real_sign_control else [model.sign_param]) + model.type_parameters()
+    optimizer = torch.optim.Adam(trainable, lr=lr, betas=adam_betas)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="min", factor=0.5, patience=patience
     )
@@ -97,7 +121,7 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
             else:
                 av, heading = generate_trial(T=T, hold_prob=hold_prob, perturb_amp=perturb_amp, seed=trial_seed)
                 theta0 = None
-            ext_input = build_external_input(av, nodes, cue_phase=theta0)
+            ext_input = build_external_input(av, nodes, gain=in_gain, cue_phase=theta0, cue_gain=cue_gain)
             states = model(ext_input)
             decoded = decode_heading(states, nodes)
             loss = circular_loss(decoded, heading)
@@ -110,7 +134,7 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
             reg.backward()
             reg_loss = reg.item()
 
-        torch.nn.utils.clip_grad_norm_([model.sign_param], max_norm=1.0)
+        torch.nn.utils.clip_grad_norm_(trainable, max_norm=1.0)
         optimizer.step()
 
         ema_loss = batch_loss if ema_loss is None else (1 - ema_alpha) * ema_loss + ema_alpha * batch_loss
@@ -142,9 +166,11 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
     # -- ver task.py) para poder comparar configuraciones/semillas de forma
     # limpia, sin que la comparación esté sesgada por qué ensayos de
     # ENTRENAMIENTO le tocaron a cada corrida (ver entrada 11 del cuaderno).
-    held_out_loss = evaluate_on_trials(
-        model, nodes, generate_held_out_set(T=T, hold_prob=hold_prob, perturb_amp=perturb_amp,
-                                            anchor=anchor, max_av=max_av))
+    held_out_trials = generate_held_out_set(T=T, hold_prob=hold_prob, perturb_amp=perturb_amp,
+                                            anchor=anchor, max_av=max_av)
+    held_out_loss = evaluate_on_trials(model, nodes, held_out_trials, in_gain=in_gain, cue_gain=cue_gain)
+    diagnostics = integration_diagnostics(model, nodes, held_out_trials, in_gain=in_gain,
+                                          cue_gain=cue_gain) if anchor else None
 
     os.makedirs(INTERIM_DIR, exist_ok=True)
     signs = model.learned_signs().numpy()
@@ -166,6 +192,16 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
         "sign_reg": sign_reg,
         "anchor": anchor,
         "max_av": max_av,
+        "activation": activation,
+        "type_params": type_params,
+        "real_sign_control": real_sign_control,
+        "in_gain": in_gain,
+        "cue_gain": cue_gain,
+        "diagnostics": diagnostics,
+        "type_names": type_names,
+        "log_pair_gain": model.log_pair_gain.detach().tolist() if type_params else None,
+        "type_bias": model.type_bias.detach().tolist() if type_params else None,
+        "log_input_scale": float(model.log_input_scale) if type_params else None,
         "ring_source": ring_source,
         "ring_sign": ring_sign,
         "tau": tau,

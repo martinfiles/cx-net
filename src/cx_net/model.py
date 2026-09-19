@@ -17,11 +17,20 @@ import torch.nn as nn
 class CXRingNetwork(nn.Module):
     def __init__(self, n_nodes: int, edge_index: torch.Tensor, synapse_weight: torch.Tensor,
                  tau: float = 5.0, dt: float = 1.0, recurrent_gain: float = 4.0,
-                 activation: str = "tanh"):
+                 activation: str = "tanh", type_ids: torch.Tensor | None = None,
+                 learn_type_params: bool = False):
         """`activation="tanh"` (defecto, reproduce todo lo anterior): tasas en
         (-1, 1); una neurona inhibidora con tasa negativa excitaría a sus
         dianas, lo que no es fisiológico. `activation="rectified"`:
-        relu(tanh(x)), tasas en [0, 1) (2026-09-19, entrada (7) del cuaderno)."""
+        relu(tanh(x)), tasas en [0, 1) (2026-09-19, entrada (7) del cuaderno).
+
+        `learn_type_params=True` (2026-09-19, entrada (8)): añade parámetros
+        COMPARTIDOS POR TIPO celular, nunca por arista: una ganancia positiva
+        por cada par de tipos origen->destino (exp de `log_pair_gain`), un
+        sesgo por tipo y una escala global de la entrada. Compensan que la
+        normalización por neurona destino borra las ganancias relativas entre
+        tipos. El signo por arista sigue siendo el único parámetro de arista.
+        Con el defecto (False) el modelo y sus state_dict no cambian."""
         super().__init__()
         if activation not in ("tanh", "rectified"):
             raise ValueError(f"activation desconocida: {activation}")
@@ -53,14 +62,36 @@ class CXRingNetwork(nn.Module):
         # H1 se lee como sign(sign_param) una vez entrenado.
         self.sign_param = nn.Parameter(torch.randn(edge_index.shape[1]) * 0.1)
 
+        self.learn_type_params = learn_type_params
+        if learn_type_params:
+            if type_ids is None:
+                raise ValueError("learn_type_params requiere type_ids")
+            n_types = int(type_ids.max()) + 1
+            self.n_types = n_types
+            self.register_buffer("type_ids", type_ids.long())
+            self.register_buffer("edge_pair", type_ids.long()[edge_index[0]] * n_types + type_ids.long()[edge_index[1]])
+            self.log_pair_gain = nn.Parameter(torch.zeros(n_types * n_types))
+            self.type_bias = nn.Parameter(torch.zeros(n_types))
+            self.log_input_scale = nn.Parameter(torch.zeros(()))
+
+    def type_parameters(self) -> list:
+        return [self.log_pair_gain, self.type_bias, self.log_input_scale] if self.learn_type_params else []
+
     def effective_weight(self) -> torch.Tensor:
-        return torch.tanh(self.sign_param) * self.synapse_weight * self.recurrent_gain
+        w = torch.tanh(self.sign_param) * self.synapse_weight * self.recurrent_gain
+        if self.learn_type_params:
+            w = w * torch.exp(torch.clamp(self.log_pair_gain, -5.0, 5.0))[self.edge_pair]
+        return w
 
     def step(self, r: torch.Tensor, ext_input: torch.Tensor) -> torch.Tensor:
         w = self.effective_weight()
         messages = w * r[self.edge_src]
         incoming = torch.zeros_like(r).index_add(0, self.edge_dst, messages)
-        drive = torch.tanh(incoming + ext_input)
+        if self.learn_type_params:
+            pre = incoming + ext_input * torch.exp(torch.clamp(self.log_input_scale, -5.0, 5.0)) + self.type_bias[self.type_ids]
+        else:
+            pre = incoming + ext_input
+        drive = torch.tanh(pre)
         if self.activation == "rectified":
             drive = torch.relu(drive)
         dr = (-r + drive) * (self.dt / self.tau)

@@ -167,15 +167,36 @@ def generate_held_out_set(n_trials: int = 30, T: int = 200, hold_prob: float = 0
             for i in range(n_trials)]
 
 
-def evaluate_on_trials(model, nodes, trials) -> float:
+def evaluate_on_trials(model, nodes, trials, in_gain: float = 3.0, cue_gain: float = 3.0) -> float:
     """Pérdida media (sin gradiente) sobre un conjunto de ensayos fijo."""
     with torch.no_grad():
         total = 0.0
         for trial in trials:
             av, heading = trial[0], trial[1]
             theta0 = trial[2] if len(trial) > 2 else None  # tarea anclada: (av, rumbo, theta0)
-            ext_input = build_external_input(av, nodes, cue_phase=theta0)
+            ext_input = build_external_input(av, nodes, gain=in_gain, cue_phase=theta0, cue_gain=cue_gain)
             states = model(ext_input)
             decoded = decode_heading(states, nodes)
             total += circular_loss(decoded, heading).item()
         return total / len(trials)
+
+
+def integration_diagnostics(model, nodes, trials, in_gain: float = 3.0, cue_gain: float = 3.0) -> dict:
+    """Solo tarea anclada: pérdida, error de anclaje a t=20 (grados) y pendiente
+    sum(dd*hc)/sum(hc*hc) entre el cambio decodificado dd y el cambio real hc
+    desde t=20 (1 = integra a velocidad correcta, 0 = no integra)."""
+    import math
+    losses, anchor_err, num, den = [], [], 0.0, 0.0
+    with torch.no_grad():
+        for av, heading, theta0 in trials:
+            states = model(build_external_input(av, nodes, gain=in_gain, cue_phase=theta0, cue_gain=cue_gain))
+            dec = decode_heading(states, nodes)
+            losses.append(circular_loss(dec, heading).item())
+            d = np.unwrap(dec.numpy())
+            anchor_err.append(abs(math.degrees(np.angle(np.exp(1j * (d[20] - theta0))))))
+            dd = d[20:] - d[20]
+            hc = heading[20:] - heading[20]
+            num += float((dd * hc).sum())
+            den += float((hc * hc).sum())
+    return {"loss": float(np.mean(losses)), "anchor_err_deg": float(np.mean(anchor_err)),
+            "slope": num / max(den, 1e-9)}
