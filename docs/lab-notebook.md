@@ -1181,6 +1181,39 @@ red con signos conocidos" no realizada).
 releer coherencia completa (1, 3, 4, 5, 7; la sección 1 aún dice que la
 potencia "se descartó" como explicación), commit, actualizar `README.md`.
 
+## 2026-09-19 (3) — ¿La tarea selecciona los signos reales? (sin entrenar)
+
+**Qué se hizo:** `src/cx_net/real_sign_task_check.py`. Se fija el signo de
+cada arista al del neurotransmisor real de su neurona de origen
+(`sign_param=±10`) y se evalúa la pérdida held-out (hold_prob=0.3, mismo set
+que `signreg05`). Referencias: los 8 modelos `signreg05` (signo blando y
+signo duro) y 500 asignaciones de neurotransmisor barajadas entre neuronas
+(mismo recuento). Salida: `data/interim/real_sign_task_check.json`.
+
+**Resultado / número clave:**
+- Signos reales: pérdida **1.006**. Barajados (n=500): media 0.983, std
+  0.103, rango 0.739-1.216, percentiles 1/5/50/95/99 = 0.76/0.82/0.98/1.15/1.21.
+  p(barajado ≤ real) = 0.58: la química real no resuelve la tarea mejor que
+  un reparto aleatorio de neurotransmisores.
+- Modelos entrenados (signo blando): 0.58-0.72, por debajo del percentil 1
+  de los barajados en 8 de 8. Con signo duro sign(sign_param) a |tanh|=1
+  empeoran a 0.70-0.79: la solución usa valores graduados.
+
+**Interpretación:** apoya la lectura 2 (la tarea no impone la química real
+en este modelo) y ordena las hipótesis: el modelo simplificado no reproduce
+con los signos reales la función biológica, así que el fallo no es de
+"recuperación por el entrenamiento". Matiz: no prueba que el circuito real
+no integre rumbo; el modelo omite ring neurons y fan-shaped body, inyecta la
+velocidad angular a mano y fija ganancia y normalización. Hallazgo lateral:
+la solución entrenada depende de magnitud efectiva graduada, así que
+"magnitud fija" se cumple solo a medias.
+
+**Siguiente paso:** la variante costosa del control de potencia (entrenar
+sobre signos conocidos) pierde prioridad: sin un modelo cuya verdad
+resuelva la tarea no es informativa con esta tarea. Queda la validación de
+`ring_angle` (Hulse 2021, Fig. 10): si `ring_angle` es incorrecto, el
+decodificador podría ser la causa de que los signos reales den pérdida ≈1.
+
 ## Plantilla para próximas entradas
 
 ```

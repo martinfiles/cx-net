@@ -182,7 +182,20 @@ proyecto no puede distinguir entre sí con el diseño actual:
    mismas restricciones funcionales** que dieron forma a la asignación
    real de neurotransmisor a lo largo de la evolución. Por bien resuelta
    que esté, una sola tarea es una ventana estrecha sobre las demandas
-   funcionales reales del circuito.
+   funcionales reales del circuito. **Una comprobación sin entrenamiento
+   apoya esta lectura** (`src/cx_net/real_sign_task_check.py`): al fijar los
+   signos reales del neurotransmisor (magnitudes de sinapsis y resto del
+   modelo iguales), la pérdida held-out es 1.006, no mejor que la de 500
+   asignaciones de neurotransmisor barajadas entre neuronas (media 0.983 ±
+   0.103; p=0.58 de que una asignación barajada sea igual o mejor). En este
+   modelo y con esta tarea, por tanto, la química real no resuelve la tarea
+   ni mejor que el azar. Los 8 modelos `sign_reg` entrenados (0.58-0.72,
+   mejores que el percentil 1 de las asignaciones barajadas, 0.76) hallaron
+   una solución que queda fuera de la región donde estaría la química real.
+   Matiz: esto no prueba que la biología no resuelva la tarea; solo que el
+   modelo simplificado (sin ring neurons ni fan-shaped body, entrada de
+   velocidad angular inyectada a mano, `recurrent_gain` y normalización por
+   nodo elegidos por nosotros) no la reproduce con los signos reales.
 3. **Limitaciones de la arquitectura**: la magnitud de cada peso queda fija
    al conteo de sinapsis (una decisión deliberada, para que el signo sea
    la única variable libre y H1 sea una prueba limpia, ver `model.py`).
@@ -230,6 +243,17 @@ el hallazgo metodológico que se reporta.
   estructura biológica; solo que reduce el error. Si la solución no se
   parece al mecanismo real, no hay razón para esperar que sus signos
   coincidan con los reales.
+- **El modelo con signos reales no resuelve la tarea** (ver sección 4,
+  lectura 2): con los signos reales fijos la pérdida es 1.006, igual que
+  con signos barajados. Esto es un hallazgo sobre el modelo, no solo sobre
+  H1: hasta que un modelo con signos reales resuelva la tarea, esta no es un
+  banco de pruebas válido para preguntar si el entrenamiento recupera la
+  química. Además, forzar a ±1 los signos de los modelos entrenados degrada
+  su pérdida (0.58-0.72 → 0.70-0.79): la solución aprendida usa valores
+  graduados de `tanh(sign_param)`, es decir, cierta magnitud efectiva, así
+  que "signo libre, magnitud fija" no se cumple estrictamente en la
+  solución y el acuerdo de signo (`sign(sign_param)`) descarta información
+  que la red usa.
 - **Control positivo de potencia parcial**: se midió la potencia del test
   de permutación sembrando señal conocida sobre los signos reales (sección
   2): ≈80% de detección para +3.3 pp de acuerdo, sin poder para efectos de
