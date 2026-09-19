@@ -68,14 +68,29 @@ def _ring_angle(row) -> float:
     return 2 * math.pi * idx / 16
 
 
-def load_cx_graph(data_dir: str = DATA_DIR):
+def load_cx_graph(data_dir: str = DATA_DIR, ring_source: str = "glomerulus", ring_sign: float = 1.0):
+    """`ring_source="glomerulus"` (por defecto, reproduce todos los resultados
+    anteriores) usa la aproximación por glomérulo descrita arriba, que
+    contradice la anatomía. `ring_source="eb_synapses"` usa el ángulo medido
+    en el EB a partir de las coordenadas de sinapsis (`extract_eb_angles.py`,
+    data/raw/<dataset>/eb_angles.csv); `ring_sign` (+1/-1) fija el sentido de
+    giro, que ese método deja arbitrario."""
     nodes = pd.read_csv(os.path.join(data_dir, "nodes.csv"))
     edges = pd.read_csv(os.path.join(data_dir, "graph_no_sign.csv"))
 
     parsed = nodes["instance"].apply(_parse_instance)
     nodes["hemisphere"] = parsed.apply(lambda d: d["hemisphere"])
     nodes["glomerulus"] = parsed.apply(lambda d: d["glomerulus"])
-    nodes["ring_angle"] = nodes.apply(_ring_angle, axis=1)
+    if ring_source == "glomerulus":
+        nodes["ring_angle"] = nodes.apply(_ring_angle, axis=1)
+    elif ring_source == "eb_synapses":
+        eb = pd.read_csv(os.path.join(data_dir, "eb_angles.csv"))
+        nodes = nodes.merge(eb[["bodyId", "eb_angle"]], on="bodyId", how="left")
+        in_ring = nodes["type"].isin(RING_POSITION_TYPES)
+        nodes["ring_angle"] = np.where(in_ring, ring_sign * nodes["eb_angle"], np.nan)
+        nodes = nodes.drop(columns="eb_angle")
+    else:
+        raise ValueError(f"ring_source desconocido: {ring_source}")
 
     id_to_idx = {body_id: i for i, body_id in enumerate(nodes["bodyId"])}
     n_nodes = len(nodes)

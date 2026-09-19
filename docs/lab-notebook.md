@@ -1262,6 +1262,53 @@ penalización de solución constante, con `ring_angle` intercalado, y
 reentrenar; (b) cerrar el preprint como informe metodológico de estas
 limitaciones. (a) reabre la fase experimental cerrada el 2026-09-18 (4).
 
+## 2026-09-19 (5) — Fase real de cada neurona en el EB, medida desde coordenadas de sinapsis
+
+**Contexto:** se elige la opción (a) de la entrada (4): rediseñar la tarea y
+reentrenar (sin prisa de publicar). Bloqueo: el grafo solo tiene bodyId, type
+e instance; el mapeo glomérulo -> fase no se puede validar. Comprobación por
+topología (sin signos): con el mapeo intercalado los PEN de L se desplazaban
+-24° y los de R -2° (esperable: ±45° opuestos), y los EPG de entrada y de
+salida de cada PEN eran casi el mismo conjunto de glomérulos.
+
+**Qué se hizo:** el token de neuPrint ya estaba en `.env` (no hace falta
+pasarlo). MaleCNS no tiene ROI de cuñas (solo zonas radiales EBr*), pero
+`fetch_synapses` da coordenadas 3D. `src/cx_net/extract_eb_angles.py`: 261.546
+sinapsis en el EB de 110 neuronas (EPG, EPGt, PEN_a, PEN_b, PEG); plano por PCA
+(89% de la varianza en 2 componentes); ángulo por sinapsis = atan2 en el plano;
+ángulo por neurona = media circular ponderada por confianza. Salida
+`data/raw/malecns/eb_angles.csv` (fuera del repo, regenerable; verificado
+reproducible, dif. 5e-10 rad). `graph_utils.load_cx_graph(ring_source=
+"eb_synapses", ring_sign=±1)`; el defecto sigue siendo el mapeo antiguo.
+
+**Resultado:**
+- Concentración angular por neurona 0.89-0.99: cada neurona ocupa una cuña.
+- EPG por glomérulo (grados, aprox.): L1..L8 = 137, 177, 216, 265, 313, 356,
+  47, 90 (sentido creciente, ~45° por glomérulo); R1..R8 = 115, 65, 22, 335,
+  291, 239, 194, 156 (sentido DECRECIENTE). Cada hemisferio cubre el anillo
+  completo; homólogos L/R desfasados ~22°. EPGt (glomérulo 9): 113-148°, en la
+  fase del glomérulo 1, como en Hulse et al. (2021).
+- **Corrección a la entrada (4):** el mapeo intercalado "conforme al artículo"
+  tampoco era correcto: L y R van en sentidos opuestos (espejo); el intercalado
+  supuso el mismo sentido en ambos. Eso explica el desplazamiento PEN
+  incoherente. Con los ángulos medidos, los PEN de L y R se desplazan en
+  sentidos opuestos con consistencia perfecta (L -6°, R +5.5° con signo +1;
+  concentración 1.0). La magnitud (~6°, no ~45°) es probablemente por sinapsis
+  EPG<->PEN recíprocas en el EB que el grafo no distingue de las del PB; el
+  sentido sí es informativo.
+- Sentido de giro (`ring_sign`): el método lo deja arbitrario. Regla por
+  topología, sin NT: que los PEN de L (empujados con av>0) se desplacen en
+  sentido +, es decir `ring_sign=-1`. Evidencia débil (magnitud pequeña): en el
+  piloto se probarán ambos sentidos y se decidirá por desempeño en la tarea
+  (nunca por acuerdo con el neurotransmisor); queda registrado como grado de
+  libertad.
+
+**Siguiente paso:** tarea anclada (fase inicial aleatoria inyectada como pista
+breve en EPG/EPGt, objetivo theta0 + integral de la velocidad), con velocidad
+angular suficiente para que "recordar theta0 sin integrar" no sea una solución
+buena; línea base trivial a reportar siempre; piloto de 1 semilla por sentido
+antes de barridos.
+
 ## Plantilla para próximas entradas
 
 ```
