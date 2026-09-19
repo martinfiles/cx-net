@@ -1520,6 +1520,39 @@ funcional + fallo de aprendibilidad + trampas metodológicas; (2) reforzar (i)
 con más barajados (p. ej. 20) y una curva dosis-respuesta de neuronas
 intercambiadas (10/25/50%); (3) atacar la aprendibilidad (currículo, inicio, lr).
 
+## 2026-09-19 (10) — Refuerzo de la suficiencia funcional: más barajados y dosis-respuesta (DISEÑO, fijado antes de ver resultados)
+
+**Motivo:** tras la entrada (9), el resultado que sí se sostiene es de suficiencia
+funcional (signos reales + ganancias por tipo integran; barajados no), pero con n
+pequeño (4 barajados por sentido de giro; p de rango = 1/5). Se refuerza con más
+barajados y una curva dosis-respuesta.
+
+**Diseño** (todo `ring_sign=+1`, tanh, `recurrent_gain=2`, `tau=10`, `in_gain=10`,
+`cue_gain=10`, `hold_prob=0.3`, `max_av=0.15`, 600 épocas, `real_sign_control=True`
+con `type_params=True`, mismo protocolo que la entrada (8); 19 corridas nuevas en
+paralelo, `data/interim/launch_dose.sh`):
+- 2 réplicas más con signos reales (`seed=1,2`; ya existe `seed=0`: `realctl_tanh_p`).
+- 8 barajados más (`control_shuffle_seed=5..12`; ya existen 1-4 -> 12 en total).
+- Intercambio parcial: fracción 0.10, 0.25, 0.50 de neuronas cuyas etiquetas se
+  permutan entre sí, 3 réplicas por nivel (`control_swap_fraction`,
+  `control_shuffle_seed=1..3`). Al permutar dentro del subconjunto solo cambia la
+  etiqueta de las neuronas que reciben la otra: se registran `frac_nodes_changed`
+  y `frac_edges_changed` en el JSON y ESA es la abscisa de la curva, no la fracción
+  nominal.
+
+**Criterio primario (fijado antes de ver resultados):** pérdida held-out (30 ensayos
+fijos, semillas 900M). Secundarios: pendiente e error de anclaje. Estadístico: p =
+(1 + #{barajados con held-out <= media de las réplicas reales}) / (N_barajados + 1).
+"Integra" = held-out < 0.466 (memoria sin integrar) Y pendiente > 0.5. No se
+excluye ninguna corrida a posteriori; se reportan todas. La curva dosis-respuesta
+es descriptiva (sin test de tendencia preespecificado).
+
+**Riesgos declarados:** (a) el sentido de giro está fijado a +1 (con -1 el resultado
+de la entrada (8) fue equivalente); (b) las ganancias por tipo se optimizan en cada
+corrida con las etiquetas de esa corrida, así que la comparación real-vs-barajado
+es de "mejor ajuste alcanzable", no de un ajuste único compartido; (c) el
+`seed` de entrenamiento coincide (0) entre barajados, salvo las réplicas reales.
+
 ## Plantilla para próximas entradas
 
 ```

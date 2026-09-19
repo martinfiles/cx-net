@@ -41,7 +41,8 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
           ring_source: str = "glomerulus", ring_sign: float = 1.0,
           activation: str = "tanh", type_params: bool = False, real_sign_control: bool = False,
           in_gain: float = 3.0, cue_gain: float = 3.0,
-          control_shuffle_seed: int | None = None) -> dict:
+          control_shuffle_seed: int | None = None,
+          control_swap_fraction: float | None = None) -> dict:
     """
     ema_alpha / patience: el primer intento uso ReduceLROnPlateau directamente
     sobre la pérdida cruda de cada época, que es muy ruidosa (cada época usa
@@ -97,10 +98,20 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
         if not type_params:
             raise ValueError("real_sign_control sin type_params no entrena nada")
         gt = attach_ground_truth(nodes, DATA_DIR)
-        node_sign = gt["expected_sign"].to_numpy()
-        if control_shuffle_seed is not None:  # control: mismo recuento 110/42, reparto barajado entre neuronas
+        true_node_sign = gt["expected_sign"].to_numpy()
+        node_sign = true_node_sign.copy()
+        if control_swap_fraction is not None:
+            # dosis-respuesta: se elige una fracción de neuronas y se permutan sus etiquetas
+            # entre sí (mismo recuento 110/42); solo cambian las que reciben la otra etiqueta
+            rng = np.random.default_rng(control_shuffle_seed or 0)
+            idx = rng.choice(len(node_sign), size=int(round(control_swap_fraction * len(node_sign))), replace=False)
+            node_sign[idx] = rng.permutation(node_sign[idx])
+        elif control_shuffle_seed is not None:  # control: mismo recuento 110/42, reparto barajado entre neuronas
             node_sign = np.random.default_rng(control_shuffle_seed).permutation(node_sign)
-        real_edge_sign = node_sign[graph["edge_index"][0].numpy()]
+        src_idx = graph["edge_index"][0].numpy()
+        real_edge_sign = node_sign[src_idx]
+        frac_nodes_changed = float((node_sign != true_node_sign).mean())
+        frac_edges_changed = float((real_edge_sign != true_node_sign[src_idx]).mean())
         with torch.no_grad():
             model.sign_param.copy_(torch.as_tensor(real_edge_sign, dtype=torch.float32) * 10.0)
         model.sign_param.requires_grad_(False)
@@ -201,6 +212,9 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
         "type_params": type_params,
         "real_sign_control": real_sign_control,
         "control_shuffle_seed": control_shuffle_seed,
+        "control_swap_fraction": control_swap_fraction,
+        "frac_nodes_changed": frac_nodes_changed if real_sign_control else None,
+        "frac_edges_changed": frac_edges_changed if real_sign_control else None,
         "in_gain": in_gain,
         "cue_gain": cue_gain,
         "diagnostics": diagnostics,
