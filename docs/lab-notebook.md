@@ -1472,6 +1472,54 @@ pendiente ~1. Si el aprendiz no encuentra la solución, el resultado es "el
 descenso de gradiente no recupera una solución que existe", distinto de "la
 tarea no la impone".
 
+## 2026-09-19 (9) — Paso 2: el aprendiz de signos no encuentra la solución que existe
+
+**Qué se hizo:** piloto de 1 semilla, 4 variantes (ring_sign +-1 x sign_reg
+{0.05, 0}), 1000 épocas, signos por arista + parámetros por tipo entrenados
+conjuntamente desde inicio neutro (ganancias 1, sesgos 0, signos ~N(0, 0.1)),
+`recurrent_gain=2`, `tau=10`, `in_gain=10`, `cue_gain=10`, tanh, `hold_prob=0.3`,
+`max_av=0.15`. Etiquetas `joint_sr{0.05,0.0}_{p,m}`, `.venv`.
+
+**Resultado (held-out fijo; referencia memoria pura 0.466; solución con signos
+reales + ganancias por tipo: 0.108/0.125):**
+
+| sign_reg | ring_sign | held-out | pendiente | anclaje | mean_abs_sign |
+|---|---|---|---|---|---|
+| 0.05 | +1 | 0.499 | -0.01 | 4° | 0.71 |
+| 0.05 | -1 | 0.477 | -0.01 | 4° | 0.77 |
+| 0.0 | +1 | 0.561 | -0.10 | 6° | 0.47 |
+| 0.0 | -1 | 0.458 | 0.00 | 4° | 0.56 |
+
+La EMA de entrenamiento quedó plana en ~0.53-0.56 desde la época ~100 en las
+cuatro (los "mejores lotes" 0.23-0.25 son ruido de selección). **Ninguna integra.**
+
+**Interpretación:** hay una solución en el espacio de búsqueda (entrada (8): signos
+reales + ganancias por tipo, 0.11) y la tarea la distingue de las alternativas
+barajadas, pero el descenso de gradiente desde un inicio neutro converge al
+óptimo local "memoria sin integrar". Hallazgo de APRENDIBILIDAD, distinto de
+"la tarea no la impone". Hipótesis sin verificar: paisaje de pérdida con un
+plateau ancho entre la solución de memoria y la de integración (BPTT de 200
+pasos con dinámica casi saturada); el aprendiz de signos parte de |tanh|~0.1
+y el gradiente hacia la integración es débil; no se probó ningún currículo, otro
+inicio, otra tasa de aprendizaje ni más épocas (cada una sería un grado de
+libertad más; el usuario fijó esta como última tentativa).
+
+**Lectura para el preprint:** con los tres controles juntos (entradas (7)-(9)):
+(i) la química real supera claramente a la barajada en resolver la tarea con
+la topología real (2/2 reales integran; 0/8 barajados; ganancias por tipo
+optimizadas igual en todos); (ii) un aprendiz de signos genérico no recupera
+esa solución. Un H1 "el aprendiz converge a la química real" no es evaluable
+porque el aprendiz no converge a NINGUNA solución que integre. Lo que sí se
+sostiene es H1 en versión de suficiencia funcional: la química real es una
+solución (y las barajadas no lo son) -- con n pequeño (4 barajados por sentido de
+giro; p de rango 1/5 por sentido).
+
+**Siguiente paso (decisión pendiente):** ver mensaje al usuario. Opciones:
+(1) cerrar aquí y reescribir el preprint con el resultado de suficiencia
+funcional + fallo de aprendibilidad + trampas metodológicas; (2) reforzar (i)
+con más barajados (p. ej. 20) y una curva dosis-respuesta de neuronas
+intercambiadas (10/25/50%); (3) atacar la aprendibilidad (currículo, inicio, lr).
+
 ## Plantilla para próximas entradas
 
 ```
