@@ -1309,6 +1309,55 @@ angular suficiente para que "recordar theta0 sin integrar" no sea una solución
 buena; línea base trivial a reportar siempre; piloto de 1 semilla por sentido
 antes de barridos.
 
+## 2026-09-19 (6) — Piloto de la tarea anclada: la red ancla la fase pero no integra
+
+**Qué se hizo:** piloto de 1 semilla por sentido de giro (`ring_sign=+1/-1`),
+`anchor=True`, `max_av=0.15`, `hold_prob=0.3`, `sign_reg=0.05`, 1000 épocas
+(`data/interim/anchor_pilot_{p,m}.log`, `model_anchor_pilot_{p,m}.pt`). Criterio
+fijado ANTES del piloto: bajar claramente de la referencia "recordar theta0 sin
+integrar" para lanzar barridos.
+
+**Resultado (held-out fijo, 30 ensayos):**
+
+| | held-out |
+|---|---|
+| recordar theta0 sin integrar (referencia exacta) | 0.466 |
+| decodificador constante | 1.105 |
+| piloto ring_sign=+1 | 0.452 |
+| piloto ring_sign=-1 | 0.477 |
+
+Error de anclaje a t=20: 7-10°. Pendiente (cambio decodificado)/(cambio real)
+≈ 0.01 y -0.03; recorrido máximo del bump 10-20° mientras el rumbo real cambia
+~65°. Es decir: ancla y mantiene la fase (mucho mejor que constante), no
+integra. **Criterio no cumplido: no se lanzan barridos ni H1.** Polarización
+alta igualmente (mean_abs_sign 0.76-0.79).
+
+**Sonda de dinámica** (velocidad constante av=0.3 desde t=25, ganancia de
+entrada 3/10/30; grados que se mueve el bump; solo diagnóstico):
+- Entrenados: |mov| <= 30° y decreciente con la ganancia.
+- Signos reales fijos: ±188° con ganancia 10 y 30 (7° con 3), el signo sigue a
+  `ring_sign`; barajados: 17-88°.
+- La ganancia 10 -> 30 no cambia nada y `max r` = 0.99-1.0 en todos los casos:
+  los EPG están saturados (tanh, `recurrent_gain=4`). El bump se desplaza a un
+  punto fijo y se para, no se mueve con velocidad proporcional a la entrada.
+  Régimen saturado, no un problema de optimización.
+- Con `ring_sign=+1` los signos reales empujan el bump en el sentido de av>0;
+  la regla por topología (entrada (5), evidencia débil) decía -1. Sin resolver.
+
+**Interpretación (hipótesis, sin verificar):** con `tanh` saturado y
+`recurrent_gain=4` la dinámica no tiene un régimen casi lineal donde la
+velocidad del bump escale con la entrada, así que ningún signo entrenado
+alcanza a integrar. La saturación explica también por qué los intentos previos
+de hiperparámetros (`tau`, `recurrent_gain`) no mostraron efecto: la tarea
+antigua no exigía integrar.
+
+**Siguiente paso (decisión pendiente):** explorar `recurrent_gain`, `tau` y
+ganancia de entrada buscando un régimen donde algún modelo integre. Riesgo
+metodológico: si el criterio es "los signos reales integran", se elige el
+régimen con ayuda del neurotransmisor (no filtra información al aprendiz, que
+solo ve hiperparámetros, pero es un grado de libertad que hay que declarar).
+Alternativa: elegirlo solo con redes entrenadas / barajadas.
+
 ## Plantilla para próximas entradas
 
 ```
