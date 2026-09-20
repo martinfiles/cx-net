@@ -1,0 +1,34 @@
+{
+  "n_edges": 9160,
+  "observed_agreement": 0.49323144104803496,
+  "null_mean": 0.4962853711790393,
+  "null_std": 0.004689103328257285,
+  "p_value": 0.7421289355322339,
+  "h1_supported": false,
+  "breakdown_by_type_h2": {
+    "Delta7": {
+      "n_edges": 2846,
+      "agreement": 0.5024595924104006
+    },
+    "EPG": {
+      "n_edges": 3585,
+      "agreement": 0.49567642956764296
+    },
+    "PEN_a(PEN1)": {
+      "n_edges": 1042,
+      "agreement": 0.4875239923224568
+    },
+    "PEN_b(PEN2)": {
+      "n_edges": 945,
+      "agreement": 0.45396825396825397
+    },
+    "PEG": {
+      "n_edges": 590,
+      "agreement": 0.5050847457627119
+    },
+    "EPGt": {
+      "n_edges": 152,
+      "agreement": 0.5
+    }
+  }
+}

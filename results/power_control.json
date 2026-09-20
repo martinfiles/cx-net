@@ -1,0 +1,227 @@
+{
+  "config": {
+    "run_prefix": "signreg05",
+    "n_seeds": 8,
+    "n_permutations": 2000,
+    "n_reps": 200,
+    "q_grid": [
+      0.0,
+      0.01,
+      0.02,
+      0.03,
+      0.05,
+      0.1,
+      0.2
+    ]
+  },
+  "results": {
+    "decoy_edge_q0.00": {
+      "truth": "decoy",
+      "mode": "edge",
+      "q": 0.0,
+      "mean_agreement": 0.4979961790393013,
+      "power": 0.04875,
+      "n_tests": 1600
+    },
+    "decoy_edge_q0.01": {
+      "truth": "decoy",
+      "mode": "edge",
+      "q": 0.01,
+      "mean_agreement": 0.503190297489083,
+      "power": 0.19125,
+      "n_tests": 1600
+    },
+    "decoy_edge_q0.02": {
+      "truth": "decoy",
+      "mode": "edge",
+      "q": 0.02,
+      "mean_agreement": 0.508427538209607,
+      "power": 0.46625,
+      "n_tests": 1600
+    },
+    "decoy_edge_q0.03": {
+      "truth": "decoy",
+      "mode": "edge",
+      "q": 0.03,
+      "mean_agreement": 0.5133157068777292,
+      "power": 0.738125,
+      "n_tests": 1600
+    },
+    "decoy_edge_q0.05": {
+      "truth": "decoy",
+      "mode": "edge",
+      "q": 0.05,
+      "mean_agreement": 0.5233719978165939,
+      "power": 0.974375,
+      "n_tests": 1600
+    },
+    "decoy_edge_q0.10": {
+      "truth": "decoy",
+      "mode": "edge",
+      "q": 0.1,
+      "mean_agreement": 0.5483524836244541,
+      "power": 1.0,
+      "n_tests": 1600
+    },
+    "decoy_edge_q0.20": {
+      "truth": "decoy",
+      "mode": "edge",
+      "q": 0.2,
+      "mean_agreement": 0.598490038209607,
+      "power": 1.0,
+      "n_tests": 1600
+    },
+    "decoy_neuron_q0.00": {
+      "truth": "decoy",
+      "mode": "neuron",
+      "q": 0.0,
+      "mean_agreement": 0.4983125,
+      "power": 0.0525,
+      "n_tests": 1600
+    },
+    "decoy_neuron_q0.01": {
+      "truth": "decoy",
+      "mode": "neuron",
+      "q": 0.01,
+      "mean_agreement": 0.5028979257641921,
+      "power": 0.11375,
+      "n_tests": 1600
+    },
+    "decoy_neuron_q0.02": {
+      "truth": "decoy",
+      "mode": "neuron",
+      "q": 0.02,
+      "mean_agreement": 0.5080835152838428,
+      "power": 0.26375,
+      "n_tests": 1600
+    },
+    "decoy_neuron_q0.03": {
+      "truth": "decoy",
+      "mode": "neuron",
+      "q": 0.03,
+      "mean_agreement": 0.513446097161572,
+      "power": 0.430625,
+      "n_tests": 1600
+    },
+    "decoy_neuron_q0.05": {
+      "truth": "decoy",
+      "mode": "neuron",
+      "q": 0.05,
+      "mean_agreement": 0.5230932041484716,
+      "power": 0.68625,
+      "n_tests": 1600
+    },
+    "decoy_neuron_q0.10": {
+      "truth": "decoy",
+      "mode": "neuron",
+      "q": 0.1,
+      "mean_agreement": 0.5481656659388646,
+      "power": 0.976875,
+      "n_tests": 1600
+    },
+    "decoy_neuron_q0.20": {
+      "truth": "decoy",
+      "mode": "neuron",
+      "q": 0.2,
+      "mean_agreement": 0.5983103165938864,
+      "power": 1.0,
+      "n_tests": 1600
+    },
+    "real_edge_q0.01": {
+      "truth": "real",
+      "mode": "edge",
+      "q": 0.01,
+      "mean_agreement": 0.501627865720524,
+      "power": 0.2475,
+      "n_tests": 1600
+    },
+    "real_edge_q0.02": {
+      "truth": "real",
+      "mode": "edge",
+      "q": 0.02,
+      "mean_agreement": 0.5066799945414847,
+      "power": 0.40875,
+      "n_tests": 1600
+    },
+    "real_edge_q0.03": {
+      "truth": "real",
+      "mode": "edge",
+      "q": 0.03,
+      "mean_agreement": 0.5117397652838428,
+      "power": 0.625,
+      "n_tests": 1600
+    },
+    "real_edge_q0.05": {
+      "truth": "real",
+      "mode": "edge",
+      "q": 0.05,
+      "mean_agreement": 0.5216835425764192,
+      "power": 0.875,
+      "n_tests": 1600
+    },
+    "real_edge_q0.10": {
+      "truth": "real",
+      "mode": "edge",
+      "q": 0.1,
+      "mean_agreement": 0.5469759143013101,
+      "power": 1.0,
+      "n_tests": 1600
+    },
+    "real_edge_q0.20": {
+      "truth": "real",
+      "mode": "edge",
+      "q": 0.2,
+      "mean_agreement": 0.5973352210698689,
+      "power": 1.0,
+      "n_tests": 1600
+    },
+    "real_neuron_q0.01": {
+      "truth": "real",
+      "mode": "neuron",
+      "q": 0.01,
+      "mean_agreement": 0.5018142740174674,
+      "power": 0.18125,
+      "n_tests": 1600
+    },
+    "real_neuron_q0.02": {
+      "truth": "real",
+      "mode": "neuron",
+      "q": 0.02,
+      "mean_agreement": 0.5064213291484716,
+      "power": 0.26625,
+      "n_tests": 1600
+    },
+    "real_neuron_q0.03": {
+      "truth": "real",
+      "mode": "neuron",
+      "q": 0.03,
+      "mean_agreement": 0.5115013646288209,
+      "power": 0.38,
+      "n_tests": 1600
+    },
+    "real_neuron_q0.05": {
+      "truth": "real",
+      "mode": "neuron",
+      "q": 0.05,
+      "mean_agreement": 0.5218026746724891,
+      "power": 0.634375,
+      "n_tests": 1600
+    },
+    "real_neuron_q0.10": {
+      "truth": "real",
+      "mode": "neuron",
+      "q": 0.1,
+      "mean_agreement": 0.5471743995633188,
+      "power": 0.939375,
+      "n_tests": 1600
+    },
+    "real_neuron_q0.20": {
+      "truth": "real",
+      "mode": "neuron",
+      "q": 0.2,
+      "mean_agreement": 0.5976237036026201,
+      "power": 1.0,
+      "n_tests": 1600
+    }
+  }
+}

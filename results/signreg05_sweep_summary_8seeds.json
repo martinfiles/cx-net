@@ -1,0 +1,302 @@
+{
+  "all_results": {
+    "signreg05_seed0": {
+      "run_label": "signreg05_seed0",
+      "n_epochs": 1000,
+      "T": 200,
+      "lr": 0.05,
+      "seed": 0,
+      "trials_per_step": 16,
+      "hold_prob": 0.3,
+      "perturb_amp": 0.0,
+      "sign_reg": 0.05,
+      "tau": 5.0,
+      "recurrent_gain": 4.0,
+      "adam_betas": [
+        0.9,
+        0.999
+      ],
+      "loss_first": 1.2475687265396118,
+      "loss_last": 0.4795649095904082,
+      "loss_min": 0.39007113594561815,
+      "held_out_loss": 0.5924543569485347,
+      "n_edges": 9160,
+      "frac_excitatory_learned": 0.495414847161572,
+      "mean_abs_sign": 0.7936394214630127,
+      "frac_polarized_gt_0.9": 0.5784934759140015,
+      "h1_p_value": 0.6176911544227887,
+      "h1_observed_agreement": 0.4965065502183406,
+      "h1_supported": false
+    },
+    "signreg05_seed1": {
+      "run_label": "signreg05_seed1",
+      "n_epochs": 1000,
+      "T": 200,
+      "lr": 0.05,
+      "seed": 1,
+      "trials_per_step": 16,
+      "hold_prob": 0.3,
+      "perturb_amp": 0.0,
+      "sign_reg": 0.05,
+      "tau": 5.0,
+      "recurrent_gain": 4.0,
+      "adam_betas": [
+        0.9,
+        0.999
+      ],
+      "loss_first": 0.9143178518861532,
+      "loss_last": 0.8633314790204167,
+      "loss_min": 0.47947235754691064,
+      "held_out_loss": 0.7231645142038663,
+      "n_edges": 9160,
+      "frac_excitatory_learned": 0.5160480349344978,
+      "mean_abs_sign": 0.7182796597480774,
+      "frac_polarized_gt_0.9": 0.3703056871891022,
+      "h1_p_value": 0.005497251374312844,
+      "h1_observed_agreement": 0.5193231441048035,
+      "h1_supported": true
+    },
+    "signreg05_seed2": {
+      "run_label": "signreg05_seed2",
+      "n_epochs": 1000,
+      "T": 200,
+      "lr": 0.05,
+      "seed": 2,
+      "trials_per_step": 16,
+      "hold_prob": 0.3,
+      "perturb_amp": 0.0,
+      "sign_reg": 0.05,
+      "tau": 5.0,
+      "recurrent_gain": 4.0,
+      "adam_betas": [
+        0.9,
+        0.999
+      ],
+      "loss_first": 0.9207332581281662,
+      "loss_last": 0.43777482444420457,
+      "loss_min": 0.3883226504549384,
+      "held_out_loss": 0.602767730752627,
+      "n_edges": 9160,
+      "frac_excitatory_learned": 0.49945414847161573,
+      "mean_abs_sign": 0.6055814027786255,
+      "frac_polarized_gt_0.9": 0.2680130898952484,
+      "h1_p_value": 0.2943528235882059,
+      "h1_observed_agreement": 0.5029475982532751,
+      "h1_supported": false
+    },
+    "signreg05_seed3": {
+      "run_label": "signreg05_seed3",
+      "n_epochs": 1000,
+      "T": 200,
+      "lr": 0.05,
+      "seed": 3,
+      "trials_per_step": 16,
+      "hold_prob": 0.3,
+      "perturb_amp": 0.0,
+      "sign_reg": 0.05,
+      "tau": 5.0,
+      "recurrent_gain": 4.0,
+      "adam_betas": [
+        0.9,
+        0.999
+      ],
+      "loss_first": 0.8933262377977371,
+      "loss_last": 0.5470221075229347,
+      "loss_min": 0.3985054222866893,
+      "held_out_loss": 0.5820419455567996,
+      "n_edges": 9160,
+      "frac_excitatory_learned": 0.4970524017467249,
+      "mean_abs_sign": 0.43911176919937134,
+      "frac_polarized_gt_0.9": 0.08810043334960938,
+      "h1_p_value": 0.15242378810594703,
+      "h1_observed_agreement": 0.50382096069869,
+      "h1_supported": false
+    },
+    "signreg05_seed4": {
+      "run_label": "signreg05_seed4",
+      "n_epochs": 1000,
+      "T": 200,
+      "lr": 0.05,
+      "seed": 4,
+      "trials_per_step": 16,
+      "hold_prob": 0.3,
+      "perturb_amp": 0.0,
+      "sign_reg": 0.05,
+      "tau": 5.0,
+      "recurrent_gain": 4.0,
+      "adam_betas": [
+        0.9,
+        0.999
+      ],
+      "loss_first": 1.1082490235567093,
+      "loss_last": 0.5296073919162154,
+      "loss_min": 0.41177163179963827,
+      "held_out_loss": 0.7147755692402522,
+      "n_edges": 9160,
+      "frac_excitatory_learned": 0.49748908296943234,
+      "mean_abs_sign": 0.592743456363678,
+      "frac_polarized_gt_0.9": 0.22401747107505798,
+      "h1_p_value": 0.6861569215392304,
+      "h1_observed_agreement": 0.4957423580786026,
+      "h1_supported": false
+    },
+    "signreg05_seed5": {
+      "run_label": "signreg05_seed5",
+      "n_epochs": 1000,
+      "T": 200,
+      "lr": 0.05,
+      "seed": 5,
+      "trials_per_step": 16,
+      "hold_prob": 0.3,
+      "perturb_amp": 0.0,
+      "sign_reg": 0.05,
+      "tau": 5.0,
+      "recurrent_gain": 4.0,
+      "adam_betas": [
+        0.9,
+        0.999
+      ],
+      "loss_first": 0.8259519897401333,
+      "loss_last": 0.5343999080359936,
+      "loss_min": 0.4072527810931206,
+      "held_out_loss": 0.6387662217020988,
+      "n_edges": 9160,
+      "frac_excitatory_learned": 0.48602620087336246,
+      "mean_abs_sign": 0.7393713593482971,
+      "frac_polarized_gt_0.9": 0.5196506381034851,
+      "h1_p_value": 0.999000499750125,
+      "h1_observed_agreement": 0.475764192139738,
+      "h1_supported": false
+    },
+    "signreg05_seed6": {
+      "run_label": "signreg05_seed6",
+      "n_epochs": 1000,
+      "T": 200,
+      "lr": 0.05,
+      "seed": 6,
+      "trials_per_step": 16,
+      "hold_prob": 0.3,
+      "perturb_amp": 0.0,
+      "sign_reg": 0.05,
+      "tau": 5.0,
+      "recurrent_gain": 4.0,
+      "adam_betas": [
+        0.9,
+        0.999
+      ],
+      "loss_first": 0.7528446894139051,
+      "loss_last": 0.4556135260500014,
+      "loss_min": 0.37452833727002144,
+      "held_out_loss": 0.5957350691159566,
+      "n_edges": 9160,
+      "frac_excitatory_learned": 0.48373362445414847,
+      "mean_abs_sign": 0.8384833931922913,
+      "frac_polarized_gt_0.9": 0.6911572217941284,
+      "h1_p_value": 0.912543728135932,
+      "h1_observed_agreement": 0.4854803493449782,
+      "h1_supported": false
+    },
+    "signreg05_seed7": {
+      "run_label": "signreg05_seed7",
+      "n_epochs": 1000,
+      "T": 200,
+      "lr": 0.05,
+      "seed": 7,
+      "trials_per_step": 16,
+      "hold_prob": 0.3,
+      "perturb_amp": 0.0,
+      "sign_reg": 0.05,
+      "tau": 5.0,
+      "recurrent_gain": 4.0,
+      "adam_betas": [
+        0.9,
+        0.999
+      ],
+      "loss_first": 1.0993886552751064,
+      "loss_last": 0.5128983752802014,
+      "loss_min": 0.3774278159253299,
+      "held_out_loss": 0.5986504385868708,
+      "n_edges": 9160,
+      "frac_excitatory_learned": 0.49170305676855897,
+      "mean_abs_sign": 0.7686360478401184,
+      "frac_polarized_gt_0.9": 0.5169214010238647,
+      "h1_p_value": 0.7421289355322339,
+      "h1_observed_agreement": 0.49323144104803496,
+      "h1_supported": false
+    }
+  },
+  "summary": {
+    "mean_abs_sign": {
+      "mean": 0.686980813741684,
+      "stdev": 0.12332206885845817,
+      "values": [
+        0.7936394214630127,
+        0.7182796597480774,
+        0.6055814027786255,
+        0.43911176919937134,
+        0.592743456363678,
+        0.7393713593482971,
+        0.8384833931922913,
+        0.7686360478401184
+      ]
+    },
+    "frac_polarized_gt_0.9": {
+      "mean": 0.4070824272930622,
+      "stdev": 0.1906474293583678,
+      "values": [
+        0.5784934759140015,
+        0.3703056871891022,
+        0.2680130898952484,
+        0.08810043334960938,
+        0.22401747107505798,
+        0.5196506381034851,
+        0.6911572217941284,
+        0.5169214010238647
+      ]
+    },
+    "held_out_loss": {
+      "mean": 0.6310444807633757,
+      "stdev": 0.053083389875072176,
+      "values": [
+        0.5924543569485347,
+        0.7231645142038663,
+        0.602767730752627,
+        0.5820419455567996,
+        0.7147755692402522,
+        0.6387662217020988,
+        0.5957350691159566,
+        0.5986504385868708
+      ]
+    },
+    "loss_min": {
+      "mean": 0.40341901654028334,
+      "stdev": 0.031242995340021375,
+      "values": [
+        0.39007113594561815,
+        0.47947235754691064,
+        0.3883226504549384,
+        0.3985054222866893,
+        0.41177163179963827,
+        0.4072527810931206,
+        0.37452833727002144,
+        0.3774278159253299
+      ]
+    },
+    "h1_p_value": {
+      "mean": 0.551224387806097,
+      "stdev": 0.3378178696527391,
+      "values": [
+        0.6176911544227887,
+        0.005497251374312844,
+        0.2943528235882059,
+        0.15242378810594703,
+        0.6861569215392304,
+        0.999000499750125,
+        0.912543728135932,
+        0.7421289355322339
+      ]
+    },
+    "n_seeds_crossing_polarization_threshold": 7,
+    "n_seeds_h1_significant": 1
+  }
+}

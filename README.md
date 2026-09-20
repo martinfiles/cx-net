@@ -26,6 +26,16 @@ celular (Delta7 = glutamato, resto = acetilcolina). Detalle y retractaciones en
 [`docs/lab-notebook.md`](docs/lab-notebook.md).
 Ver hoja de ruta más abajo.
 
+## Figuras
+
+Se regeneran con `python -m src.cx_net.make_figures` (leen solo de `results/`).
+
+![Un decodificador inerte supera a todos los modelos entrenados](docs/figures/fig1.png)
+![Los dos hemisferios recorren el anillo en sentidos opuestos](docs/figures/fig2.png)
+![26 de 64 patrones integran; la asignación real es uno más](docs/figures/fig3.png)
+![Ningún signo por tipo basta](docs/figures/fig4.png)
+![La solución con la química real usa Delta7 con tasa negativa](docs/figures/fig5.png)
+
 ## Datos
 
 - Conectividad del subcircuito CX (PB, EB, FB, NO) vía [neuprint-python](https://github.com/connectome-neuprint/neuprint-python) (hemibrain, dataset piloto) y [caveclient](https://github.com/CAVEconnectome/CAVEclient) (MaleCNS v1.0).
@@ -77,6 +87,25 @@ configuraciones exactas. **Entrenar siempre con el intérprete del `.venv`**: co
 torch 2.4.1 (Python del sistema) el gradiente de `atan2(0,0)` es `nan`.
 
 Registro de decisiones y resultados: [`docs/lab-notebook.md`](docs/lab-notebook.md).
+
+## Reproducibilidad
+
+- **Datos.** No se redistribuyen: `data/` está fuera del repositorio. Hace falta un
+  token personal de neuPrint (`.env`) y `python -m src.cx_net.extract_graph` (por defecto `--dataset male-cns:v1.0`) para
+  regenerar el grafo de `male-cns:v1.0`; `python -m src.cx_net.extract_eb_angles` regenera
+  la fase angular de cada neurona.
+- **Resultados.** `results/` contiene los resúmenes que respaldan el borrador
+  (`runs_summary.csv`: una fila por corrida; análisis de los 64 patrones, del refuerzo
+  y de la búsqueda de régimen; ángulos agregados por glomérulo). `python -m
+  src.cx_net.collect_results` los reconstruye desde `data/interim/`.
+- **Entorno.** Fija tu versión de PyTorch: con `torch` 2.4.1 el gradiente de `atan2(0,0)`
+  era `nan` (corregido en `task.decode_heading`; el entrenamiento por defecto reproduce
+  exactamente `epoch 0/25` de `signreg05_seed0` en `torch` 2.4.1 y 2.14).
+- **Coste.** Cada entrenamiento de 600 épocas tarda ≈40-50 min en CPU con ~20 en
+  paralelo; la enumeración de 64 patrones lleva ≈2,5 h en 16 núcleos.
+- **Cuaderno.** [`docs/lab-notebook.md`](docs/lab-notebook.md) registra cada decisión,
+  incluidos los errores y sus correcciones; las afirmaciones retractadas están en la
+  tabla de la sección 9 de [`docs/preprint-discussion.md`](docs/preprint-discussion.md).
 
 ## Referencias clave
 
