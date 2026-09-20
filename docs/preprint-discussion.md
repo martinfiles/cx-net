@@ -1,127 +1,80 @@
-# Discusión metodológica (borrador) — CX-Net
+# Resultados y discusión metodológica (borrador v2) — CX-Net
 
-> Borrador de trabajo para la sección de discusión del preprint. Fuente:
-> `docs/lab-notebook.md` (registro completo, 2026-09-16 a 2026-09-19). Este
-> documento reorganiza esa cronología en una narrativa argumentativa; el
-> cuaderno sigue siendo la fuente primaria de datos y decisiones.
+> Borrador de trabajo del preprint. Fuente primaria de datos y decisiones:
+> `docs/lab-notebook.md` (2026-09-16 a 2026-09-20). **Esta versión reescribe la
+> anterior** tras las entradas (4)-(13) del cuaderno: varias afirmaciones de la
+> v1 quedan retractadas (tabla de la sección 9). Enfoque: informe metodológico
+> y negativo.
 
-## 1. Resultado central
+## 1. Resumen
 
-Entrenamos una red recurrente cuya única restricción estructural es la
-topología sináptica real del núcleo del sistema de dirección de cabeza del
-complejo central de *Drosophila melanogaster* (152 neuronas, 9.160 aristas;
-`EPG`, `EPGt`, `PEN_a(PEN1)`, `PEN_b(PEN2)`, `PEG`, `Delta7`; male-cns:v1.0).
-La magnitud de cada peso queda fija al número real de sinapsis; el signo
-(excitador/inhibidor) es el único parámetro libre, entrenado por descenso de
-gradiente sobre una tarea de integración de rumbo, sin acceso nunca al
-neurotransmisor real de cada neurona.
+Preguntamos si una red recurrente cuya única restricción estructural es la
+topología sináptica real del núcleo del sistema de dirección de cabeza de
+*Drosophila* (152 neuronas, 9.160 aristas; male-cns:v1.0; `EPG`, `EPGt`,
+`PEN_a`, `PEN_b`, `PEG`, `Delta7`), con la magnitud de cada peso fijada al
+número real de sinapsis y el signo como único parámetro de arista, recupera por
+descenso de gradiente el neurotransmisor real de cada neurona (H1).
 
-La red reduce de forma consistente el error de la tarea respecto a una fase
-aleatoria (pérdida held-out ≈0.6 frente a ≈1.0), pero no la resuelve: un
-decodificador constante en 0 obtiene 0.18, así que los modelos entrenados son
-unas 3-4 veces peores que la solución trivial (ver sección 5). Además,
-**el signo sináptico
-aprendido no coincide con el neurotransmisor real anotado más de lo
-esperable por azar** (test de permutación de etiqueta de neurotransmisor,
-2000 permutaciones). De todas las evaluaciones de H1 realizadas a lo largo
-del proyecto, ninguna sobrevive como evidencia reproducible a favor de H1.
+**No encontramos evidencia de que lo haga, y el diseño no permitía encontrarla.**
+El valor del trabajo está en cinco hallazgos metodológicos, cada uno de los
+cuales invalida una versión anterior del experimento:
 
-Este resultado negativo no depende de una sola corrida: se llegó a él tras
-descartar sistemáticamente, con metodología multi-semilla, la explicación
-más obvia, que la falta de señal se debiera simplemente a una potencia
-estadística insuficiente por polarización de signo débil. Un control
-positivo de potencia (sección 2) acota además el resultado: el test habría
-detectado un acuerdo de +3.3 pp o más con ≥80% de probabilidad, pero no
-efectos menores.
+1. La tarea original de integración de rumbo era resoluble de forma trivial: un
+   decodificador constante superaba a todos los modelos entrenados (0.18 frente
+   a 0.58-0.72), y la referencia de "azar" usada inicialmente era una fase
+   aleatoria, no una solución trivial (sección 4).
+2. La geometría angular del anillo, medida con coordenadas de sinapsis, es un
+   espejo entre hemisferios que ningún mapeo asumido recogía (sección 5).
+3. Con una tarea bien planteada, el modelo original no puede integrar el rumbo
+   ni siquiera con los signos reales en ningún régimen dinámico explorado (588
+   evaluaciones); con ganancias por tipo celular sí, pero **la asignación real
+   de neurotransmisor no es especial**: 26 de los 64 patrones de signo por tipo
+   integran y la real queda en el puesto 22 (p exacto = 0.34), apoyándose en
+   tasas negativas no fisiológicas (sección 6).
+4. Un aprendiz de signos genérico no encuentra esa solución (sección 7).
+5. El neurotransmisor es función exacta del tipo celular en este subcircuito
+   (Delta7 = glutamato, resto = acetilcolina), lo que reduce la "química real"
+   a un dato de tipo y invalida los cálculos de potencia por neurona (sección 3).
 
-## 2. El problema de potencia estadística y cómo se resolvió
+## 2. Diseño
 
-Un test de acuerdo de signo solo es informativo si la red se ha
-comprometido con un signo por arista (`|tanh(sign_param)|` cercano a 1).
-Las primeras evaluaciones de H1 (2026-09-16/17, ver cuaderno, entradas
-2026-09-16 (7) y 2026-09-17 (2)/(5)) se hicieron sobre modelos con
-polarización débil (`mean_abs_sign` entre 0.31 y 0.36, muy por debajo del
-umbral de referencia de 0.5 usado en este proyecto). El resultado (p>0.9)
-no era concluyente: un modelo que apenas decidió sus signos no permite
-distinguir entre "H1 es falsa" y "el test no tuvo ocasión de detectar
-nada".
+- **Modelo.** Red recurrente de tasas con `tanh`, magnitudes de peso fijas
+  (conteo de sinapsis normalizado por neurona destino), signo por arista
+  parametrizado por `tanh(sign_param)` y leído como `sign(sign_param)`.
+- **Tarea original.** Integración de velocidad angular inyectada en PEN; el
+  rumbo se decodifica como vector poblacional de EPG/EPGt sobre `ring_angle`;
+  pérdida `1 − cos`. Variantes: `hold_prob` (tramos de quietud), `perturb_amp`
+  (ruido de entrada), `sign_reg` (regularización de polarización del signo).
+- **Tarea anclada** (sección 4): fase inicial aleatoria θ₀ inyectada como pulso
+  en EPG/EPGt; objetivo θ₀ + ∫velocidad; `max_av=0.15`, `hold_prob=0.3`.
+- **Evaluación de H1.** Acuerdo entre `sign(sign_param)` y el signo del
+  neurotransmisor de la neurona de origen; test de permutación de etiquetas
+  entre neuronas (2000 permutaciones, una cola).
+- **Ground truth.** `predictedNt` de male-cns:v1.0. Hecho estructural: **el
+  neurotransmisor es función exacta del tipo** (tabla siguiente).
 
-Se probaron cuatro vías distintas para forzar más compromiso de signo, cada
-una con protocolo multi-semilla (3 a 8 semillas, set de validación
-held-out fijo, comparación por solapamiento entre grupos) para evitar
-repetir el error metodológico temprano del proyecto: una sola corrida por
-configuración (entrada 2026-09-16 (11) del cuaderno).
+| tipo | neuronas | neurotransmisor |
+|---|---|---|
+| Delta7 | 42 | glutamato (100%) |
+| EPG, EPGt, PEG, PEN_a, PEN_b | 46+4+18+20+22 = 110 | acetilcolina (100%) |
 
-| Vía | Mecanismo | Mejor `mean_abs_sign` | ¿Sin solapamiento vs. baseline? |
-|---|---|---|---|
-| Hiperparámetros de dinámica (`tau`, `recurrent_gain`, momentum, `trials_per_step`) | Optimización | ~0.31-0.35, sin diferencia consistente | No aplica: no hubo efecto |
-| `hold_prob` (rediseño de tarea: tramos de quietud forzada, memoria sin entrada) | Diseño de tarea | 0.349-0.364 | Sí, pero insuficiente para cruzar el umbral |
-| `hold_prob` + `perturb_amp` (rediseño de tarea: ruido de entrada a filtrar) | Diseño de tarea | 0.465 ± 0.163 (bimodal) | No, solapa con `hold_prob` solo |
-| `hold_prob` + `sign_reg` (regularización directa sobre el parámetro de signo) | Optimización, independiente de la tarea | **0.687 ± 0.123** | **Sí: `mean_abs_sign` de las 8 semillas queda por encima del máximo del baseline** (7 de 8 cruzan además el umbral de referencia) |
+## 3. H1 sobre la tarea original: nulo, y poco informativo
 
-Solo las dos últimas vías modifican de forma significativa la
-polarización, y solo `sign_reg` (penalización `1 - tanh(sign_param)^2`,
-que no favorece ningún signo en particular, solo penaliza la indecisión)
-la resuelve de forma limpia y reproducible: 7 de 8 semillas cruzan el
-umbral de referencia (`frac_polarized_gt_0.9 > 10%`), con un coste
-moderado y desigual en el desempeño de la tarea (`held_out_loss` sube de
-0.603±0.009 a 0.631±0.053, aunque la mayoría de las semillas quedan
-indistinguibles del baseline).
+**Polarización.** Un test de acuerdo solo es informativo si la red se
+compromete con un signo por arista. Los modelos iniciales tenían polarización
+débil (`mean_abs_sign` 0.31-0.36). Cuatro vías intentaron corregirlo, con
+protocolo multi-semilla (3-8 semillas, held-out fijo): hiperparámetros de
+dinámica (sin efecto), `hold_prob` (0.349-0.364, insuficiente), `hold_prob` +
+`perturb_amp` (0.465 ± 0.163, bimodal; 1 de 8 semillas polariza) y `hold_prob` +
+`sign_reg=0.05` (0.687 ± 0.123; 7 de 8 semillas cruzan el umbral de referencia
+`frac_polarized_gt_0.9 > 10%`). Solo `sign_reg` lo resuelve de forma limpia; se
+añadió tras observar el techo de polarización, no formaba parte del diseño
+original.
 
-### Control positivo de potencia del test (medido)
+**H1 con `sign_reg`.** El acuerdo con el neurotransmisor real es
+prácticamente el del azar:
 
-Que la red esté polarizada es condición necesaria, no suficiente, para que
-el test sea informativo. Para medir la potencia en vez de inferirla
-(`src/cx_net/power_control.py`, `data/interim/power_control.json`) se
-sembró señal conocida sobre los signos reales de los 8 modelos `sign_reg`:
-una fracción q de las neuronas de origen (o, en la variante de aristas
-independientes, de las aristas) pasa a tener el signo de la "verdad", y el
-resto conserva el signo aprendido. Se aplicó el mismo test que en H1 (2000
-permutaciones, una cola, alfa=0.05), 200 repeticiones por modelo y valor
-de q. Como "verdad" se usó una asignación de etiquetas barajada, sorteada
-de nuevo en cada repetición (`decoy`), de modo que q=0 mide el falso
-positivo y no hereda la señal residual de la semilla 1. Con las etiquetas
-reales (`real`) la potencia es similar (hasta ≈0.07 mayor con q bajo, por la
-señal residual de la semilla 1).
-
-| q (neuronas sembradas) | acuerdo medio | potencia (neuronas) | potencia (aristas indep.) |
-|---|---|---|---|
-| 0 (falso positivo) | 0.498 | 0.052 | 0.049 |
-| 0.01 | 0.503 | 0.11 | 0.19 |
-| 0.02 | 0.508 | 0.26 | 0.47 |
-| 0.03 | 0.513 | 0.43 | 0.74 |
-| 0.05 | 0.523 | 0.69 | 0.97 |
-| 0.10 | 0.548 | 0.98 | 1.00 |
-| 0.20 | 0.598 | 1.00 | 1.00 |
-
-El test está calibrado (falso positivo ≈5%). Con siembra a nivel de
-neurona, que es la variante realista porque el neurotransmisor es una
-propiedad de la neurona y la permutación baraja a ese nivel, la potencia
-alcanza ≈50% con un acuerdo de ≈0.516 (+1.6 pp sobre el azar) y ≈80% con
-≈0.533 (+3.3 pp); un acuerdo de 0.55 o más se detecta prácticamente
-siempre. Los acuerdos observados en los modelos reales (0.476-0.519, media
-0.497) quedan todos por debajo del punto de 80% de potencia y solo la semilla
-1 supera el de 50%.
-
-Esto sustituye la inferencia por una medición y acota el resultado nulo:
-**un acuerdo de signo de +3.3 pp o más sobre el azar se habría detectado
-con ≥80% de probabilidad; el diseño no excluye efectos menores** (del
-orden de +1-2 pp sobre el azar; la única desviación nominal observada, la
-semilla 1 con acuerdo 0.519, cae justo en la zona de ≈50% de potencia). Limitaciones del control: la señal sembrada es un modelo
-idealizado (neuronas enteras con el signo correcto, sin ruido intermedio)
-y mide la potencia del test de permutación, no la capacidad del
-entrenamiento de recuperar signos; esa segunda pregunta requeriría entrenar
-sobre una red con signos conocidos (variante no realizada).
-
-## 3. Con la polarización resuelta, H1 sigue sin evidencia
-
-Este es el punto argumentativo central de la discusión: con `sign_reg`, la
-falta de polarización deja de ser una explicación viable para la ausencia
-de señal. Sobre las 8 semillas de `hold_prob=0.3` + `sign_reg=0.05` (7 de
-ellas por encima del umbral de referencia), el acuerdo de signo con el
-neurotransmisor real es prácticamente el del azar en todas:
-
-| semilla | acuerdo observado | media nula | z | p (una cola) |
+| semilla | acuerdo | media nula | z | p (una cola) |
 |---|---|---|---|---|
 | 0 | 0.4965 | 0.4978 | −0.28 | 0.618 |
 | 1 | 0.5193 | 0.5071 | +2.49 | 0.0055 |
@@ -132,199 +85,266 @@ neurotransmisor real es prácticamente el del azar en todas:
 | 6 | 0.4855 | 0.4929 | −1.33 | 0.913 |
 | 7 | 0.4932 | 0.4963 | −0.65 | 0.742 |
 
-Tres puntos que el resumen "solo 1 de 8 sale significativo" oculta y que
-conviene decir de forma explícita:
+Agregado: Stouffer z = −0.62 (p = 0.73), Fisher p = 0.26. La semilla 1
+(p = 0.0055; probabilidad de un mínimo tan bajo entre 8 p-valores bajo la nula
+≈4.3%; por debajo del umbral de Bonferroni 0.00625) tiene un efecto diminuto
+(+1.2 pp), no se replica y la semilla 5 muestra la desviación opuesta de mayor
+magnitud. Un resultado aislado análogo con `perturb_amp` (p = 0.0005) se
+retractó por criterio de polarización, no por comparaciones múltiples. Los 8
+modelos comparten las mismas etiquetas: no son 8 pruebas independientes de H1.
 
-- **La semilla 1 (p=0.0055) no es descartable por simple recuento de
-  falsos positivos al 5%.** Bajo la nula, la probabilidad de que el mínimo de
-  8 p-valores baje de 0.0055 es ≈4.3%, y 0.0055 queda por debajo del umbral
-  de Bonferroni (0.05/8=0.00625). Lo que la hace no concluyente es que su
-  efecto es diminuto (acuerdo 0.519 frente a 0.507, +1.2 puntos porcentuales),
-  que no se replica en las otras semillas y que la semilla 5 muestra la
-  desviación opuesta, de mayor magnitud (z=−3.16), que un test de una cola
-  (p=0.999) no señala. Las desviaciones a ambos lados son coherentes con
-  ruido de optimización, no con un acuerdo sistemático. El control de
-  potencia (sección 2) explica además por qué un efecto de este tamaño no
-  es decisivo en ningún sentido: se detecta solo la mitad de las veces si
-  existe, de modo que verlo en 1 de 8 semillas es compatible tanto con
-  ruido como con un efecto pequeño real.
-- **Agregado, no hay señal:** z medio −0.22; Stouffer z=−0.62
-  (p=0.73, una cola); Fisher p=0.26. Además, los 8 modelos se evalúan contra
-  las mismas etiquetas reales, así que no son 8 pruebas independientes de
-  H1 sino 8 muestras del mismo procedimiento de entrenamiento.
-- **El mismo patrón, un resultado significativo aislado que no se replica,
-  ya había aparecido con `perturb_amp`** (1 de 8 semillas, p=0.0005 en el
-  mínimo posible con 2000 permutaciones; entrada 2026-09-18 del cuaderno). Ese
-  resultado se retractó por un criterio distinto (la semilla polarizaba por
-  azar de optimización, no por efecto de la condición), no por un análisis de
-  comparaciones múltiples, y debe reportarse así.
+**Por qué este nulo es poco informativo.** (i) La tarea era resoluble de forma
+trivial y los modelos ni siquiera la igualaban (sección 4); no hay razón para
+que sus signos reflejen una restricción funcional. (ii) **El control positivo de
+potencia por neurona (v1) no es aplicable.** El test está calibrado (falso
+positivo 0.049-0.052 con etiquetas señuelo), pero la potencia se midió sembrando
+señal en fracciones de neuronas independientes (152 unidades) o de aristas; como
+el neurotransmisor es función del tipo, una señal real estaría estructurada en
+6 unidades, una de ellas con 42 neuronas, y las cifras de potencia (p. ej. "80%
+para +3.3 pp") no son transferibles. (iii) El test de permutación baraja
+etiquetas entre neuronas, rompiendo la estructura por tipo. Los acuerdos
+observados (0.476-0.519) no muestran estructura por tipo y no hubo falsos
+positivos, pero una nula formalmente correcta sería sobre patrones de signo por
+tipo (sección 6).
 
-La evidencia decisiva es solo la de `sign_reg`. `hold_prob` y
-`hold_prob`+`perturb_amp` no lograron polarizar de forma suficiente y
-reproducible (esta última solo en 1 de 8 semillas), de modo que no
-constituyen pruebas independientes con potencia adecuada de H1; son
-intentos fallidos de alcanzarla. Presentarlos como "dos mecanismos
-ortogonales que convergen" sobreestima el peso de la convergencia: lo que
-convergen es la ausencia de señal, pero solo uno de los dos mecanismos
-llega a tener potencia para detectarla.
+## 4. Trampas de la tarea de integración
 
-## 4. Interpretación
+| referencia (held-out, `hold_prob=0.3`) | pérdida absoluta |
+|---|---|
+| Modelos `sign_reg` entrenados | 0.58-0.72 |
+| Fase aleatoria (la "azar" de v1) | ≈1.0 |
+| **Decodificador constante en 0** | **0.179** |
+| Integrador perfecto con fase inicial arbitraria | 0.999 |
 
-Los datos son compatibles con, al menos, tres lecturas distintas, que este
-proyecto no puede distinguir entre sí con el diseño actual:
+1. **Referencia de azar inadecuada.** La afirmación de v1 "la red aprende
+   mejor que el azar (0.6 frente a 0.85)" comparaba con una fase aleatoria.
+   Un decodificador constante da 0.18: los modelos son 3-4 veces peores. Con
+   una pérdida invariante al desfase constante, los entrenados dan 0.08-0.36
+   frente a 0.06 del decodificador constante.
+2. **Tarea sin ancla.** La tarea pedía el rumbo absoluto (parte de 0) sin
+   ninguna pista de dónde está el 0; ni un integrador perfecto con fase inicial
+   arbitraria baja de ≈1.0. Con signos reales fijos, la pérdida original fue
+   1.006 frente a 0.983 ± 0.103 de 500 asignaciones barajadas (p = 0.58); con
+   la pérdida invariante al desfase y tres mapeos de `ring_angle`, 0.459 / 0.139
+   / 0.115 frente a medias barajadas 0.155 / 0.130 / 0.125 (p = 0.98 / 0.77 /
+   0.55), todos por encima del suelo trivial (0.060).
+3. **Tarea anclada.** Se sortea θ₀ por ensayo y se inyecta como pulso de 20
+   pasos en EPG/EPGt. Referencias en el held-out: recordar θ₀ sin integrar
+   **0.466**; decodificador constante 1.105. Criterio de "integra": pérdida
+   < 0.466 y pendiente (cambio decodificado / cambio real) > 0.5.
+4. **Piloto sin parámetros por tipo.** Dos pilotos (`ring_sign` ±1): 0.452 y
+   0.477, pendiente ≈ 0, error de anclaje 7-10°. Anclan y mantienen la fase,
+   no integran. Una sonda con velocidad constante mostró activación saturada
+   (r ≈ 1.0) y un desplazamiento del bump a un punto fijo en lugar de una
+   velocidad proporcional; subir la ganancia de entrada de 10 a 30 no cambia
+   nada.
 
-1. **La topología por sí sola no codifica información suficiente sobre
-   identidad química** como para que un descenso de gradiente agnóstico a
-   la tarea pueda recuperarla. El signo sináptico real podría depender de
-   más contexto del que capta este subcircuito acotado (152 neuronas
-   núcleo, sin los ~30 subtipos de ring neurons ni los
-   PFN/PFL/hDelta/vDelta del fan-shaped body completo).
-2. **La tarea conductual elegida (integración de rumbo) no impone las
-   mismas restricciones funcionales** que dieron forma a la asignación
-   real de neurotransmisor a lo largo de la evolución. Por bien resuelta
-   que esté, una sola tarea es una ventana estrecha sobre las demandas
-   funcionales reales del circuito. **Dos comprobaciones sin entrenamiento
-   apoyan que la tarea no discrimina la química** (`real_sign_task_check.py`,
-   `real_sign_offset_check.py`). (i) Con la pérdida original, los signos
-   reales fijos dan 1.006 frente a 0.983 ± 0.103 de 500 asignaciones de
-   neurotransmisor barajadas (p=0.58). Esa no es una prueba justa: la
-   pérdida exige el rumbo absoluto sin dar pista de dónde está el 0, así que
-   ni un integrador perfecto con fase inicial arbitraria baja de ≈1.0.
-   (ii) Con una pérdida invariante al desfase constante y tres mapeos de
-   `ring_angle` (el actual y dos intercalados, conformes a Hulse et al.
-   2021), los signos reales tampoco superan a los barajados (p=0.98, 0.77 y
-   0.55; 150 asignaciones por mapeo) y quedan por encima del suelo trivial
-   (0.06, decodificador constante): 0.115-0.459. Es decir, en este modelo
-   los signos reales no producen una red que integre el rumbo, y el 5%
-   inferior de las asignaciones barajadas (≈0.067) es indistinguible de una
-   red estática. Matiz: esto no prueba que la biología no resuelva la tarea;
-   solo que el modelo simplificado (sin ring neurons ni fan-shaped body,
-   entrada de velocidad angular inyectada a mano, `recurrent_gain` y
-   normalización por nodo elegidos por nosotros) no la reproduce con los
-   signos reales. Los modelos entrenados se evaluaron solo con el mapeo
-   actual.
-3. **Limitaciones de la arquitectura**: la magnitud de cada peso queda fija
-   al conteo de sinapsis (una decisión deliberada, para que el signo sea
-   la única variable libre y H1 sea una prueba limpia, ver `model.py`).
-   Pero esa misma decisión le quita a la red la posibilidad de compensar
-   un signo equivocado con la magnitud, que es precisamente el mecanismo
-   que permitiría distinguir una arista donde el signo importa de otra
-   donde no.
+## 5. Geometría del anillo medida en sinapsis
 
-Ninguna de las tres lecturas implica que H1 sea falsa en general. Lo que
-sí implican es que **este diseño experimental concreto solo excluye
-efectos de acuerdo de signo de +3.3 pp o más (potencia ≥80%, sección 2) y
-no puede refutar ni confirmar de forma concluyente efectos menores**,
-incluso después de resolver el cuello de botella de la polarización. Más
-importante aún: como los modelos no resuelven la tarea mejor que una
-solución trivial (sección 5), es dudoso que los signos aprendidos reflejen
-alguna restricción funcional; el resultado nulo informa sobre este montaje
-(tarea y decodificador) más que sobre la biología. Ese es el hallazgo
-metodológico que se reporta.
+MaleCNS no expone la fase (cuña) de cada neurona en el EB (solo zonas radiales
+`EBr*`), pero neuPrint da coordenadas 3D de sinapsis. Con 261.546 sinapsis en
+el EB de 110 neuronas (`extract_eb_angles.py`), un ajuste de plano por PCA
+(89% de la varianza en 2 componentes) y la media circular ponderada por
+confianza, cada neurona queda en una cuña (concentración 0.89-0.99).
 
-## 5. Limitaciones explícitas
+- Los EPG de L recorren el anillo en un sentido (L1…L8 ≈ 137°, 177°, 216°,
+  265°, 313°, 356°, 47°, 90°) y los de R en el **sentido contrario** (R1…R8 ≈
+  115°, 65°, 22°, 335°, 291°, 239°, 194°, 156°): un espejo, con pasos de ≈45° y
+  un desfase L/R de ≈22° entre glomérulos homólogos. EPGt (glomérulo 9) queda en
+  113-148°, la fase del glomérulo 1.
+- Es consistente con lo descrito por Hulse et al. (2021) (cada hemisferio
+  muestrea el anillo completo a ≈45°, desfase L/R de 22.5°), pero **ningún mapeo
+  usado antes lo recogía**: el original colocaba L y R en mitades del círculo, y
+  el "intercalado" descartado el 2026-09-16, aunque correcto en cobertura y
+  desfase, supuso el mismo sentido en ambos hemisferios.
+- Validación con los PEN (no usados para construir el mapa): los PEN de L y R
+  se desplazan en sentidos opuestos con consistencia perfecta (≈ −6° y +5.5°;
+  magnitud pequeña, probablemente por sinapsis EPG↔PEN recíprocas en el EB que
+  el grafo no distingue de las del PB).
+- El sentido de giro global es arbitrario en el método (`ring_sign`); ambos
+  sentidos dan resultados equivalentes en la comprobación de realizabilidad.
 
-- **`ring_angle` inconsistente con la anatomía**: el mapeo del proyecto
-  (`actual`) coloca los 8 glomérulos de L en media circunferencia y los de R
-  en la otra media. Hulse et al. (2021, texto de EPG y Fig. 16) describen que
-  cada hemisferio del PB muestrea el anillo completo a ≈45° (8 glomérulos por
-  lado), con un desfase L/R de 22.5°, y que EPGt (glomérulo 9) equivale en fase
-  al glomérulo 1. El mapeo intercalado que se descartó el 2026-09-16 (entrada
-  10) es el conforme al artículo; se revirtió por su efecto sobre la
-  polarización, no por un criterio anatómico. La tabla exacta (Fig. 10) no
-  pudo extraerse del texto y el sentido de giro no está verificado. Todos los
-  modelos entrenados de este trabajo usan el mapeo `actual` y no se
-  reentrenó con el corregido. El test de permutación de H1 no usa
-  `ring_angle`, pero `task.py` sí lo usa para el objetivo de decodificación
-  durante el entrenamiento, así que un mapeo erróneo cambia la tarea que la
-  red aprende y, con ella, los signos aprendidos: es una fuente potencial de
-  sesgo sobre H1.
-- **Alcance del subcircuito**: 152 neuronas núcleo del sistema de
-  dirección de cabeza, sin las ring neurons de entrada visual ni el
-  fan-shaped body completo. Un circuito más amplio podría comportarse de
-  forma distinta.
-- **Una sola tarea conductual**: integración de rumbo, con dos variantes
-  de dificultad (`hold_prob`, `perturb_amp`). No se probaron tareas
-  cualitativamente distintas (navegación hacia una meta, integración
-  multisensorial) por restricción de alcance y tiempo del proyecto.
-- **Desglose H2 con n bajo por tipo celular**: 152 neuronas repartidas en
-  6 tipos (`Delta7`=42, `EPGt`=4). Los tipos con menos neuronas tienen
-  pocas aristas de origen, así que cualquier señal, o ausencia de señal,
-  en ellos debe leerse con esa salvedad.
-- **La red no resuelve la tarea**: la pérdida held-out (≈0.6) es 3-4 veces
-  peor que la de un decodificador constante en 0 (0.18; el rumbo tiene
-  desviación final ≈1 rad, así que no moverse ya da pérdida baja). La mejora
-  "sobre el azar" se mide contra una fase aleatoria (≈1.0), una referencia
-  que no es pertinente. Con la pérdida invariante al desfase, los modelos
-  entrenados dan 0.08-0.36 frente a 0.06 del decodificador constante. No se
-  ha demostrado que la red implemente un integrador de rumbo, biológico o no.
-  Si la solución no se parece al mecanismo real, no hay razón para esperar
-  que sus signos coincidan con los reales.
-- **El modelo con signos reales tampoco integra el rumbo** (ver sección 4,
-  lectura 2): con signos reales fijos la pérdida invariante al desfase es
-  0.115-0.459 según el mapeo, frente a 0.06 del decodificador constante, y no
-  mejor que con signos barajados. Hasta que un modelo con signos reales
-  resuelva la tarea, esta no es un banco de pruebas válido para preguntar si
-  el entrenamiento recupera la química. Además, forzar a ±1 los signos de
-  los modelos entrenados degrada su pérdida original (0.58-0.72 → 0.70-0.79):
-  la solución aprendida usa valores graduados de `tanh(sign_param)`, es decir,
-  cierta magnitud efectiva, así que "signo libre, magnitud fija" no se cumple
-  estrictamente en la solución y el acuerdo de signo (`sign(sign_param)`)
-  descarta información que la red usa.
-- **Control positivo de potencia parcial**: se midió la potencia del test
-  de permutación sembrando señal conocida sobre los signos reales (sección
-  2): ≈80% de detección para +3.3 pp de acuerdo, sin poder para efectos de
-  +1-2 pp. Lo que no se hizo es el control más exigente: entrenar sobre una
-  red con signos conocidos para comprobar que el *entrenamiento* recupera
-  el signo cuando existe. Sin él, un resultado nulo también es compatible
-  con que el entrenamiento no recupere señal que sí está presente.
-- **Grados de libertad del investigador**: ~30 configuraciones y umbrales
-  de referencia (`mean_abs_sign>0.5`, `frac_polarized_gt_0.9>10%`) fijados
-  sin análisis previo de potencia. Es coherente con un resultado nulo, pero
-  hace que ningún p-valor aislado deba leerse como confirmatorio.
-- **`sign_reg` es una intervención posterior al diseño original**: se
-  añadió específicamente para resolver la duda de potencia estadística
-  tras observar el techo de polarización. Es un control metodológico
-  válido para esa pregunta puntual, pero no debe presentarse como parte
-  del diseño experimental original.
+## 6. Realizabilidad y (falta de) especificidad de la química real
 
-## 6. Qué no se hizo (fuera de alcance, candidatos para trabajo futuro)
+**Régimen dinámico.** Con signos reales fijos y la tarea anclada, se exploraron
+tres rondas de hiperparámetros sin entrenar (588 evaluaciones: `recurrent_gain`
+0.5-16, `tau` 2-20, ganancia de entrada 1-300, ganancia de pista 3-10,
+activación `tanh` y rectificada, ambos sentidos de giro; conjunto de ajuste
+distinto del held-out). La mejor pérdida fue 0.470-0.493 (referencia del
+conjunto de ajuste 0.537) con pendiente ≈ 0; las configuraciones con pendiente
+≈ 1 tenían recurrencia débil y perdían el ancla (pérdida 0.76-1.02). Mantener
+el bump exige recurrencia fuerte; moverlo con velocidad proporcional, régimen
+casi lineal. **En este modelo la red con signos reales no integra.**
 
-- Escalar a un subcircuito CX más amplio o al connectoma completo de
-  MaleCNS v1.0.
-- Probar tareas conductuales cualitativamente distintas, o varias tareas
-  simultáneas, más allá de las dos variantes de dificultad probadas.
-- Permitir magnitud entrenable. Esto rompería la limpieza de H1 tal como
-  está planteada, pero podría usarse como análisis complementario para
-  distinguir aristas sensibles al signo de aristas donde el signo no
-  importa.
-- Comparar directamente contra el modelo nulo que preserva el grado
-  topológico, usado por Dhiman (2026). Aquí se usó permutación de la
-  etiqueta de neurotransmisor, que responde una pregunta distinta (acuerdo
-  de signo, no velocidad de aprendizaje).
+**Parámetros por tipo.** Se añadieron ≈43 parámetros compartidos por tipo
+celular, nunca por arista: una ganancia positiva por par de tipos
+origen→destino, un sesgo por tipo y una escala global de la entrada. Con signos
+reales fijos (solo se entrenan esos parámetros; control de realizabilidad, sus
+valores no se reutilizan):
 
-## 7. Enunciado propuesto para la sección de discusión (borrador de texto)
+| variante | held-out | pendiente |
+|---|---|---|
+| `tanh`, `ring_sign=+1`, 3 semillas de entrenamiento | 0.108 / 0.124 / 0.106 | 0.82 / 0.75 / 0.84 |
+| `tanh`, `ring_sign=−1` | 0.125 | 0.87 |
+| rectificada, `ring_sign=−1` / `+1` | 0.172 / 0.467 | 0.73 / 0.00 |
 
-> Entrenar una red cuya única variable libre es el signo sináptico, sobre
-> la topología real de un circuito de navegación bien caracterizado,
-> reduce el error en una tarea de integración de rumbo respecto a una fase
-> aleatoria, aunque sin alcanzar el de una solución trivial, y sin que el signo aprendido reproduzca la identidad química real
-> más allá del azar. Un primer intento de rediseñar la tarea no consiguió
-> que la red se comprometiera con un signo por arista, lo que dejaba abierta
-> la duda de si el test tenía potencia. Una regularización aplicada
-> directamente sobre el parámetro de signo resolvió ese cuello de botella
-> (polarización por encima del umbral de referencia en 7 de 8 semillas)
-> sin alterar el resultado: el acuerdo con el neurotransmisor real
-> permaneció indistinguible del esperado por azar, tanto por semilla
-> (una semilla nominalmente significativa, con un efecto de +1.2 puntos
-> porcentuales y otra con desviación opuesta de mayor magnitud) como en
-> agregado (Stouffer z=−0.62). En este subcircuito y con esta tarea, por
-> tanto, no encontramos evidencia de que la topología sináptica por sí
-> sola baste para que un entrenamiento por gradiente recupere la química
-> real de las sinapsis. Un control positivo de potencia (señal
-> sembrada sobre los signos reales) muestra que el test detecta con ≥80% de
-> probabilidad un acuerdo de +3.3 puntos porcentuales o más sobre el azar,
-> pero no efectos menores. Dado que la red no resuelve la tarea mejor que una
-> solución trivial y que no se comprobó que el entrenamiento recupere signos conocidos, este
-> resultado no permite descartar que la señal exista, con menor magnitud, o
-> bajo una tarea o una arquitectura distintas.
+**Barajados por neurona e intercambio parcial** (`ring_sign=+1`, mismo
+protocolo): 12 asignaciones barajadas dan 0.444-0.598 (0/12 integran, pendiente
+máx. 0.04) y el intercambio de etiquetas en 10 / 25 / 50% de las neuronas (≈4 /
+≈10 / ≈22% de aristas cambiadas) da 0.463-0.507 (0/9 integran). El estadístico
+preespecificado da p = 0.077, el mínimo alcanzable con 12 barajados. Las 3
+corridas reales comparten una sola asignación (difieren solo en la semilla de
+entrenamiento): demuestran reproducibilidad, no 3 asignaciones distintas.
+
+**Enumeración de patrones de signo por tipo.** Como el neurotransmisor es
+función del tipo, la hipótesis natural es un signo por tipo: 2⁶ = 64 patrones,
+de los que la asignación real (solo Delta7 inhibe) es uno. Se entrenaron los 64
+con el mismo protocolo (una corrida por patrón, semilla 0):
+
+- **26 de 64 patrones integran.** La real (held-out 0.108, pendiente 0.82) es
+  el **puesto 22 de 64; p exacto = 22/64 = 0.344.** Patrones biológicamente
+  absurdos la superan (p. ej. "solo EPG inhibe": 0.063; "EPG+EPGt inhiben":
+  0.063).
+- Fracción de patrones que integran según el signo del tipo (excitador /
+  inhibidor, de 32 cada uno): Delta7 7 / 19; EPG 10 / 16; EPGt 14 / 12; PEG 12 /
+  14; PEN_a 14 / 12; PEN_b 20 / 6. Descriptivo, sin test. Delta7 inhibidor
+  ayuda pero no es necesario ni suficiente.
+- Los 12 barajados fallan porque rompen la coherencia por tipo, no porque la
+  química real sea especial: **la lectura de "suficiencia funcional" de la v1 se
+  retracta.**
+
+**Mecanismo probable.** Con `tanh` las tasas van en (−1, 1). En la red que
+integra con la asignación real, las tasas de Delta7 son negativas el 89% del
+tiempo (fracción > 0 = 0.11; media −0.17): una neurona "inhibidora" con
+actividad negativa excita a sus dianas. En el patrón sin ninguna inhibición
+(que no integra) Delta7 tiene fracción > 0 = 1.00. La solución explota una
+libertad no fisiológica (comprobación descriptiva sobre 5 ensayos; la simetría
+de gauge no se ha demostrado formalmente), que hace que muchos patrones de
+signo sean funcionalmente equivalentes. Vale también para la solución con la
+asignación real: **no es una solución biológica.**
+
+## 7. Aprendibilidad
+
+Con signos por arista y parámetros por tipo entrenados a la vez desde un inicio
+neutro (ganancias 1, sesgos 0, signos ≈ N(0, 0.1); sin usar nada de los pasos
+anteriores), cuatro pilotos de una semilla (`ring_sign` ±1 × `sign_reg` 0.05 /
+0; 1000 épocas) dan held-out 0.458-0.561 y pendiente −0.10 a 0.00: convergen al
+óptimo local "memoria sin integrar". Existe una solución en el espacio de
+búsqueda (0.11 con signos reales) que el descenso de gradiente no encuentra.
+Hipótesis sin verificar: plateau ancho entre las soluciones de memoria y de
+integración (BPTT de 200 pasos con dinámica casi saturada). No se probó
+currículo, otro inicio, otra tasa de aprendizaje ni más épocas. Al no aprender el
+aprendiz ninguna solución que integre, H1 (que converja a la química real) no
+es evaluable.
+
+## 8. Interpretación
+
+- **H1 tal como se formuló no está ni confirmada ni refutada**: el aprendiz no
+  llega a una solución funcional, y la solución funcional existente no depende
+  de la química real. El nulo de la sección 3 no informa sobre la biología.
+- **Lo que sí se sostiene:** (a) las cinco trampas metodológicas; (b) un modelo
+  de tasas con signo puede resolver la tarea con patrones de signo por tipo
+  muy distintos, así que **la tarea de integración de rumbo con activación
+  `tanh` no selecciona la química**; (c) la fragilidad frente a perturbaciones
+  parciales de etiquetas por neurona (≈4% de aristas ya la destruye) puede
+  reflejar afinado fino o mera sensibilidad del optimizador de 43 parámetros;
+  no se distinguen.
+- **Consecuencia práctica para trabajos similares:** antes de interpretar un
+  acuerdo o un desacuerdo de signo, comprobar (1) que existe una solución trivial
+  que el modelo no supera, (2) que la tarea da pista de fase, (3) que el modelo
+  con los signos reales resuelve la tarea, (4) que la solución no depende de
+  tasas negativas y (5) si el ground truth es función de una variable de tipo.
+
+## 9. Retractaciones respecto a la v1
+
+| afirmación de la v1 | estado |
+|---|---|
+| "La red aprende la tarea mejor que el azar (0.6 vs. 0.85)" | Retractada: referencia errónea; los modelos son 3-4× peores que un decodificador constante (sección 4). |
+| "Control de potencia: el test detecta ≥ +3.3 pp con ≥ 80%" | Retractada: siembra por neurona/arista, no aplicable a una señal estructurada por tipo (sección 3). Solo se mantiene la calibración del falso positivo. |
+| "Signos reales no superan a barajados: 1.006 vs 0.983" (primera lectura) | Superada: prueba injusta sin ancla; ver sección 4. |
+| "El mapeo intercalado es el conforme a la anatomía" | Corregida: L y R recorren el anillo en sentidos opuestos (sección 5). |
+| "La química real integra y las barajadas no (suficiencia funcional)" | Retractada: 26/64 patrones por tipo integran; la real, puesto 22 (sección 6). |
+| "~440 evaluaciones de régimen" | Corregida: 588. |
+
+## 10. Limitaciones
+
+- **Una corrida por patrón (semilla 0)** en la enumeración de 64: un "no
+  integra" puede ser mala suerte de optimización; las réplicas de la asignación
+  real (0.106-0.124) sugieren estabilidad, pero no se replicaron los demás
+  patrones. Un solo `ring_sign` (+1) en las corridas de refuerzo y de
+  enumeración.
+- **Hiperparámetros dinámicos** (`recurrent_gain=2`, `tau=10`, `in_gain=10`,
+  `cue_gain=10`) elegidos en zonas seleccionadas con ayuda de los signos reales
+  (criterio A): grado de libertad del investigador, declarado. Más ≈30
+  configuraciones de las fases anteriores y umbrales de polarización fijados sin
+  análisis previo de potencia; ningún p-valor aislado debe leerse como
+  confirmatorio.
+- **Tasas con signo (`tanh`)**: no se probó una activación no negativa con
+  entrenamiento estable, que es el test biológicamente válido; la rectificada
+  fue inestable en la comprobación de realizabilidad.
+- **Nula del test de H1 a nivel de neurona** (sección 3) y potencia no medida
+  para señal por tipo.
+- **Un solo subcircuito y una sola tarea**: 152 neuronas del núcleo, sin ring
+  neurons ni fan-shaped body; entrada de velocidad sintética inyectada en PEN;
+  normalización por neurona destino que borra ganancias relativas entre tipos.
+- **Muestreo pequeño en pilotos**: el paso de aprendibilidad son 4 corridas de
+  una semilla; los modelos de la sección 3 usan 8 semillas pero sobre una tarea
+  trivial.
+- **Solución con magnitud efectiva**: forzar los signos entrenados a ±1 degrada
+  su pérdida (0.58-0.72 → 0.70-0.79): "magnitud fija" se cumple solo a medias
+  en la solución aprendida.
+- **Entorno**: con torch 2.4.1 (Python del sistema) el gradiente de
+  `atan2(0,0)` es `nan`; el entorno del proyecto (`.venv`, torch 2.14) da 0. Los
+  entrenamientos por defecto deben ejecutarse con el `.venv`
+  (reproducción exacta verificada). Los dos pilotos de la tarea anclada se
+  ejecutaron con el Python del sistema (la pista evita el caso `(0,0)`).
+
+## 11. Trabajo futuro
+
+- Repetir la comprobación de realizabilidad y la enumeración de 64 patrones con
+  tasas no negativas (sigmoide o rectificada estable): es el único test
+  biológicamente válido de si la química real es especial.
+- Replicar cada patrón con varias semillas y ambos sentidos de giro.
+- Atacar la aprendibilidad (currículo sobre T, otro inicio, tasas de aprendizaje
+  por grupo de parámetros, más épocas).
+- Medir la potencia del test de H1 para señal a nivel de tipo y usar una nula
+  sobre patrones por tipo.
+- Ampliar el circuito (ring neurons, fan-shaped body) y permitir magnitud
+  entrenable como análisis complementario; comparar con el modelo nulo que
+  preserva el grado (Dhiman, 2026).
+
+## 12. Enunciado propuesto (borrador de texto)
+
+> Preguntamos si una red recurrente restringida solo por la topología real del
+> núcleo del sistema de dirección de cabeza de *Drosophila*, con el signo
+> sináptico como único parámetro de arista, recupera el neurotransmisor real. No
+> encontramos evidencia de ello, pero el diseño no permitía encontrarla:
+> la tarea de integración de rumbo era resoluble de forma trivial (un
+> decodificador constante superaba a todos los modelos), carecía de pista de fase
+> y usaba un mapeo angular que la anatomía medida en sinapsis contradice (los
+> hemisferios recorren el anillo en sentidos opuestos). Con una tarea anclada y
+> ganancias por tipo celular existe una solución que integra el rumbo, pero no
+> es específica de la química real: 26 de los 64 patrones de signo por tipo la
+> alcanzan (la asignación real, en el puesto 22; p = 0.34), apoyándose en tasas
+> negativas no fisiológicas; y un aprendiz de signos genérico no la encuentra.
+> Dado que en este subcircuito el neurotransmisor es función exacta del tipo
+> celular, la pregunta se reduce a un dato de tipo, y los cálculos de potencia
+> por neurona no son aplicables. Proponemos una lista de comprobaciones previas
+> (existencia de una solución trivial, pista de fase, solubilidad con el ground
+> truth, independencia de tasas negativas y estructura del ground truth) antes
+> de interpretar acuerdos o desacuerdos de signo en modelos restringidos por
+> conectoma.
+
+## Apéndice: correspondencia con el cuaderno y el código
+
+| hallazgo | entrada del cuaderno | código |
+|---|---|---|
+| polarización / H1 con `sign_reg` | 2026-09-16 a 09-18 | `train.py`, `evaluate.py` |
+| control de potencia por neurona (retirado) | 2026-09-19 (2) | `power_control.py` |
+| referencia trivial, signos reales, sin ancla | 2026-09-19 (3), (4) | `real_sign_task_check.py`, `real_sign_offset_check.py` |
+| fase real desde sinapsis | 2026-09-19 (5) | `extract_eb_angles.py`, `graph_utils.py` |
+| tarea anclada y piloto | 2026-09-19 (6) | `task.py`, `train.py` |
+| búsqueda de régimen | 2026-09-19 (7) | `regime_search.py` |
+| parámetros por tipo, realizabilidad, barajados | 2026-09-19 (8), (10), (11) | `model.py`, `train.py`, `analyze_dose.py` |
+| aprendibilidad | 2026-09-19 (9) | `train.py` |
+| 64 patrones por tipo | 2026-09-20, 2026-09-20 (2) | `analyze_types.py` |

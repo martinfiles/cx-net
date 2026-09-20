@@ -8,13 +8,20 @@ Si se entrena una red neuronal cuya única restricción es la topología sinápt
 
 ## Estado
 
-Fase experimental cerrada (2026-09-18); en redacción del preprint.
-Resultado principal (negativo): la red aprende la tarea de integración de
-rumbo, pero el signo aprendido no coincide con el neurotransmisor real más
-de lo esperable por azar, ni siquiera con regularización que fuerza la
-polarización del signo (8 semillas). Un control positivo de potencia indica
-que el test detectaría un acuerdo de ≈+3.3 pp o más sobre el azar con ≥80%
-de probabilidad. Detalle en
+Fase experimental cerrada (2026-09-20); redactando el preprint como informe
+metodológico y negativo.
+
+Resultado principal: **no hay evidencia de que un aprendiz de signos recupere el
+neurotransmisor real, y el diseño no permitía encontrarla.** Hallazgos: (1) la
+tarea original era resoluble de forma trivial (un decodificador constante
+superaba a los modelos entrenados); (2) la fase angular real de cada neurona en
+el EB, medida con coordenadas de sinapsis, es un espejo entre hemisferios que
+los mapeos asumidos no recogían; (3) con ganancias por tipo celular existe una
+solución que integra el rumbo, pero no es específica de la química real (26 de
+64 patrones de signo por tipo la alcanzan; la real, puesto 22) y se apoya en
+tasas negativas no fisiológicas; (4) un aprendiz de signos genérico no la
+encuentra; (5) en este subcircuito el neurotransmisor es función exacta del tipo
+celular (Delta7 = glutamato, resto = acetilcolina). Detalle y retractaciones en
 [`docs/preprint-discussion.md`](docs/preprint-discussion.md) y
 [`docs/lab-notebook.md`](docs/lab-notebook.md).
 Ver hoja de ruta más abajo.
@@ -59,12 +66,15 @@ Fases posteriores (módulos en `src/cx_net/`; los resultados se escriben en
 ```bash
 python -m src.cx_net.train          # entrena el modelo de signo libre
 python -m src.cx_net.evaluate       # H1 (test de permutación) y H2 (por tipo celular)
-python -m src.cx_net.power_control  # control positivo de potencia del test de H1
+python -m src.cx_net.extract_eb_angles  # fase angular real de cada neurona (sinapsis del EB, neuPrint)
+python -m src.cx_net.analyze_types      # análisis de los 64 patrones de signo por tipo
 ```
 
 Los barridos multi-semilla y las variantes (`hold_prob`, `perturb_amp`,
-`sign_reg`) se lanzaron llamando a `train()` con distintos argumentos; ver
-el cuaderno para las configuraciones exactas.
+`sign_reg`, tarea anclada, parámetros por tipo, controles de signos) se lanzaron
+llamando a `train()` con distintos argumentos; ver el cuaderno para las
+configuraciones exactas. **Entrenar siempre con el intérprete del `.venv`**: con
+torch 2.4.1 (Python del sistema) el gradiente de `atan2(0,0)` es `nan`.
 
 Registro de decisiones y resultados: [`docs/lab-notebook.md`](docs/lab-notebook.md).
 

@@ -1398,7 +1398,7 @@ constante = 0.932. Tres rondas (la 2 y la 3 diseñadas tras ver la anterior):
 **Conclusión:** en este montaje (152 neuronas del núcleo, magnitudes fijas
 normalizadas por neurona destino, dinámica de una sola constante de tiempo,
 entrada de velocidad inyectada en PEN) la red con los signos reales NO
-integra el rumbo en ningún régimen probado (~440 evaluaciones). Por tanto la
+integra el rumbo en ningún régimen probado (588 evaluaciones (288+100+200; corrección de un recuento previo erróneo de ~440)). Por tanto la
 tarea no es realizable con la química real en este modelo y un H1 nulo no
 informa sobre la biología. Se detiene la búsqueda: más rondas serían más
 grados de libertad sin base.
