@@ -1690,6 +1690,48 @@ biológico; si no, es un negativo definitivo. (B) Cerrar y reescribir el preprin
 lo anterior como informe metodológico/negativo, retirando el control de potencia por
 neurona y la lectura de suficiencia.
 
+## 2026-09-20 (3) — Sigmoide, validación mecanística, revisión crítica y datos
+
+**Comprobación con tasas no negativas (sigmoide, `activation="sigmoid"`, tasa basal 0.5;
+mismos hiperparámetros y 600 épocas; `sigm_*`):** signos reales `ring_sign=-1`: held-out
+0.303, pendiente 0.33; `+1`: 0.470, pendiente 0.01; 4 barajados (+1): 0.536-0.955,
+pendiente máx 0.27. Los reales quedan por delante de los barajados pero ninguno cumple
+"integra" (< 0.466 y pendiente > 0.5): no concluyente; no se enumeran los 64 patrones (haría
+falta una búsqueda de régimen propia).
+
+**Validación mecanística (`src/cx_net/bump_check.py`, `results/bump_check.json`):** con velocidad
+constante GRANDE (±0.3, 180 pasos) ningún modelo desplaza el bump (velocidad decodificada ≈ 0;
+fuera del rango de entrenamiento: 54 rad). Con velocidad constante en rango (±0.01 a ±0.08 por
+paso durante 90 pasos), desplazamiento decodificado frente a esperado: real (solo Delta7
+inhibe) ganancia 0.54, R² 0.84 (esperado ±7.2 rad -> -2.8/+3.3, saturante); "solo EPG inhibe"
+0.76 (R² 0.93); "EPG+EPGt inhiben" 0.75 (R² 0.92); sin inhibición 0.00 (desplazamiento
+≈ -0.2 rad plano). Localización del bump |sum r e^{i th}|/sum|r| (EPG/EPGt): 0.62 real,
+0.33-0.37 "solo EPG"/"EPG+EPGt", 0.64 sin inhibición. Conclusión: las redes que "integran" no son
+un artefacto del decodificador (respuesta antisimétrica y aproximadamente proporcional), pero
+son integradores COMPRESIVOS (ganancia < 1, saturantes), no perfectos; la "pendiente" de las
+entradas anteriores mide integración en el rango de entrenamiento.
+
+**Revisión crítica interna (`docs/expert-review.md`):** ocho preocupaciones principales. Cambios
+aplicados al borrador: (M1) H1 se reduce a un bit conocido (Delta7 inhibe); (M2) "ground truth"
+-> neurotransmisor anotado (predicción), supuestos de Dale/GluCl/receptor explícitos; (M3) "tasas
+negativas no fisiológicas" retirado -> desviaciones de una basal nula y falta de
+identificabilidad del signo; (M4) validación mecanística parcial; (M5) estado exploratorio,
+umbral binario arbitrario, marginales no independientes, sesgo de selección de hiperparámetros a
+favor de la real (que refuerza el nulo); (M6) resolución mínima del test por tipo (1/64; 1/6);
+(M7) geometría "no es un hallazgo nuevo"; (M8) subsección de posicionamiento con referencias por
+verificar. Abierto: replicar patrones con varias semillas, perfil/anchura del bump y comparación
+con modelos de anillo ajustados a mano, validación del mapeo de fase en hemibrain, revisión
+por alguien del campo.
+
+**Datos y licencia:** MaleCNS (`male-cns:v1.0`, liberado 2026-06-08) está bajo CC-BY 4.0; se piden
+citas. Referencia: Berg et al. (2026), "Sexual dimorphism in the complete Drosophila male central
+nervous system connectome", Cell (publicado 2026-09-03); preprint bioRxiv 10.1101/2025.10.09.680999.
+El repo no redistribuye datos; `results/` contiene derivados agregados (con atribución en el
+README). Código bajo MIT.
+
+**Figuras:** títulos matizados ("se asocian" en lugar de "pesan"), fig. 1 aclarada (tarea sin pista
+de fase), fig. 5 ("por debajo de la basal").
+
 ## Plantilla para próximas entradas
 
 ```

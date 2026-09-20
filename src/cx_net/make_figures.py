@@ -57,7 +57,7 @@ def fig1():
     runs = pd.read_csv(os.path.join(RES, "runs_summary.csv"))
     tr = runs[runs.label.str.match(r"^signreg05_seed\d$")].held_out_loss.to_numpy()
     fig = frame("Un decodificador inerte supera a todos los modelos entrenados",
-                "Pérdida en el conjunto held-out de la tarea original (menor es mejor)")
+                "Pérdida held-out de la tarea original, sin pista de fase (menor es mejor)")
     ax = fig.add_axes([0.30, 0.16, 0.65, 0.62])
     clean(ax)
     rows = [("Decodificador constante\n(siempre apunta a 0)", [0.179], INK2),
@@ -152,7 +152,7 @@ def fig4():
         exc.append(100 * np.mean(e))
         inh.append(100 * np.mean(h))
     order = np.argsort(np.array(inh) - np.array(exc))  # menor diferencia abajo
-    fig = frame("Ningún signo por tipo basta; pesan más PEN_b y Delta7",
+    fig = frame("Ningún signo por tipo basta; PEN_b y Delta7 se asocian más",
                 "Porcentaje de patrones que integran según el signo asignado a cada tipo (32 patrones por punto)")
     ax = fig.add_axes([0.16, 0.19, 0.78, 0.59])
     clean(ax)
@@ -197,7 +197,7 @@ def fig5():
     ax.axvline(0, color=INK2, linewidth=1, zorder=1)
     real = r["models"]["real"]["types"]["Delta7"]["frac_positive"]
     ax.set_xlim(-1, 1)
-    ax.set_xlabel("tasa de activación (negativa = no fisiológica)", fontsize=9.5)
+    ax.set_xlabel("tasa de activación (negativa = por debajo de la basal)", fontsize=9.5)
     ax.set_ylabel("% de instantes", fontsize=9.5)
     ax.text(-0.97, ax.get_ylim()[1] * 0.93, f"asignación real: {100*(1-real):.0f} % del tiempo\ncon tasa negativa",
             fontsize=10.5, color=INK, va="top")

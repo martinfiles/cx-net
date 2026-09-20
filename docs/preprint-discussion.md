@@ -4,7 +4,10 @@
 > `docs/lab-notebook.md` (2026-09-16 a 2026-09-20). **Esta versión reescribe la
 > anterior** tras las entradas (4)-(13) del cuaderno: varias afirmaciones de la
 > v1 quedan retractadas (tabla de la sección 9). Enfoque: informe metodológico
-> y negativo.
+> y negativo. **Estado: exploratorio.** Los análisis de las secciones 6-7 usan una
+> corrida por configuración y solo algunos criterios se fijaron antes de ver los
+> resultados (entradas (10) y (12) del cuaderno). La revisión crítica interna está en
+> `docs/expert-review.md`.
 
 ## 1. Resumen
 
@@ -16,6 +19,8 @@ número real de sinapsis y el signo como único parámetro de arista, recupera p
 descenso de gradiente el neurotransmisor real de cada neurona (H1).
 
 **No encontramos evidencia de que lo haga, y el diseño no permitía encontrarla.**
+(En todo el texto, «integra» significa pérdida held-out < 0.466 —la de recordar la fase
+inicial sin integrar— y pendiente > 0.5 entre el cambio decodificado y el cambio real de rumbo.)
 El valor del trabajo está en cinco hallazgos metodológicos, cada uno de los
 cuales invalida una versión anterior del experimento:
 
@@ -23,14 +28,16 @@ cuales invalida una versión anterior del experimento:
    decodificador constante superaba a todos los modelos entrenados (0.18 frente
    a 0.58-0.72), y la referencia de "azar" usada inicialmente era una fase
    aleatoria, no una solución trivial (sección 4).
-2. La geometría angular del anillo, medida con coordenadas de sinapsis, es un
-   espejo entre hemisferios que ningún mapeo asumido recogía (sección 5).
+2. La geometría angular del anillo, medida con coordenadas de sinapsis, confirma en
+   MaleCNS un espejo entre hemisferios ya descrito en la anatomía y que ninguno de
+   nuestros mapeos previos recogía (sección 5).
 3. Con una tarea bien planteada, el modelo original no puede integrar el rumbo
    ni siquiera con los signos reales en ningún régimen dinámico explorado (588
    evaluaciones); con ganancias por tipo celular sí, pero **la asignación real
    de neurotransmisor no es especial**: 26 de los 64 patrones de signo por tipo
    integran y la real queda en el puesto 22 (p exacto = 0.34), apoyándose en
-   tasas negativas no fisiológicas (sección 6).
+   tasas con signo (desviaciones respecto a un nivel basal nulo) que hacen el
+   signo del peso poco identificable (sección 6).
 4. Un aprendiz de signos genérico no encuentra esa solución (sección 7).
 5. El neurotransmisor es función exacta del tipo celular en este subcircuito
    (Delta7 = glutamato, resto = acetilcolina), lo que reduce la "química real"
@@ -50,13 +57,25 @@ cuales invalida una versión anterior del experimento:
 - **Evaluación de H1.** Acuerdo entre `sign(sign_param)` y el signo del
   neurotransmisor de la neurona de origen; test de permutación de etiquetas
   entre neuronas (2000 permutaciones, una cola).
-- **Ground truth.** `predictedNt` de male-cns:v1.0. Hecho estructural: **el
-  neurotransmisor es función exacta del tipo** (tabla siguiente).
+- **Neurotransmisor anotado.** `predictedNt` de male-cns:v1.0 es una predicción a partir
+  de EM (Eckstein et al., 2024), no una medida directa; para estos tipos es consistente
+  con lo descrito en la literatura (por verificar con referencias concretas). Se asume
+  además que el signo lo fija la neurona presináptica (ley de Dale) y que acetilcolina
+  excita y glutamato inhibe (vía GluClα en este circuito); no se modelan co-transmisión
+  ni dependencia del receptor. Hecho estructural: **el neurotransmisor anotado es
+  función exacta del tipo** (tabla siguiente).
 
 | tipo | neuronas | neurotransmisor |
 |---|---|---|
 | Delta7 | 42 | glutamato (100%) |
 | EPG, EPGt, PEG, PEN_a, PEN_b | 46+4+18+20+22 = 110 | acetilcolina (100%) |
+
+**Consecuencia para H1.** Como el neurotransmisor es función del tipo, y que Delta7 es
+glutamatérgico e inhibidor en este circuito es un hecho descrito desde antes, «recuperar
+el neurotransmisor» equivale en la práctica a recuperar un solo bit: *Delta7 inhibe, el
+resto excita*. Aun confirmada, H1 aportaría poco sobre la biología; la pregunta con
+contenido es si la función y la topología restringen el signo *más allá* de lo ya
+conocido. Este trabajo la aborda, sin respuesta concluyente (secciones 6-8).
 
 ## 3. H1 sobre la tarea original: nulo, y poco informativo
 
@@ -105,7 +124,10 @@ para +3.3 pp") no son transferibles. (iii) El test de permutación baraja
 etiquetas entre neuronas, rompiendo la estructura por tipo. Los acuerdos
 observados (0.476-0.519) no muestran estructura por tipo y no hubo falsos
 positivos, pero una nula formalmente correcta sería sobre patrones de signo por
-tipo (sección 6).
+tipo (sección 6), y con solo 6 tipos ese test tiene resolución mínima: hay
+2⁶ = 64 patrones posibles, así que el p más pequeño por coincidencia exacta es
+1/64 = 0.016, y si solo se contrasta «Delta7 inhibe» frente a los seis lugares
+posibles de una única etiqueta distinta, 1/6 = 0.17.
 
 ## 4. Trampas de la tarea de integración
 
@@ -152,17 +174,22 @@ confianza, cada neurona queda en una cuña (concentración 0.89-0.99).
   115°, 65°, 22°, 335°, 291°, 239°, 194°, 156°): un espejo, con pasos de ≈45° y
   un desfase L/R de ≈22° entre glomérulos homólogos. EPGt (glomérulo 9) queda en
   113-148°, la fase del glomérulo 1.
-- Es consistente con lo descrito por Hulse et al. (2021) (cada hemisferio
-  muestrea el anillo completo a ≈45°, desfase L/R de 22.5°), pero **ningún mapeo
-  usado antes lo recogía**: el original colocaba L y R en mitades del círculo, y
-  el "intercalado" descartado el 2026-09-16, aunque correcto en cobertura y
-  desfase, supuso el mismo sentido en ambos hemisferios.
+- Es consistente con lo descrito para el sistema (cada hemisferio muestrea el anillo
+  completo a ≈45° con desfase L/R de 22.5°, Hulse et al., 2021, y la proyección alterna
+  de las cuñas del EB a los dos hemisferios del PB viene de trabajos anteriores) y **no
+  es un hallazgo anatómico nuevo**: la aportación es una medición reproducible en
+  MaleCNS y la corrección de nuestros mapeos previos, que colocaban L y R en mitades
+  del círculo (el original) o suponían el mismo sentido en ambos hemisferios (el
+  «intercalado» descartado el 2026-09-16).
 - Validación con los PEN (no usados para construir el mapa): los PEN de L y R
   se desplazan en sentidos opuestos con consistencia perfecta (≈ −6° y +5.5°;
   magnitud pequeña, probablemente por sinapsis EPG↔PEN recíprocas en el EB que
   el grafo no distingue de las del PB).
 - El sentido de giro global es arbitrario en el método (`ring_sign`); ambos
   sentidos dan resultados equivalentes en la comprobación de realizabilidad.
+- Limitaciones del método: el ajuste de plano por PCA supone un EB aproximadamente
+  plano y un muestreo angular parejo de sinapsis; no se contrastó con el recuento de 16
+  cuñas ni con la misma medición en hemibrain frente a las tablas publicadas.
 
 ## 6. Realizabilidad y (falta de) especificidad de la química real
 
@@ -213,15 +240,42 @@ con el mismo protocolo (una corrida por patrón, semilla 0):
   química real sea especial: **la lectura de "suficiencia funcional" de la v1 se
   retracta.**
 
-**Mecanismo probable.** Con `tanh` las tasas van en (−1, 1). En la red que
-integra con la asignación real, las tasas de Delta7 son negativas el 89% del
-tiempo (fracción > 0 = 0.11; media −0.17): una neurona "inhibidora" con
-actividad negativa excita a sus dianas. En el patrón sin ninguna inhibición
-(que no integra) Delta7 tiene fracción > 0 = 1.00. La solución explota una
-libertad no fisiológica (comprobación descriptiva sobre 5 ensayos; la simetría
-de gauge no se ha demostrado formalmente), que hace que muchos patrones de
-signo sean funcionalmente equivalentes. Vale también para la solución con la
-asignación real: **no es una solución biológica.**
+**Mecanismo probable.** Con `tanh` las tasas van en (−1, 1) y el nivel basal es 0: se
+interpretan como desviaciones respecto a una actividad basal. En la red que integra con
+la asignación real, Delta7 está por debajo de la basal el 89% del tiempo (fracción > 0 =
+0.11; media −0.17): una neurona inhibidora que baja su actividad desinhibe a sus dianas,
+con efecto neto excitador. Es una lectura legítima si la neurona real tuviera una
+actividad basal tónica suficiente, pero el modelo ni la representa ni la limita, y hace
+que el signo del peso deje de ser identificable a partir de la función: muchos patrones
+de signo se vuelven funcionalmente equivalentes (comprobación descriptiva sobre 5
+ensayos; la simetría de gauge no se ha demostrado formalmente). Con el patrón sin
+ninguna inhibición (que no integra), Delta7 tiene fracción > 0 = 1.00. Por tanto la
+solución con la asignación real no debe leerse como una solución mecanísticamente
+biológica.
+
+**Validación mecanística (descriptiva; `bump_check.py`).** Con velocidad constante
+dentro del rango de entrenamiento (±0.01 a ±0.08 por paso durante 90 pasos), la red con
+la asignación real desplaza el bump en el sentido correcto, de forma antisimétrica y
+aproximadamente proporcional (ganancia 0.54 respecto a un integrador ideal de 1; R² =
+0.84), con saturación para desplazamientos grandes (esperado ±7.2 rad, decodificado −2.8
+/ +3.3). Otros patrones que integran dan ganancia 0.75-0.76 (R² 0.92-0.93). La red sin
+inhibición no responde (desplazamiento ≈ −0.2 rad a todas las velocidades). La
+localización del bump (|Σ r e^{iθ}| / Σ|r| sobre EPG/EPGt) es 0.62 en la solución con la
+asignación real y 0.34-0.37 en «solo EPG inhibe» y «EPG+EPGt inhiben». Es decir: las
+redes que «integran» implementan una integración compresiva (ganancia < 1, saturante),
+no un integrador perfecto; y con una velocidad constante grande (±0.3 durante 180
+pasos) ningún modelo desplaza el bump. La pendiente de las secciones anteriores mide la
+integración en el rango de entrenamiento, no un integrador general. Se comprobó que no
+es un artefacto del decodificador, pero no se caracterizó el mecanismo (perfil del
+bump, anchura, dependencia de la inhibición).
+
+**Tasas no negativas (sigmoide).** Con `activation="sigmoid"` (tasa basal 0.5), mismos
+hiperparámetros y protocolo (600 épocas), los signos reales dan held-out 0.303
+(`ring_sign=−1`, pendiente 0.33) y 0.470 (`+1`, pendiente 0.01), y 4 barajados
+0.536-0.955: los reales quedan por delante de los barajados, pero ninguno cumple el
+criterio de «integra». Con esos hiperparámetros la comprobación de realizabilidad no se
+cumple, así que no se enumeraron los 64 patrones; haría falta una búsqueda de régimen
+propia. El resultado es no concluyente.
 
 ## 7. Aprendibilidad
 
@@ -242,6 +296,13 @@ es evaluable.
 - **H1 tal como se formuló no está ni confirmada ni refutada**: el aprendiz no
   llega a una solución funcional, y la solución funcional existente no depende
   de la química real. El nulo de la sección 3 no informa sobre la biología.
+- **Un bit conocido.** Con el neurotransmisor función del tipo, el contraste de fondo es
+  «Delta7 inhibe» (conocido) frente a las otras 63 combinaciones. Que la tarea no lo
+  seleccione, con este modelo, dice que la tarea y el modelo no imponen esa
+  restricción, no que la biología no la imponga.
+- **Sesgo de selección a favor de la real.** Los hiperparámetros dinámicos se eligieron
+  en zonas donde la asignación real funcionaba; eso favorecería a la real frente al resto
+  de patrones. Que aun así quede en el puesto 22 refuerza el nulo en vez de debilitarlo.
 - **Lo que sí se sostiene:** (a) las cinco trampas metodológicas; (b) un modelo
   de tasas con signo puede resolver la tarea con patrones de signo por tipo
   muy distintos, así que **la tarea de integración de rumbo con activación
@@ -252,8 +313,24 @@ es evaluable.
 - **Consecuencia práctica para trabajos similares:** antes de interpretar un
   acuerdo o un desacuerdo de signo, comprobar (1) que existe una solución trivial
   que el modelo no supera, (2) que la tarea da pista de fase, (3) que el modelo
-  con los signos reales resuelve la tarea, (4) que la solución no depende de
-  tasas negativas y (5) si el ground truth es función de una variable de tipo.
+  con los signos anotados resuelve la tarea, (4) que el resultado no depende de
+  tasas con signo sin nivel basal, (5) si el neurotransmisor anotado es función de
+  una variable de tipo, y (6) que la red que «integra» responde de forma
+  proporcional a la velocidad y no solo en el decodificador.
+
+### Posicionamiento y trabajo previo (referencias por verificar antes de citar)
+
+No se ha hecho una revisión sistemática. Trabajos de partida que un lector esperaría ver
+discutidos: la descripción anatómica del circuito (Wolff et al., 2015; Hulse et al.,
+2021); los modelos de anillo atractor basados en el conectoma del sistema de dirección de
+cabeza, entre ellos Kakaria y de Bivort (2017), Turner-Evans et al. (2020) y Pisokas et
+al. (2020), que obtienen dinámica de bump con parámetros ajustados y una inhibición de
+Delta7 específica; modelos entrenados con restricción de conectoma (Lappalainen et al.,
+2024) y la sensibilidad topológica de esos modelos (Dhiman, 2026); la predicción de
+neurotransmisor (Eckstein et al., 2024); y el conectoma MaleCNS (Berg et al., 2026). La
+comparación de nuestra dinámica con la de esos modelos ajustados a mano (¿qué parámetros
+e inhibición requieren?) es la vía más directa para entender por qué el modelo original
+no integra.
 
 ## 9. Retractaciones respecto a la v1
 
@@ -265,6 +342,7 @@ es evaluable.
 | "El mapeo intercalado es el conforme a la anatomía" | Corregida: L y R recorren el anillo en sentidos opuestos (sección 5). |
 | "La química real integra y las barajadas no (suficiencia funcional)" | Retractada: 26/64 patrones por tipo integran; la real, puesto 22 (sección 6). |
 | "~440 evaluaciones de régimen" | Corregida: 588. |
+| «Tasas negativas no fisiológicas» (versión intermedia) | Matizada: son desviaciones respecto a un nivel basal nulo; el problema es la falta de identificabilidad del signo (sección 6). |
 
 ## 10. Limitaciones
 
@@ -279,9 +357,9 @@ es evaluable.
   configuraciones de las fases anteriores y umbrales de polarización fijados sin
   análisis previo de potencia; ningún p-valor aislado debe leerse como
   confirmatorio.
-- **Tasas con signo (`tanh`)**: no se probó una activación no negativa con
-  entrenamiento estable, que es el test biológicamente válido; la rectificada
-  fue inestable en la comprobación de realizabilidad.
+- **Tasas con signo (`tanh`)**: la comprobación con sigmoide (tasa basal 0.5, sección 6)
+  no fue concluyente con los mismos hiperparámetros; la rectificada fue inestable. No
+  hay un test con tasas no negativas que cumpla la realizabilidad.
 - **Nula del test de H1 a nivel de neurona** (sección 3) y potencia no medida
   para señal por tipo.
 - **Un solo subcircuito y una sola tarea**: 152 neuronas del núcleo, sin ring
@@ -293,6 +371,19 @@ es evaluable.
 - **Solución con magnitud efectiva**: forzar los signos entrenados a ±1 degrada
   su pérdida (0.58-0.72 → 0.70-0.79): "magnitud fija" se cumple solo a medias
   en la solución aprendida.
+- **Neurotransmisor anotado, no medido; supuestos de signo.** `predictedNt` es una
+  predicción a partir de EM; se asume ley de Dale y acetilcolina→excita,
+  glutamato→inhibe. No se modelan la co-transmisión ni la dependencia del receptor
+  (p. ej. receptores muscarínicos inhibidores o receptores de glutamato excitadores).
+- **«Integra» es un umbral binario arbitrario** (held-out < 0.466 y pendiente > 0.5,
+  fijado antes de la enumeración). El p exacto usa el rango continuo del held-out, pero
+  no hay intervalos de incertidumbre por corrida y la diferencia entre puestos vecinos
+  (p. ej. el 22 frente al 15) está dentro del ruido de optimización (las réplicas de la
+  real varían 0.106-0.124).
+- **Las fracciones por tipo (sección 6) son marginales de patrones no independientes**:
+  cada patrón entra en seis marginales; no son efectos causales de cada tipo.
+- **Integración compresiva**: ganancia 0.54-0.76 y saturación; no se compararon las
+  redes con integradores ajustados a mano ni se caracterizó el perfil del bump.
 - **Entorno**: con torch 2.4.1 (Python del sistema) el gradiente de
   `atan2(0,0)` es `nan`; el entorno del proyecto (`.venv`, torch 2.14) da 0. Los
   entrenamientos por defecto deben ejecutarse con el `.venv`
@@ -301,9 +392,12 @@ es evaluable.
 
 ## 11. Trabajo futuro
 
-- Repetir la comprobación de realizabilidad y la enumeración de 64 patrones con
-  tasas no negativas (sigmoide o rectificada estable): es el único test
-  biológicamente válido de si la química real es especial.
+- Buscar un régimen dinámico donde la asignación real integre con tasas no negativas
+  (sigmoide, rectificada estable o desviaciones con nivel basal explícito) y solo
+  entonces repetir la enumeración de 64 patrones; con los hiperparámetros actuales la
+  sigmoide no lo logra.
+- Validar el mapeo de fase aplicando el mismo procedimiento a hemibrain y comparándolo
+  con las tablas publicadas; comparar la dinámica con modelos de anillo ajustados a mano.
 - Replicar cada patrón con varias semillas y ambos sentidos de giro.
 - Atacar la aprendibilidad (currículo sobre T, otro inicio, tasas de aprendizaje
   por grupo de parámetros, más épocas).
@@ -326,14 +420,15 @@ es evaluable.
 > ganancias por tipo celular existe una solución que integra el rumbo, pero no
 > es específica de la química real: 26 de los 64 patrones de signo por tipo la
 > alcanzan (la asignación real, en el puesto 22; p = 0.34), apoyándose en tasas
-> negativas no fisiológicas; y un aprendiz de signos genérico no la encuentra.
+> con signo (desviaciones respecto a un nivel basal nulo) que hacen el signo del peso
+> poco identificable; y un aprendiz de signos genérico no la encuentra.
 > Dado que en este subcircuito el neurotransmisor es función exacta del tipo
 > celular, la pregunta se reduce a un dato de tipo, y los cálculos de potencia
 > por neurona no son aplicables. Proponemos una lista de comprobaciones previas
-> (existencia de una solución trivial, pista de fase, solubilidad con el ground
-> truth, independencia de tasas negativas y estructura del ground truth) antes
-> de interpretar acuerdos o desacuerdos de signo en modelos restringidos por
-> conectoma.
+> (existencia de una solución trivial, pista de fase, solubilidad con los signos
+> anotados, independencia de tasas con signo sin nivel basal, estructura del
+> neurotransmisor anotado y respuesta proporcional a la velocidad) antes de
+> interpretar acuerdos o desacuerdos de signo en modelos restringidos por conectoma.
 
 ## Apéndice: correspondencia con el cuaderno y el código
 
@@ -348,3 +443,4 @@ es evaluable.
 | parámetros por tipo, realizabilidad, barajados | 2026-09-19 (8), (10), (11) | `model.py`, `train.py`, `analyze_dose.py` |
 | aprendibilidad | 2026-09-19 (9) | `train.py` |
 | 64 patrones por tipo | 2026-09-20, 2026-09-20 (2) | `analyze_types.py` |
+| validación mecanística; tasas no negativas | 2026-09-20 (3) | `bump_check.py`, `rate_stats.py` |

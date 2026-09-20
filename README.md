@@ -18,8 +18,8 @@ superaba a los modelos entrenados); (2) la fase angular real de cada neurona en
 el EB, medida con coordenadas de sinapsis, es un espejo entre hemisferios que
 los mapeos asumidos no recogían; (3) con ganancias por tipo celular existe una
 solución que integra el rumbo, pero no es específica de la química real (26 de
-64 patrones de signo por tipo la alcanzan; la real, puesto 22) y se apoya en
-tasas negativas no fisiológicas; (4) un aprendiz de signos genérico no la
+64 patrones de signo por tipo la alcanzan; la real, puesto 22) y usa tasas con
+signo (desviaciones de una basal nula) que hacen el signo poco identificable; (4) un aprendiz de signos genérico no la
 encuentra; (5) en este subcircuito el neurotransmisor es función exacta del tipo
 celular (Delta7 = glutamato, resto = acetilcolina). Detalle y retractaciones en
 [`docs/preprint-discussion.md`](docs/preprint-discussion.md) y
@@ -106,6 +106,18 @@ Registro de decisiones y resultados: [`docs/lab-notebook.md`](docs/lab-notebook.
 - **Cuaderno.** [`docs/lab-notebook.md`](docs/lab-notebook.md) registra cada decisión,
   incluidos los errores y sus correcciones; las afirmaciones retractadas están en la
   tabla de la sección 9 de [`docs/preprint-discussion.md`](docs/preprint-discussion.md).
+
+## Datos, licencia y citas
+
+- **Código:** MIT (`LICENSE`).
+- **Datos de conectoma:** MaleCNS (`male-cns:v1.0`) se distribuye bajo **CC-BY 4.0**;
+  este repositorio no los redistribuye. Los ficheros derivados de `results/` (ángulos
+  agregados por glomérulo, resúmenes de entrenamientos) se ofrecen con la misma atribución.
+  Si usas este trabajo, cita el conectoma: Berg et al. (2026), *Sexual dimorphism in the
+  complete Drosophila male central nervous system connectome*, Cell
+  ([texto](https://www.cell.com/cell/fulltext/S0092-8674(26)00942-6)); preprint en bioRxiv,
+  doi:10.1101/2025.10.09.680999. Neurotransmisor predicho: Eckstein et al. (2024).
+- **Revisión crítica interna:** [`docs/expert-review.md`](docs/expert-review.md).
 
 ## Referencias clave
 
