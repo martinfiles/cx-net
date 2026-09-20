@@ -21,3 +21,6 @@ data/interim/
 # OS
 .DS_Store
 Thumbs.db
+
+# Paquetes generados
+dist/
