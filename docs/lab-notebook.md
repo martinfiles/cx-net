@@ -1611,6 +1611,36 @@ ve qué tipos importan (¿basta "Delta7 inhibe"?, ¿importa el signo de los PEN?
 Después, reescribir el borrador con estos resultados y rehacer/retirar el control
 de potencia.
 
+## 2026-09-20 — Enumeración de los 64 patrones de signo por tipo celular (DISEÑO, fijado antes de ver resultados)
+
+**Motivo:** entrada (11): el neurotransmisor es función exacta del tipo (Delta7 =
+glutamato, resto = acetilcolina), así que la hipótesis natural es un signo por
+tipo: 2^6 = 64 patrones. Enumerarlos todos da un p-valor exacto (rango de la
+asignación real entre los 64, sin muestreo) y muestra qué tipos importan.
+
+**Diseño:** `control_type_mask` en `train()` (máscara de 6 bits; bit i = 1 ->
+el tipo `TYPE_ORDER[i]` inhibe; orden Delta7, EPG, EPGt, PEG, PEN_a(PEN1),
+PEN_b(PEN2); el signo se aplica a todas las aristas SALIENTES del tipo).
+Máscara 1 (solo Delta7 inhibe) == neurotransmisor real (verificado). 63 corridas
+nuevas (`types_mask{0..63 salvo 1}_p`, `data/interim/launch_types.sh`, 21 en
+paralelo); la máscara 1 se reutiliza de `realctl_tanh_p` (seed 0). Mismo
+protocolo que las entradas (8)/(10): `ring_sign=+1`, tanh, `recurrent_gain=2`,
+`tau=10`, `in_gain=10`, `cue_gain=10`, `hold_prob=0.3`, `max_av=0.15`, 600
+épocas, `seed=0`, ganancias/sesgos por tipo entrenables con signos fijos.
+
+**Criterio primario (fijado antes):** "integra" = held-out < 0.466 Y pendiente
+> 0.5. p exacto = #{patrones con held-out <= el de la máscara 1} / 64 (la real
+incluida; si es la única que integra y la mejor, p = 1/64 = 0.0156). Descriptivos:
+lista de patrones que integran, y para cada tipo la fracción de patrones que
+integran con ese tipo excitador vs. inhibidor. No se excluye ninguna corrida.
+
+**Riesgos declarados:** (a) una corrida por patrón y semilla 0: un patrón
+"no integra" puede ser mala suerte de optimización, no imposibilidad; se
+valorará con las réplicas de la real (0.106-0.124, muy estables); (b) los signos
+son por tipo de ORIGEN de la arista; (c) `ring_sign=+1` fijo; (d) los
+hiperparámetros dinámicos se eligieron con ayuda de la asignación real
+(grado de libertad ya declarado en (7)/(8)).
+
 ## Plantilla para próximas entradas
 
 ```

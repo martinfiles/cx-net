@@ -31,6 +31,9 @@ INTERIM_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data", "inter
 # los ensayos de entrenamiento y validación nunca coinciden por semilla.
 SEED_STRIDE = 1_000_000
 
+# Orden de tipos para las máscaras de signo por tipo (control_type_mask).
+TYPE_ORDER = ["Delta7", "EPG", "EPGt", "PEG", "PEN_a(PEN1)", "PEN_b(PEN2)"]
+
 
 def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
           trials_per_step: int = 16, ema_alpha: float = 0.05, patience: int = 150,
@@ -42,7 +45,8 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
           activation: str = "tanh", type_params: bool = False, real_sign_control: bool = False,
           in_gain: float = 3.0, cue_gain: float = 3.0,
           control_shuffle_seed: int | None = None,
-          control_swap_fraction: float | None = None) -> dict:
+          control_swap_fraction: float | None = None,
+          control_type_mask: int | None = None) -> dict:
     """
     ema_alpha / patience: el primer intento uso ReduceLROnPlateau directamente
     sobre la pérdida cruda de cada época, que es muy ruidosa (cada época usa
@@ -100,7 +104,12 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
         gt = attach_ground_truth(nodes, DATA_DIR)
         true_node_sign = gt["expected_sign"].to_numpy()
         node_sign = true_node_sign.copy()
-        if control_swap_fraction is not None:
+        if control_type_mask is not None:
+            # patrón de signo POR TIPO: bit i de la máscara = 1 -> los tipos TYPE_ORDER[i] inhiben
+            # (máscara 1 = solo Delta7 inhibe = la asignación real de neurotransmisor)
+            node_sign = np.array([-1.0 if (control_type_mask >> TYPE_ORDER.index(t)) & 1 else 1.0
+                                  for t in nodes["type"]])
+        elif control_swap_fraction is not None:
             # dosis-respuesta: se elige una fracción de neuronas y se permutan sus etiquetas
             # entre sí (mismo recuento 110/42); solo cambian las que reciben la otra etiqueta
             rng = np.random.default_rng(control_shuffle_seed or 0)
@@ -213,6 +222,7 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
         "real_sign_control": real_sign_control,
         "control_shuffle_seed": control_shuffle_seed,
         "control_swap_fraction": control_swap_fraction,
+        "control_type_mask": control_type_mask,
         "frac_nodes_changed": frac_nodes_changed if real_sign_control else None,
         "frac_edges_changed": frac_edges_changed if real_sign_control else None,
         "in_gain": in_gain,
