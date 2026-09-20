@@ -28,7 +28,9 @@ Ver hoja de ruta más abajo.
 
 ## Figuras
 
-Se regeneran con `python -m src.cx_net.make_figures` (leen solo de `results/`).
+Se regeneran con `python -m src.cx_net.make_figures [--lang es|en|all]` (leen solo de `results/`).
+Versiones en inglés en [`docs/figures/en/`](docs/figures/en/); resumen en inglés en
+[`docs/summary-en.md`](docs/summary-en.md) (English summary).
 
 ![Un decodificador inerte supera a todos los modelos entrenados](docs/figures/fig1.png)
 ![Los dos hemisferios recorren el anillo en sentidos opuestos](docs/figures/fig2.png)
