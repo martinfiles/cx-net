@@ -1641,6 +1641,55 @@ son por tipo de ORIGEN de la arista; (c) `ring_sign=+1` fijo; (d) los
 hiperparámetros dinámicos se eligieron con ayuda de la asignación real
 (grado de libertad ya declarado en (7)/(8)).
 
+## 2026-09-20 (2) — Resultado de los 64 patrones: la asignación real NO es especial; las tasas negativas del tanh abren un grado de libertad no fisiológico
+
+**Resultado** (diseño y criterio de la entrada (12); `src/cx_net/analyze_types.py`,
+`data/interim/types_analysis.json`; ninguna corrida excluida, 1 corrida por patrón, seed 0):
+- **26 de 64 patrones de signo por tipo integran** (held-out < 0.466 y pendiente > 0.5).
+- La asignación real (máscara 1, solo Delta7 inhibe): held-out 0.108, pendiente 0.82,
+  **puesto 22 de 64 por held-out. p exacto = 22/64 = 0.344.** No hay evidencia de que
+  sea especial.
+- Mejores: máscaras 39/43/47 (0.054-0.055; incluyen D7 inhibidor), pero también la 2
+  ("solo EPG inhibe": 0.063) y la 6 ("EPG+EPGt inhiben": 0.063), biológicamente absurdas.
+- Fracción de patrones que integran según el signo del tipo: D7 exc 7/32, inh 19/32;
+  EPG 10/32 vs 16/32; EPGt 14/32 vs 12/32; PEG 12/32 vs 14/32; PEN_a 14/32 vs 12/32;
+  PEN_b 20/32 vs 6/32. Descriptivo, sin test; el único contraste marcado es PEN_b
+  excitador, y D7 inhibidor ayuda pero no es necesario ni suficiente. No integrados:
+  held-out 0.262-0.703 (mediana 0.474).
+
+**Consecuencia:** RETRACTAR la lectura de "suficiencia funcional" de la entrada (9):
+que 12 barajados por neurona fallen NO muestra que la química real sea especial,
+sino que asignaciones que rompen la coherencia por tipo fallan. A nivel de tipo, 26 de
+64 patrones funcionan, y la real es uno más (puesto 22).
+
+**Mecanismo probable (verificado descriptivamente, 5 ensayos, t>=40):** con `tanh` las
+tasas van en (-1, 1). En la red con la asignación real, las tasas de Delta7 son
+negativas el 89% del tiempo (fracción >0: 0.11; media -0.17): una neurona
+"inhibidora" con actividad negativa EXCITA a sus dianas. En "solo EPG inhibe" las EPG
+oscilan ~50/50 alrededor de 0; en el patrón sin inhibición (que no integra) Delta7
+tiene fracción >0 = 1.00 (media +0.98). Es decir, la solución explota tasas
+negativas, una libertad no fisiológica que actúa como simetría de gauge y hace que
+muchos patrones de signo sean funcionalmente equivalentes. Esto vale también para
+la solución con la asignación real de la entrada (8): no es una solución biológica.
+(Sin verificar formalmente la simetría de gauge; solo la observación descriptiva.)
+
+**Implicaciones:** (1) El H1 "el aprendiz converge a la química real" sigue sin ser
+evaluable (el aprendiz no aprende, entrada (9)). (2) La versión de suficiencia
+funcional no se sostiene con tasas con signo. (3) Un test biológicamente válido
+requiere tasas no negativas; la activación rectificada ya existe (`activation=
+"rectified"`) pero en la entrada (8) fue inestable (real: 0.172 con ring_sign=-1,
+0.467 con +1). Alternativas sin ReLU muerta: sigmoide/softplus (con tasa basal).
+(4) Siguen siendo hallazgos sólidos: la referencia de azar errónea, la tarea sin ancla,
+la geometría del anillo medida en sinapsis, la realizabilidad con parámetros por tipo,
+el fallo de aprendibilidad y este sesgo de las tasas con signo.
+
+**Siguiente paso (decisión pendiente):** (A) repetir la comprobación de realizabilidad y
+la enumeración de 64 patrones con tasas no negativas (sigmoide o rectificada estable);
+~1 h de comprobación + ~3 h de enumeración. Si la real destaca, es el resultado
+biológico; si no, es un negativo definitivo. (B) Cerrar y reescribir el preprint con
+lo anterior como informe metodológico/negativo, retirando el control de potencia por
+neurona y la lectura de suficiencia.
+
 ## Plantilla para próximas entradas
 
 ```
