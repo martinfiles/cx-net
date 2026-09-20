@@ -23,6 +23,8 @@ class CXRingNetwork(nn.Module):
         (-1, 1); una neurona inhibidora con tasa negativa excitaría a sus
         dianas, lo que no es fisiológico. `activation="rectified"`:
         relu(tanh(x)), tasas en [0, 1) (2026-09-19, entrada (7) del cuaderno).
+        `activation="sigmoid"` (2026-09-20): sigmoide, tasas en (0, 1) con tasa
+        basal 0.5 y sin ReLU muerta; tasas no negativas sin perder gradiente.
 
         `learn_type_params=True` (2026-09-19, entrada (8)): añade parámetros
         COMPARTIDOS POR TIPO celular, nunca por arista: una ganancia positiva
@@ -32,7 +34,7 @@ class CXRingNetwork(nn.Module):
         tipos. El signo por arista sigue siendo el único parámetro de arista.
         Con el defecto (False) el modelo y sus state_dict no cambian."""
         super().__init__()
-        if activation not in ("tanh", "rectified"):
+        if activation not in ("tanh", "rectified", "sigmoid"):
             raise ValueError(f"activation desconocida: {activation}")
         self.activation = activation
         self.n_nodes = n_nodes
@@ -91,7 +93,7 @@ class CXRingNetwork(nn.Module):
             pre = incoming + ext_input * torch.exp(torch.clamp(self.log_input_scale, -5.0, 5.0)) + self.type_bias[self.type_ids]
         else:
             pre = incoming + ext_input
-        drive = torch.tanh(pre)
+        drive = torch.sigmoid(pre) if self.activation == "sigmoid" else torch.tanh(pre)
         if self.activation == "rectified":
             drive = torch.relu(drive)
         dr = (-r + drive) * (self.dt / self.tau)

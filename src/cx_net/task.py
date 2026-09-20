@@ -136,6 +136,13 @@ def decode_heading(states: torch.Tensor, nodes) -> torch.Tensor:
     r_compass = states[:, compass_mask]  # [T, n_compass]
     x = (r_compass * torch.cos(angles)).sum(dim=1)
     y = (r_compass * torch.sin(angles)).sum(dim=1)
+    # atan2(0, 0) tiene gradiente nan en algunas versiones de torch (2.4.1) y 0 en
+    # otras (2.14). Se sustituye el vector nulo por uno constante (sin gradiente):
+    # valor idéntico (atan2(0, 0) = 0) y gradiente 0 en cualquier versión; los
+    # vectores no nulos no cambian ni un bit.
+    zero = (x == 0) & (y == 0)
+    x = torch.where(zero, torch.ones_like(x), x)
+    y = torch.where(zero, torch.zeros_like(y), y)
     return torch.atan2(y, x)  # [T]
 
 
