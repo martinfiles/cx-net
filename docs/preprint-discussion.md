@@ -289,6 +289,25 @@ velocidad y la actividad graduada, no la retención de fase. Salvedades: una sol
 por modelo, resolución angular gruesa (50 neuronas), y no se comparó con el perfil de
 un modelo de anillo construido a mano.
 
+**Magnitudes libres por arista, signos fijos (`edge_gain`, `analyze_edge_gain.py`,
+`results/edge_gain*_analysis.json`).** Prueba propuesta por la revisión externa: ¿son las
+magnitudes rígidas (conteo de sinapsis) lo que impide integrar? Se añadió una ganancia
+positiva por arista (9.160 parámetros) sobre la receta por tipo, con los signos fijos. Con
+la misma tasa de aprendizaje que el resto (ronda 1) la asignación real deja de integrar
+(held-out 0.470-0.475, pendiente ≈ 0; con ganancias por tipo era 0.106-0.124) y de 6
+barajados solo uno integra (0.236): es un fallo de optimización, no un resultado sobre la
+biología, porque la solución por tipo está contenida en este espacio (ganancia 1). Con una
+tasa 10 veces menor para las ganancias por arista (ronda 2; elegida después de ver el
+fallo, en el sentido que favorece a la real) la real integra en 3 de 3 semillas (0.078-0.103,
+pendiente 0.80-0.91) y ninguno de 6 barajados ni el patrón sin inhibición lo hace
+(0.35-0.58). Pero las ganancias por arista apenas se mueven (percentiles 5-95 entre 0.8 y
+1.3) y no se poda ninguna arista, así que esto es casi el resultado por tipo con una mejora
+pequeña (0.08-0.10 frente a 0.11-0.12), no una prueba de que las magnitudes rígidas sean el
+problema: con libertad grande no se optimiza, y con libertad pequeña no cambia nada. La
+hipótesis «fuerza funcional ≠ conteo de sinapsis» sigue sin poder separarse de la de
+«identidad del signo» con este diseño; la comparación a nivel de tipo (ganancias por tipo:
+la real integra, los barajados no) es la evidencia disponible.
+
 **Tasas no negativas (sigmoide).** Con `activation="sigmoid"` (tasa basal 0.5), mismos
 hiperparámetros y protocolo (600 épocas), los signos reales dan held-out 0.303
 (`ring_sign=−1`, pendiente 0.33) y 0.470 (`+1`, pendiente 0.01), y 4 barajados
@@ -351,6 +370,24 @@ neurotransmisor (Eckstein et al., 2024); y el conectoma MaleCNS (Berg et al., 20
 comparación de nuestra dinámica con la de esos modelos ajustados a mano (¿qué parámetros
 e inhibición requieren?) es la vía más directa para entender por qué el modelo original
 no integra.
+
+Estado de verificación (2026-09-21). Existencia de las referencias confirmada en la web
+del editor: Pisokas, Heinze y Webb (2020), *eLife* 9:e53985, «The head direction circuit
+of two insect species»; Turner-Evans et al. (2020), *Neuron* 108(1):145-163, «The
+neuroanatomical ultrastructure and function of a biological ring attractor»; Franconville,
+Beron y Jayaraman (2018), *eLife* 7:e37017, «Building a functional connectome of the
+Drosophila central complex». Su contenido NO está verificado contra el texto completo. Lo
+poco que se leyó de la página de Pisokas et al. corrige mi descripción anterior: son
+neuronas de integración y disparo (LIF), no un modelo de tasas, y los pesos no se ajustan a
+mano sino que se optimizan (agrupando varias optimizaciones con k-means); los pesos
+absolutos se declaran arbitrarios y lo que emerge es un patrón de eficacias *relativas* entre
+tipos (E-PG→P-EN/P-EG fuertes; P-EN→E-PG y P-EG→E-PG débiles) y una velocidad de giro del
+bump que crece de forma exponencial con la estimulación unihemisférica de las P-EN. Esto es
+coherente con que las ganancias por tipo, y no el signo, sean lo que hace falta, pero no lo
+demuestra. Falta leer Kakaria y de Bivort (2017), Kim et al. (2017; es un trabajo
+experimental de dinámica de anillo atractor, no un modelo mecanicista), Green et al. (2017) y
+Prinz, Bucher y Marder (2004, *Nat. Neurosci.*; circuitos con parámetros muy distintos dan
+actividad similar), que respalda que varios patrones de signo resuelvan la tarea.
 
 ## 9. Retractaciones respecto a la v1
 

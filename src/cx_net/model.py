@@ -18,7 +18,7 @@ class CXRingNetwork(nn.Module):
     def __init__(self, n_nodes: int, edge_index: torch.Tensor, synapse_weight: torch.Tensor,
                  tau: float = 5.0, dt: float = 1.0, recurrent_gain: float = 4.0,
                  activation: str = "tanh", type_ids: torch.Tensor | None = None,
-                 learn_type_params: bool = False):
+                 learn_type_params: bool = False, learn_edge_gain: bool = False):
         """`activation="tanh"` (defecto, reproduce todo lo anterior): tasas en
         (-1, 1); una neurona inhibidora con tasa negativa excitaría a sus
         dianas, lo que no es fisiológico. `activation="rectified"`:
@@ -32,7 +32,14 @@ class CXRingNetwork(nn.Module):
         sesgo por tipo y una escala global de la entrada. Compensan que la
         normalización por neurona destino borra las ganancias relativas entre
         tipos. El signo por arista sigue siendo el único parámetro de arista.
-        Con el defecto (False) el modelo y sus state_dict no cambian."""
+        Con el defecto (False) el modelo y sus state_dict no cambian.
+
+        `learn_edge_gain=True` (2026-09-21, respuesta a la revisión externa): añade una ganancia
+        positiva POR ARISTA (exp de `log_edge_gain`, init 0), es decir, magnitudes de peso libres
+        con el signo fijo. Es la excepción deliberada al diseño «magnitud fija»: sirve para
+        preguntar si la magnitud (conteo de sinapsis) es lo que impide integrar con los signos
+        reales. Una arista de signo «equivocado» puede podarse llevando su ganancia a 0, así que
+        esta variante NO es una prueba de H1. Con el defecto (False) nada cambia."""
         super().__init__()
         if activation not in ("tanh", "rectified", "sigmoid"):
             raise ValueError(f"activation desconocida: {activation}")
@@ -75,14 +82,20 @@ class CXRingNetwork(nn.Module):
             self.log_pair_gain = nn.Parameter(torch.zeros(n_types * n_types))
             self.type_bias = nn.Parameter(torch.zeros(n_types))
             self.log_input_scale = nn.Parameter(torch.zeros(()))
+        self.learn_edge_gain = learn_edge_gain
+        if learn_edge_gain:
+            self.log_edge_gain = nn.Parameter(torch.zeros(edge_index.shape[1]))
 
     def type_parameters(self) -> list:
-        return [self.log_pair_gain, self.type_bias, self.log_input_scale] if self.learn_type_params else []
+        params = [self.log_pair_gain, self.type_bias, self.log_input_scale] if self.learn_type_params else []
+        return params + ([self.log_edge_gain] if self.learn_edge_gain else [])
 
     def effective_weight(self) -> torch.Tensor:
         w = torch.tanh(self.sign_param) * self.synapse_weight * self.recurrent_gain
         if self.learn_type_params:
             w = w * torch.exp(torch.clamp(self.log_pair_gain, -5.0, 5.0))[self.edge_pair]
+        if self.learn_edge_gain:
+            w = w * torch.exp(torch.clamp(self.log_edge_gain, -5.0, 5.0))
         return w
 
     def step(self, r: torch.Tensor, ext_input: torch.Tensor) -> torch.Tensor:

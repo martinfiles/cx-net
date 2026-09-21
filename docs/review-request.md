@@ -87,6 +87,7 @@ five methodological findings, and a set of retractions of my own earlier claims.
 | The real-assignment solution runs Delta7 below baseline 89% of the time | `results/rates_by_type.json`; figure 5 |
 | Integrating networks respond antisymmetrically and roughly proportionally, compressively | `results/bump_check.json` |
 | The integrating networks move a broad graded bump (FWHM ≈ 120–170°, no saturation); the non-integrating one is a frozen saturated pattern; phase memory does not discriminate | `results/bump_profile.json`; figure 6 |
+| With free positive per-edge gains (signs fixed) the real assignment integrates only if the edge-gain learning rate is small (3/3 seeds), where the gains barely move (5–95th percentile 0.8–1.3) and 0/6 shuffled patterns integrate; with the default rate it fails (optimisation) | `results/edge_gain_analysis.json`, `results/edge_gain_lr005_analysis.json` |
 | A generic sign learner does not find the solution (4 pilots, 0.458–0.561) | `results/runs_summary.csv` (`joint_sr*`) |
 
 ## Reproducing

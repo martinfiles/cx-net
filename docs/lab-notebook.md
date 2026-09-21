@@ -1750,6 +1750,28 @@ signo; corregido antes de usarlo. Salvedades: una corrida por modelo, contenedor
 **Siguiente paso:** comparar el perfil con un anillo construido a mano (Kakaria-de Bivort /
 Turner-Evans / Pisokas); barrido de escala global de pesos; replicar los 64 patrones con semillas.
 
+## 2026-09-22 — Magnitudes libres por arista con signos fijos (propuesta del experto)
+
+**Qué se hizo:** opción `edge_gain` (ganancia positiva por arista, `log_edge_gain`, init 0) en
+`model.py`/`train.py`; `edge_gain_lr` para una tasa propia. Misma receta que los patrones por tipo
+(600 épocas, tanh, ganancias por tipo). Ronda 1 (`edgegain_*`, misma tasa 0.05): real x3, 6 barajados
+por neurona (los mismos que `realctl_shuf1..6`), mask0, mask2. Ronda 2 (`edgegain_lr005_*`, tasa 0.005
+solo para las ganancias por arista): real x3, 6 barajados, mask0. Análisis: `analyze_edge_gain.py`.
+**Por qué:** el experto sugirió fijar los signos y liberar solo magnitudes para probar que el problema
+es «fuerza = conteo de sinapsis». Mi reserva de diseño (la original de `model.py`): un signo «equivocado»
+se puede compensar con la magnitud; se midió la poda.
+**Resultado / número clave:** ronda 1: real 0.470-0.475 (no integra), barajados 0.236-0.486 (1 de 6
+integra), mask0 0.468, mask2 0.474; no hay poda (< 0.5 % de aristas de signo distinto). Ronda 2: real
+0.103 / 0.078 / 0.083 (pendiente 0.80-0.91), barajados 0.353-0.578 (ninguno integra), mask0 0.464;
+ganancias por arista entre 0.8 y 1.3 (p5-p95), sin poda. Lectura: ronda 1 = fallo de optimización
+(la solución por tipo está contenida y aun así se pierde); ronda 2 = casi el resultado por tipo (mejora
+0.02-0.04). No aísla el efecto de las magnitudes. La receta de la ronda 2 se eligió después de ver que
+la real fallaba en la ronda 1 (sesgo a favor de la real, como en los demás hiperparámetros).
+Un error de mi script de análisis (prefijo fijo) mostró primero de nuevo la ronda 1; se corrigió antes
+de usar los números.
+**Siguiente paso:** semillas 1 y 2 de los 63 patrones (en curso, `data/interim/launch_seeds.sh`);
+no repetir `edge_gain` con tasas intermedias salvo que se quiera una curva dosis-respuesta de libertad.
+
 ## Plantilla para próximas entradas
 
 ```

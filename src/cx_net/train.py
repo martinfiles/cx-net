@@ -46,7 +46,8 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
           in_gain: float = 3.0, cue_gain: float = 3.0,
           control_shuffle_seed: int | None = None,
           control_swap_fraction: float | None = None,
-          control_type_mask: int | None = None) -> dict:
+          control_type_mask: int | None = None, edge_gain: bool = False,
+          edge_gain_lr: float | None = None) -> dict:
     """
     ema_alpha / patience: el primer intento uso ReduceLROnPlateau directamente
     sobre la pérdida cruda de cada época, que es muy ruidosa (cada época usa
@@ -97,7 +98,7 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
     type_names = list(pd.factorize(nodes["type"])[1]) if type_params else None
     model = CXRingNetwork(graph["n_nodes"], graph["edge_index"], graph["synapse_weight"],
                            tau=tau, recurrent_gain=recurrent_gain, activation=activation,
-                           type_ids=type_ids, learn_type_params=type_params)
+                           type_ids=type_ids, learn_type_params=type_params, learn_edge_gain=edge_gain)
     if real_sign_control:
         if not type_params:
             raise ValueError("real_sign_control sin type_params no entrena nada")
@@ -126,7 +127,14 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
         model.sign_param.requires_grad_(False)
         sign_reg = 0.0
     trainable = ([] if real_sign_control else [model.sign_param]) + model.type_parameters()
-    optimizer = torch.optim.Adam(trainable, lr=lr, betas=adam_betas)
+    if edge_gain and edge_gain_lr is not None:
+        # tasa de aprendizaje propia (menor) para las 9.160 ganancias por arista: con la misma tasa
+        # que el resto la primera ronda destruyó la solución por tipo (entrada 2026-09-21)
+        base = [p for p in trainable if p is not model.log_edge_gain]
+        optimizer = torch.optim.Adam([{"params": base, "lr": lr}, {"params": [model.log_edge_gain], "lr": edge_gain_lr}],
+                                     betas=adam_betas)
+    else:
+        optimizer = torch.optim.Adam(trainable, lr=lr, betas=adam_betas)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="min", factor=0.5, patience=patience
     )
@@ -223,6 +231,8 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
         "control_shuffle_seed": control_shuffle_seed,
         "control_swap_fraction": control_swap_fraction,
         "control_type_mask": control_type_mask,
+        "edge_gain": edge_gain,
+        "edge_gain_lr": edge_gain_lr,
         "frac_nodes_changed": frac_nodes_changed if real_sign_control else None,
         "frac_edges_changed": frac_edges_changed if real_sign_control else None,
         "in_gain": in_gain,

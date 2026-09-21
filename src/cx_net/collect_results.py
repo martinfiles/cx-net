@@ -28,7 +28,7 @@ COPY = ["types_analysis.json", "dose_analysis.json", "regime_search.csv", "regim
 
 KEYS = ["n_epochs", "seed", "hold_prob", "sign_reg", "anchor", "max_av", "ring_source", "ring_sign",
         "activation", "type_params", "real_sign_control", "control_shuffle_seed", "control_swap_fraction",
-        "control_type_mask", "frac_edges_changed", "recurrent_gain", "tau", "in_gain", "cue_gain",
+        "control_type_mask", "edge_gain", "frac_edges_changed", "recurrent_gain", "tau", "in_gain", "cue_gain",
         "mean_abs_sign", "frac_polarized_gt_0.9"]
 
 
