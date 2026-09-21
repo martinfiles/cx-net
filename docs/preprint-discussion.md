@@ -266,8 +266,28 @@ redes que «integran» implementan una integración compresiva (ganancia < 1, sa
 no un integrador perfecto; y con una velocidad constante grande (±0.3 durante 180
 pasos) ningún modelo desplaza el bump. La pendiente de las secciones anteriores mide la
 integración en el rango de entrenamiento, no un integrador general. Se comprobó que no
-es un artefacto del decodificador, pero no se caracterizó el mecanismo (perfil del
-bump, anchura, dependencia de la inhibición).
+es un artefacto del decodificador.
+
+**Perfil del bump, kymographs y memoria de fase (`bump_profile.py`,
+`results/bump_profile.json`, figura 6).** Respuesta a la objeción de que una pérdida baja
+no prueba la existencia de un bump localizado. Con velocidad 0, alineando la actividad de
+las 50 neuronas de compás (EPG/EPGt) con la fase decodificada (12 contenedores de 30°, ≈4
+neuronas por contenedor, media poblacional restada), el ancho a media altura es de 167°
+(asignación real), 122° («solo EPG inhibe»), 135° («EPG+EPGt inhiben») y 133° (sin
+inhibición); una coseno tendría 180°. Es decir, el «bump» es ancho y de perfil suave, no
+un paquete estrecho, y la resolución (30°) es gruesa. La fracción de neuronas saturadas
+(|r| > 0.95) es 0.00 en los tres modelos que integran y 0.83 en el que no integra: este
+último es un patrón binario congelado (media anillo a +1 y la otra media a −1), no un
+bump graduado. En los kymographs (figura 6) los tres modelos que integran arrastran la
+banda de actividad y la fase decodificada en el sentido correcto, más despacio que el
+ideal en la asignación real (ganancia 0.54) y algo por debajo en los otros dos (0.75-0.76);
+el que no integra no se mueve con ninguna velocidad. La memoria de una fase arbitraria
+(8 fases de pista, velocidad 0) no discrimina: los cuatro modelos, incluido el que no
+integra, sostienen la fase con error circular medio de 0.06-0.15 rad a t = 60 y 0.18-0.40
+rad a t = 199. Lo que separa a los integradores del resto es la respuesta a la
+velocidad y la actividad graduada, no la retención de fase. Salvedades: una sola corrida
+por modelo, resolución angular gruesa (50 neuronas), y no se comparó con el perfil de
+un modelo de anillo construido a mano.
 
 **Tasas no negativas (sigmoide).** Con `activation="sigmoid"` (tasa basal 0.5), mismos
 hiperparámetros y protocolo (600 épocas), los signos reales dan held-out 0.303

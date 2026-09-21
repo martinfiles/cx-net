@@ -21,7 +21,7 @@ five methodological findings, and a set of retractions of my own earlier claims.
 ## What to read, in this order
 
 1. `summary-en.md` (5 min): the whole argument.
-2. The five figures in `figures/en/` (5 min).
+2. The six figures in `figures/en/` (5 min).
 3. `preprint-discussion.md` (in Spanish; sections 2 and 4–8 carry the substance, ≈35 min). If
    Spanish is a problem, tell me and I will translate the sections you need.
 4. The questions below.
@@ -86,6 +86,7 @@ five methodological findings, and a set of retractions of my own earlier claims.
 | 26 / 64 per-type patterns integrate; the real one ranks 22nd | `results/types_analysis.json`; figure 3 |
 | The real-assignment solution runs Delta7 below baseline 89% of the time | `results/rates_by_type.json`; figure 5 |
 | Integrating networks respond antisymmetrically and roughly proportionally, compressively | `results/bump_check.json` |
+| The integrating networks move a broad graded bump (FWHM ≈ 120–170°, no saturation); the non-integrating one is a frozen saturated pattern; phase memory does not discriminate | `results/bump_profile.json`; figure 6 |
 | A generic sign learner does not find the solution (4 pilots, 0.458–0.561) | `results/runs_summary.csv` (`joint_sr*`) |
 
 ## Reproducing

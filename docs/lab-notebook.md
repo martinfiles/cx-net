@@ -1732,6 +1732,24 @@ README). Código bajo MIT.
 **Figuras:** títulos matizados ("se asocian" en lugar de "pesan"), fig. 1 aclarada (tarea sin pista
 de fase), fig. 5 ("por debajo de la basal").
 
+## 2026-09-21 — Perfil del bump y kymographs (respuesta a la revisión externa)
+
+**Qué se hizo:** `src/cx_net/bump_profile.py` -> `results/bump_profile.json` y figura 6
+(kymographs, es/en). Para los mismos cuatro modelos de `bump_check.py`: perfil del bump
+alineado con la fase decodificada (velocidad 0), ancho a media altura, contraste, fracción de
+neuronas saturadas, y memoria de 8 fases de pista arbitrarias.
+**Por qué:** el experto objetó que una pérdida baja no prueba un bump localizado; la validación
+mecanística previa medía ganancia y localización global, no el perfil ni el movimiento en el tiempo.
+**Resultado / número clave:** ancho 167° (real), 122°, 135° (integran) y 133° (no integra);
+saturadas 0.00 / 0.00 / 0.00 / 0.83; error de memoria de fase a t=199: 0.40 / 0.30 / 0.28 / 0.18 rad.
+Los tres que integran mueven una banda ancha y graduada; el que no integra es un patrón binario
+congelado. La memoria de fase arbitraria NO discrimina (los cuatro la sostienen). Primera versión
+del perfil sin restar la media poblacional daba un contraste engañoso (1.06) por las tasas con
+signo; corregido antes de usarlo. Salvedades: una corrida por modelo, contenedores de 30°
+(≈4 neuronas), sin comparación con un modelo de anillo a mano.
+**Siguiente paso:** comparar el perfil con un anillo construido a mano (Kakaria-de Bivort /
+Turner-Evans / Pisokas); barrido de escala global de pesos; replicar los 64 patrones con semillas.
+
 ## Plantilla para próximas entradas
 
 ```

@@ -1,7 +1,7 @@
 """
 Figuras del informe (PNG, 1200x675, tema claro), en español e inglés. Lee SOLO de `results/`
 (versionado), así que se pueden regenerar sin `data/interim/`.
-Salida: docs/figures/fig{1..5}.png (es) y docs/figures/en/fig{1..5}.png (en).
+Salida: docs/figures/fig{1..6}.png (es) y docs/figures/en/fig{1..6}.png (en).
 Uso: python -m src.cx_net.make_figures [--lang es|en|all]
 
 Convenciones (guía de visualización del proyecto): un color por función;
@@ -55,6 +55,12 @@ TEXT = {
         "f5_x": "tasa de activación (negativa = por debajo de la basal)", "f5_y": "% de instantes",
         "f5_ann": "asignación real: {v:.0f} % del tiempo\ncon tasa negativa",
         "f5_real": "asignación real (integra)", "f5_none": "sin inhibición (no integra)",
+        "f6_title": "Las redes que integran mueven un bump ancho, más lento que el ideal",
+        "f6_sub": "Actividad de las EPG/EPGt por fase del anillo (color) y fase decodificada (línea). Pista de fase 0 hasta t = 20",
+        "f6_models": ["Asignación real (solo Delta7 inhibe)", "Solo EPG inhibe", "EPG + EPGt inhiben", "Sin inhibición (no integra)"],
+        "f6_cols": ["velocidad −0.04/paso", "velocidad 0", "velocidad +0.04/paso"],
+        "f6_x": "tiempo (pasos)", "f6_y": "fase (rad)", "f6_ideal": "integración ideal", "f6_dec": "fase decodificada",
+        "f6_cbar": "tasa (desviación de la basal)",
     },
     "en": {
         "source": "cx-net · data: male-cns:v1.0 (neuPrint)",
@@ -80,6 +86,12 @@ TEXT = {
         "f5_x": "activation rate (negative = below baseline)", "f5_y": "% of time steps",
         "f5_ann": "real assignment: {v:.0f}% of the time\nat a negative rate",
         "f5_real": "real assignment (integrates)", "f5_none": "no inhibition (does not integrate)",
+        "f6_title": "Integrating networks move a broad bump, slower than ideal",
+        "f6_sub": "EPG/EPGt activity by ring phase (colour) and decoded phase (line). Phase-0 cue until t = 20",
+        "f6_models": ["Real assignment (only Delta7 inhibits)", "Only EPG inhibits", "EPG + EPGt inhibit", "No inhibition (does not integrate)"],
+        "f6_cols": ["velocity −0.04/step", "velocity 0", "velocity +0.04/step"],
+        "f6_x": "time (steps)", "f6_y": "phase (rad)", "f6_ideal": "ideal integration", "f6_dec": "decoded phase",
+        "f6_cbar": "rate (deviation from baseline)",
     },
 }
 L = TEXT["es"]  # idioma activo (se fija en main)
@@ -253,6 +265,62 @@ def fig5():
     return fig
 
 
+# ---------------------------------------------------------------- fig 6
+def fig6():
+    from matplotlib.colors import LinearSegmentedColormap
+    d = json.load(open(os.path.join(RES, "bump_profile.json")))
+    cmap = LinearSegmentedColormap.from_list("div", [BLUE, SURFACE, "#b03a8c"])
+    steps = np.array(d["steps"])
+    centers = np.array(d["bin_centers_rad"])
+    fig = plt.figure(figsize=(8, 7.6), dpi=150)
+    fig.text(0.05, 0.968, L["f6_title"], fontsize=14, fontweight="bold", color=INK, va="top")
+    fig.text(0.05, 0.93, L["f6_sub"], fontsize=9.5, color=INK2, va="top")
+    fig.text(0.05, 0.012, L["source"], fontsize=8, color=MUTED)
+    avs = d["kymo_av"]
+    keys = list(d["models"].keys())
+    for i, key in enumerate(keys):
+        for j, av in enumerate(avs):
+            ax = fig.add_axes([0.13 + j * 0.285, 0.15 + (3 - i) * 0.185, 0.265, 0.14])
+            k = np.array(d["models"][key]["kymograph"][f"{av:+.2f}"], dtype=float)
+            order = np.argsort(centers)
+            im = ax.imshow(k[:, order].T, origin="lower", aspect="auto", cmap=cmap, vmin=-1, vmax=1,
+                           extent=[steps[0], steps[-1] + 2, -np.pi, np.pi], interpolation="nearest")
+            dec = np.array(d["models"][key]["decoded_phase"][f"{av:+.2f}"])
+            dec_u = np.unwrap(dec)
+            ideal = av * np.clip(steps - 20, 0, None)
+            ax.plot(steps, np.where(np.abs(np.diff(dec, prepend=dec[0])) > np.pi, np.nan, dec), color=INK, linewidth=1.4, zorder=3)
+            ax.plot(steps, np.where(np.abs(np.diff(wrap_(ideal), prepend=wrap_(ideal)[0])) > np.pi, np.nan, wrap_(ideal)),
+                    color=INK2, linewidth=1.1, linestyle=(0, (3, 2)), zorder=3)
+            ax.set_ylim(-np.pi, np.pi)
+            ax.set_yticks([-np.pi, 0, np.pi])
+            ax.set_yticklabels(["−π", "0", "π"] if j == 0 else [])
+            ax.tick_params(length=0, labelsize=8)
+            for sp in ax.spines.values():
+                sp.set_visible(False)
+            if i == 0:
+                fig.text(0.13 + j * 0.285 + 0.1325, 0.895, L["f6_cols"][j], fontsize=9.5, color=INK, ha="center")
+            if i == len(keys) - 1:
+                ax.set_xlabel(L["f6_x"], fontsize=8.5)
+            else:
+                ax.set_xticklabels([])
+            if j == 0:
+                ax.set_ylabel(L["f6_y"], fontsize=8.5)
+        fig.text(0.13, 0.15 + (3 - i) * 0.185 + 0.148, L["f6_models"][i], fontsize=9, color=INK, fontweight="bold", va="bottom")
+    cax = fig.add_axes([0.13, 0.068, 0.30, 0.010])
+    fig.colorbar(im, cax=cax, orientation="horizontal")
+    cax.tick_params(length=0, labelsize=8)
+    cax.set_xlabel(L["f6_cbar"], fontsize=8.5)
+    for x, ls, lab in ((0.52, "-", L["f6_dec"]), (0.74, (0, (3, 2)), L["f6_ideal"])):
+        fig.add_artist(Line2D([x, x + 0.04], [0.073, 0.073], color=INK if ls == "-" else INK2, linewidth=1.4, linestyle=ls,
+                              transform=fig.transFigure))
+        fig.text(x + 0.05, 0.073, lab, fontsize=9, color=INK, va="center")
+    return fig
+
+
+def wrap_(x):
+    return (np.asarray(x) + np.pi) % (2 * np.pi) - np.pi
+
+
 def main():
     global L
     ap = argparse.ArgumentParser()
@@ -262,11 +330,11 @@ def main():
         L = TEXT[lang]
         out = os.path.join(ROOT, "docs", "figures", "" if lang == "es" else "en")
         os.makedirs(out, exist_ok=True)
-        for i, f in enumerate((fig1, fig2, fig3, fig4, fig5), 1):
+        for i, f in enumerate((fig1, fig2, fig3, fig4, fig5, fig6), 1):
             fig = f()
             fig.savefig(os.path.join(out, f"fig{i}.png"))
             plt.close(fig)
-        print(f"{lang}: 5 figuras en {os.path.normpath(out)}")
+        print(f"{lang}: 6 figuras en {os.path.normpath(out)}")
 
 
 if __name__ == "__main__":

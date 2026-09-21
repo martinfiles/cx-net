@@ -37,6 +37,7 @@ Versiones en inglés en [`docs/figures/en/`](docs/figures/en/); resumen en ingl�
 ![26 de 64 patrones integran; la asignación real es uno más](docs/figures/fig3.png)
 ![Ningún signo por tipo basta](docs/figures/fig4.png)
 ![La solución con la química real usa Delta7 con tasa negativa](docs/figures/fig5.png)
+![Las redes que integran mueven un bump ancho, más lento que el ideal](docs/figures/fig6.png)
 
 ## Datos
 

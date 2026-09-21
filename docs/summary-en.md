@@ -36,7 +36,11 @@ initial phase without integrating) and a slope > 0.5 between decoded and true he
    (exact rank p = 22/64 = 0.34; [figure 3](figures/en/fig3.png)). The solutions rely on
    signed rates, i.e. deviations from a zero baseline, so an "inhibitory" type below baseline
    ends up exciting its targets ([figure 5](figures/en/fig5.png)), which makes the sign of a
-   weight poorly identifiable.
+   weight poorly identifiable. The networks that integrate do move a graded, broad bump
+   (FWHM ≈ 120–170° at 30° resolution, no saturated units) at a fraction of the ideal speed
+   (gain 0.54–0.76); the one that does not integrate is a frozen saturated pattern
+   ([figure 6](figures/en/fig6.png)). Holding an arbitrary phase at zero velocity does not
+   discriminate between them.
 5. **The annotated neurotransmitter is an exact function of cell type** (Delta7 = glutamate,
    the other five types = acetylcholine). "Recovering the neurotransmitter" therefore reduces
    to recovering one already-known bit (*Delta7 inhibits*), and per-neuron power calculations
