@@ -1790,6 +1790,26 @@ especial (28/64 la superan o igualan).
 **Siguiente paso:** ninguno pendiente de este bloque. Falta decidir si vale la pena una 4ª-5ª
 semilla para los patrones que siguen cerca del umbral (mask14, mask15, mask45, mask57).
 
+## 2026-09-22 (3) — Correccion de citas: verificacion de Pisokas, Turner-Evans, Franconville; "Green et al. 2017" no localizado
+
+**Que se hizo:** verificacion de existencia (no de contenido completo) de las referencias de la
+subseccion de posicionamiento: Pisokas, Heinze y Webb (2020, eLife 9:e53985); Turner-Evans et al.
+(2020, Neuron 108:145); Franconville, Beron y Jayaraman (2018, eLife 7:e37017); Kakaria y de
+Bivort (2017, Front. Behav. Neurosci. 11:8); Kim et al. (2017, Science 356:849); Prinz, Bucher y
+Marder (2004, Nat. Neurosci. 7:1345). Las 6 existen con esos datos.
+**Por que:** el experto no verifico ninguna cita en sus dos respuestas; hacia falta antes de
+citarlas en una version publica.
+**Resultado / numero clave:** las entradas (3) del 2026-09-16 y de mas abajo citan dos veces
+"Green et al. (2017)" para Delta7 inhibidor / resto excitador en modelos analiticos del circuito.
+No encuentro ningun articulo de Green con ese tema en 2017. Lo mas cercano es Green, Vijayan,
+Mussells Pires, Adachi y Maimon (2019, Nat. Neurosci. 22:1460), sobre comparar el rumbo con un
+objetivo interno, publicado 2 anos despues -- no confirma que sea la misma referencia mal
+fechada ni que el contenido (Delta7 inhibidor) este ahi. **No usar "Green et al. 2017" en el
+informe ni en el paquete de revision hasta verificarlo**; el hallazgo del ground truth (Delta7 =
+glutamato inhibidor) no depende de esta cita, viene de neuPrint/Eckstein et al. (2024).
+**Siguiente paso:** al escribir para bioRxiv, releer la entrada (3) del 2026-09-16 y buscar cual
+articulo se queria citar (¿Turner-Evans et al. 2017 solamente? ¿otro Green?).
+
 ## Plantilla para próximas entradas
 
 ```

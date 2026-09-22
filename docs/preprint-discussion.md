@@ -394,10 +394,17 @@ absolutos se declaran arbitrarios y lo que emerge es un patrón de eficacias *re
 tipos (E-PG→P-EN/P-EG fuertes; P-EN→E-PG y P-EG→E-PG débiles) y una velocidad de giro del
 bump que crece de forma exponencial con la estimulación unihemisférica de las P-EN. Esto es
 coherente con que las ganancias por tipo, y no el signo, sean lo que hace falta, pero no lo
-demuestra. Falta leer Kakaria y de Bivort (2017), Kim et al. (2017; es un trabajo
-experimental de dinámica de anillo atractor, no un modelo mecanicista), Green et al. (2017) y
-Prinz, Bucher y Marder (2004, *Nat. Neurosci.*; circuitos con parámetros muy distintos dan
-actividad similar), que respalda que varios patrones de signo resuelvan la tarea.
+demuestra. Falta leer Kakaria y de Bivort (2017, *Front. Behav. Neurosci.* 11:8; modelo de integración y
+disparo del puente protocerebral completo, recapitula la dinámica de anillo atractor), Kim et
+al. (2017, *Science* 356:849; es un trabajo experimental con calcio + optogenética, no un
+modelo mecanicista: muestra excitación local e inhibición global) y Prinz, Bucher y Marder
+(2004, *Nat. Neurosci.* 7:1345; circuitos con parámetros muy distintos dan actividad similar),
+que respalda que varios patrones de signo resuelvan la tarea. Corrección: en el cuaderno
+(2026-09-16) cito dos veces "Green et al. (2017)" para Delta7 inhibidor / resto excitador en
+modelos analíticos; no encuentro ese artículo — el trabajo que existe con ese apellido y tema es
+Green et al. (2019, *Nat. Neurosci.* 22:1460), tres años más tarde. Puede ser un año mal
+recordado o una referencia equivocada; no lo doy por bueno sin volver a verificarlo, y **no debe
+citarse "Green et al. 2017" en ninguna versión pública** hasta confirmarlo.
 
 ## 9. Retractaciones respecto a la v1
 
