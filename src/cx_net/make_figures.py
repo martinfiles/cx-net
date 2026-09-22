@@ -43,12 +43,12 @@ TEXT = {
         "f2_L": "Hemisferio izquierdo (L)", "f2_R": "Hemisferio derecho (R)",
         "f2_note": "Cada hemisferio cubre el anillo\ncompleto en pasos de ≈45°.\n\nLos glomérulos homólogos L y R\nquedan desfasados ≈22°, y L y R\ngiran en sentido contrario\n(un espejo).",
         "f3_title": "{n} de 64 patrones integran; la asignación real es uno más",
-        "f3_sub": "Pérdida held-out de cada patrón (una corrida por patrón), ordenados de mejor a peor",
+        "f3_sub": "Pérdida held-out media de cada patrón (3 semillas), ordenados de mejor a peor",
         "f3_mem": "memoria sin integrar (0.466)", "f3_real": "asignación real: puesto {r} de 64 (p = {r}/64 = {p:.2f})",
         "f3_yes": "integra", "f3_no": "no integra", "f3_leg_real": "asignación real",
         "f3_x": "patrón (ordenado por pérdida)", "f3_y": "pérdida held-out",
         "f4_title": "Ningún signo por tipo basta; PEN_b y Delta7 se asocian más",
-        "f4_sub": "Porcentaje de patrones que integran según el signo asignado a cada tipo (32 patrones por punto)",
+        "f4_sub": "% de patrones que integran (mayoría de 3 semillas) según el signo de cada tipo (32 por punto)",
         "f4_exc": "tipo excitador", "f4_inh": "tipo inhibidor",
         "f5_title": "La solución con la química real usa Delta7 con tasa negativa",
         "f5_sub": "Distribución de la tasa de activación de las neuronas Delta7 (activación tanh, t ≥ 40)",
@@ -74,12 +74,12 @@ TEXT = {
         "f2_L": "Left hemisphere (L)", "f2_R": "Right hemisphere (R)",
         "f2_note": "Each hemisphere covers the full\nring in ≈45° steps.\n\nHomologous L and R glomeruli are\noffset by ≈22°, and L and R turn\nin opposite directions\n(a mirror image).",
         "f3_title": "{n} of 64 patterns integrate; the real assignment is just one",
-        "f3_sub": "Held-out loss of each pattern (one run per pattern), sorted best to worst",
+        "f3_sub": "Mean held-out loss of each pattern (3 seeds), sorted best to worst",
         "f3_mem": "memory without integrating (0.466)", "f3_real": "real assignment: rank {r} of 64 (p = {r}/64 = {p:.2f})",
         "f3_yes": "integrates", "f3_no": "does not integrate", "f3_leg_real": "real assignment",
         "f3_x": "pattern (sorted by loss)", "f3_y": "held-out loss",
         "f4_title": "No per-type sign is enough; PEN_b and Delta7 stand out",
-        "f4_sub": "Percentage of patterns that integrate, by the sign assigned to each type (32 patterns per point)",
+        "f4_sub": "% of patterns that integrate (majority of 3 seeds), by the sign of each type (32 per point)",
         "f4_exc": "excitatory type", "f4_inh": "inhibitory type",
         "f5_title": "The real-chemistry solution runs Delta7 at negative rates",
         "f5_sub": "Distribution of Delta7 activation rate (tanh activation, t ≥ 40)",
@@ -175,10 +175,10 @@ def fig2():
 
 # ---------------------------------------------------------------- fig 3
 def fig3():
-    t = json.load(open(os.path.join(RES, "types_analysis.json")))
-    t = sorted(t, key=lambda x: x["held_out"])
-    ho = np.array([x["held_out"] for x in t])
-    integra = np.array([x["integra"] for x in t])
+    t = json.load(open(os.path.join(RES, "types_analysis_3seeds.json")))
+    t = sorted(t, key=lambda x: x["mean_held_out"])
+    ho = np.array([x["mean_held_out"] for x in t])
+    integra = np.array([x["integra_majority"] for x in t])
     real_rank = [i for i, x in enumerate(t) if x["mask"] == 1][0] + 1
     n_int = int(integra.sum())
     fig = frame(L["f3_title"].format(n=n_int), L["f3_sub"])
@@ -205,12 +205,12 @@ def fig3():
 
 # ---------------------------------------------------------------- fig 4
 def fig4():
-    t = json.load(open(os.path.join(RES, "types_analysis.json")))
+    t = json.load(open(os.path.join(RES, "types_analysis_3seeds.json")))
     names = ["Delta7", "EPG", "EPGt", "PEG", "PEN_a", "PEN_b"]
     exc, inh = [], []
     for i in range(6):
-        e = [x["integra"] for x in t if not (x["mask"] >> i) & 1]
-        h = [x["integra"] for x in t if (x["mask"] >> i) & 1]
+        e = [x["integra_majority"] for x in t if not (x["mask"] >> i) & 1]
+        h = [x["integra_majority"] for x in t if (x["mask"] >> i) & 1]
         exc.append(100 * np.mean(e))
         inh.append(100 * np.mean(h))
     order = np.argsort(np.array(inh) - np.array(exc))  # menor diferencia abajo

@@ -35,7 +35,8 @@ cuales invalida una versión anterior del experimento:
    ni siquiera con los signos reales en ningún régimen dinámico explorado (588
    evaluaciones); con ganancias por tipo celular sí, pero **la asignación real
    de neurotransmisor no es especial**: 26 de los 64 patrones de signo por tipo
-   integran y la real queda en el puesto 22 (p exacto = 0.34), apoyándose en
+   integran y la real queda en el puesto 14 de 64 (p = 0.22; 26/64 y puesto 22 con
+   una sola semilla), apoyándose en
    tasas con signo (desviaciones respecto a un nivel basal nulo) que hacen el
    signo del peso poco identificable (sección 6).
 4. Un aprendiz de signos genérico no encuentra esa solución (sección 7).
@@ -226,23 +227,31 @@ entrenamiento): demuestran reproducibilidad, no 3 asignaciones distintas.
 **Enumeración de patrones de signo por tipo.** Como el neurotransmisor es
 función del tipo, la hipótesis natural es un signo por tipo: 2⁶ = 64 patrones,
 de los que la asignación real (solo Delta7 inhibe) es uno. Se entrenaron los 64
-con el mismo protocolo (una corrida por patrón, semilla 0):
+con el mismo protocolo, primero con una sola corrida por patrón (semilla 0) y
+después replicados con 2 semillas más (2026-09-22, tras la revisión externa:
+"¿cuántas semillas por patrón antes de creer un ranking?"), 3 en total:
 
-- **26 de 64 patrones integran.** La real (held-out 0.108, pendiente 0.82) es
-  el **puesto 22 de 64; p exacto = 22/64 = 0.344.** Patrones biológicamente
-  absurdos la superan (p. ej. "solo EPG inhibe": 0.063; "EPG+EPGt inhiben":
-  0.063).
-- Fracción de patrones que integran según el signo del tipo (excitador /
-  inhibidor, de 32 cada uno): Delta7 7 / 19; EPG 10 / 16; EPGt 14 / 12; PEG 12 /
-  14; PEN_a 14 / 12; PEN_b 20 / 6. Descriptivo, sin test. Delta7 inhibidor
-  ayuda pero no es necesario ni suficiente.
+- **Con una sola semilla, 26/64 integran y la real es el puesto 22 (p =
+  22/64 = 0.344).** Con las 3 semillas (criterio: mayoría, held-out medio) el
+  número sube a **28/64, y la real pasa al puesto 14 (p = 14/64 = 0.219)**,
+  con held-out medio 0.113 (0.106-0.124) y **la asignación real integra en
+  las 3 semillas** (mientras que 4 de los otros 63 patrones cambian de
+  veredicto entre semillas: 2 pasan de "no integra" a "integra" y 2 al
+  revés, evidencia de que una sola corrida por patrón es ruidosa, como ya se
+  sospechaba). Patrones biológicamente absurdos la siguen superando (p. ej.
+  "solo EPG inhibe": held-out medio 0.063; "EPG+EPGt inhiben": 0.062).
+- Fracción de patrones que integran (mayoría de 3 semillas) según el signo del
+  tipo (excitador / inhibidor, de 32 cada uno): Delta7 8 / 20; EPG 10 / 18;
+  EPGt 15 / 13; PEG 12 / 16; PEN_a 15 / 13; PEN_b 22 / 6. Descriptivo, sin
+  test. Delta7 inhibidor ayuda pero no es necesario ni suficiente; PEN_b
+  excitador es el sesgo individual más fuerte.
 - Los 12 barajados fallan porque rompen la coherencia por tipo, no porque la
   química real sea especial: **la lectura de "suficiencia funcional" de la v1 se
   retracta.**
 
 **Mecanismo probable.** Con `tanh` las tasas van en (−1, 1) y el nivel basal es 0: se
 interpretan como desviaciones respecto a una actividad basal. En la red que integra con
-la asignación real, Delta7 está por debajo de la basal el 89% del tiempo (fracción > 0 =
+la asignación real (semilla 0), Delta7 está por debajo de la basal el 89% del tiempo (fracción > 0 =
 0.11; media −0.17): una neurona inhibidora que baja su actividad desinhibe a sus dianas,
 con efecto neto excitador. Es una lectura legítima si la neurona real tuviera una
 actividad basal tónica suficiente, pero el modelo ni la representa ni la limita, y hace
@@ -341,7 +350,8 @@ es evaluable.
   restricción, no que la biología no la imponga.
 - **Sesgo de selección a favor de la real.** Los hiperparámetros dinámicos se eligieron
   en zonas donde la asignación real funcionaba; eso favorecería a la real frente al resto
-  de patrones. Que aun así quede en el puesto 22 refuerza el nulo en vez de debilitarlo.
+  de patrones. Que aun así quede en el puesto 14 (con una sola semilla, 22) refuerza el
+  nulo en vez de debilitarlo.
 - **Lo que sí se sostiene:** (a) las cinco trampas metodológicas; (b) un modelo
   de tasas con signo puede resolver la tarea con patrones de signo por tipo
   muy distintos, así que **la tarea de integración de rumbo con activación
@@ -397,17 +407,19 @@ actividad similar), que respalda que varios patrones de signo resuelvan la tarea
 | "Control de potencia: el test detecta ≥ +3.3 pp con ≥ 80%" | Retractada: siembra por neurona/arista, no aplicable a una señal estructurada por tipo (sección 3). Solo se mantiene la calibración del falso positivo. |
 | "Signos reales no superan a barajados: 1.006 vs 0.983" (primera lectura) | Superada: prueba injusta sin ancla; ver sección 4. |
 | "El mapeo intercalado es el conforme a la anatomía" | Corregida: L y R recorren el anillo en sentidos opuestos (sección 5). |
-| "La química real integra y las barajadas no (suficiencia funcional)" | Retractada: 26/64 patrones por tipo integran; la real, puesto 22 (sección 6). |
+| "La química real integra y las barajadas no (suficiencia funcional)" | Retractada: 28/64 patrones por tipo integran (3 semillas); la real, puesto 14 de 64 (sección 6). |
 | "~440 evaluaciones de régimen" | Corregida: 588. |
 | «Tasas negativas no fisiológicas» (versión intermedia) | Matizada: son desviaciones respecto a un nivel basal nulo; el problema es la falta de identificabilidad del signo (sección 6). |
 
 ## 10. Limitaciones
 
-- **Una corrida por patrón (semilla 0)** en la enumeración de 64: un "no
-  integra" puede ser mala suerte de optimización; las réplicas de la asignación
-  real (0.106-0.124) sugieren estabilidad, pero no se replicaron los demás
-  patrones. Un solo `ring_sign` (+1) en las corridas de refuerzo y de
-  enumeración.
+- **Enumeración de 64 patrones con 3 semillas (2026-09-22):** 4 de 63 patrones
+  distintos del real cambian de veredicto entre semillas, lo que confirma que
+  una sola corrida es ruidosa (limitación que se mantenía abierta). La real
+  es estable en las 3 (0.106-0.124, siempre integra). Un solo `ring_sign` (+1)
+  en las corridas de refuerzo y de enumeración; el criterio de "integra"
+  sigue siendo el umbral binario arbitrario (M5) y las 3 semillas no
+  sustituyen a un test formal con más réplicas.
 - **Hiperparámetros dinámicos** (`recurrent_gain=2`, `tau=10`, `in_gain=10`,
   `cue_gain=10`) elegidos en zonas seleccionadas con ayuda de los signos reales
   (criterio A): grado de libertad del investigador, declarado. Más ≈30
@@ -476,7 +488,7 @@ actividad similar), que respalda que varios patrones de signo resuelvan la tarea
 > hemisferios recorren el anillo en sentidos opuestos). Con una tarea anclada y
 > ganancias por tipo celular existe una solución que integra el rumbo, pero no
 > es específica de la química real: 26 de los 64 patrones de signo por tipo la
-> alcanzan (la asignación real, en el puesto 22; p = 0.34), apoyándose en tasas
+> alcanzan (la asignación real, en el puesto 14 de 64; p = 0.22), apoyándose en tasas
 > con signo (desviaciones respecto a un nivel basal nulo) que hacen el signo del peso
 > poco identificable; y un aprendiz de signos genérico no la encuentra.
 > Dado que en este subcircuito el neurotransmisor es función exacta del tipo

@@ -1772,6 +1772,24 @@ de usar los números.
 **Siguiente paso:** semillas 1 y 2 de los 63 patrones (en curso, `data/interim/launch_seeds.sh`);
 no repetir `edge_gain` con tasas intermedias salvo que se quiera una curva dosis-respuesta de libertad.
 
+## 2026-09-22 (2) — Replica de los 64 patrones con 3 semillas; nuevo ranking de la real
+
+**Qué se hizo:** las 63 corridas restantes (todas menos la real, ya replicada en `dose_real_seed{1,2}_p`)
+con semillas 1 y 2 (126 corridas, `data/interim/launch_seeds.sh`, tras la ronda de `edge_gain`).
+Agregado en `results/types_analysis_3seeds.json` (media de held-out y voto de mayoría sobre
+`integra` por patrón). Figuras 3 y 4 regeneradas con este archivo.
+**Por qué:** responde a la pregunta pendiente del experto ("¿cuántas semillas por patrón antes de
+creer un ranking?") y a la limitación ya anotada (M5 / sección 10) de una sola corrida por patrón.
+**Resultado / número clave:** **28/64 integran por mayoría (antes 26/64); la real pasa del puesto
+22 al 14 de 64 por held-out medio (p = 14/64 = 0.219, antes 0.344).** La real es estable: integra
+en las 3 semillas (0.106, 0.124, 0.106). De los otros 63 patrones, 4 cambian de veredicto entre
+semillas (mask14, mask15: de "no integra" a "integra"; mask45, mask57: al revés) — confirma que
+una sola corrida es ruidosa. Ningún patrón cambia en sentido "integra con semilla 0 -> dejan de
+integrar con más semillas" salvo mask45 y mask57. El sesgo se mantiene: la real sigue sin ser
+especial (28/64 la superan o igualan).
+**Siguiente paso:** ninguno pendiente de este bloque. Falta decidir si vale la pena una 4ª-5ª
+semilla para los patrones que siguen cerca del umbral (mask14, mask15, mask45, mask57).
+
 ## Plantilla para próximas entradas
 
 ```

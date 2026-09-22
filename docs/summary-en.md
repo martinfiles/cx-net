@@ -32,8 +32,11 @@ initial phase without integrating) and a slope > 0.5 between decoded and true he
 4. **With the original model, even the real signs do not integrate** in any dynamical regime
    explored (588 evaluations). Adding trainable *per-type* gains (≈43 shared parameters, never
    per-edge) gives solutions that integrate, but **the real neurotransmitter assignment is not
-   special**: 26 of the 64 per-type sign patterns integrate and the real one ranks 22nd
-   (exact rank p = 22/64 = 0.34; [figure 3](figures/en/fig3.png)). The solutions rely on
+   special**: with 3 seeds per pattern, 28 of the 64 per-type sign patterns integrate (by
+   majority vote) and the real one ranks 14th by mean held-out loss (p = 14/64 = 0.22; a
+   single-seed pass had put it 22nd of 26 integrating; 4 of the other 63 patterns flip
+   verdict between seeds, confirming a single run is noisy). The real assignment itself
+   integrates in all 3 seeds (0.106–0.124; [figure 3](figures/en/fig3.png)). The solutions rely on
    signed rates, i.e. deviations from a zero baseline, so an "inhibitory" type below baseline
    ends up exciting its targets ([figure 5](figures/en/fig5.png)), which makes the sign of a
    weight poorly identifiable. The networks that integrate do move a graded, broad bump

@@ -17,8 +17,8 @@ tarea original era resoluble de forma trivial (un decodificador constante
 superaba a los modelos entrenados); (2) la fase angular real de cada neurona en
 el EB, medida con coordenadas de sinapsis, es un espejo entre hemisferios que
 los mapeos asumidos no recogían; (3) con ganancias por tipo celular existe una
-solución que integra el rumbo, pero no es específica de la química real (26 de
-64 patrones de signo por tipo la alcanzan; la real, puesto 22) y usa tasas con
+solución que integra el rumbo, pero no es específica de la química real (28 de
+64 patrones de signo por tipo la alcanzan, con 3 semillas; la real, puesto 14) y usa tasas con
 signo (desviaciones de una basal nula) que hacen el signo poco identificable; (4) un aprendiz de signos genérico no la
 encuentra; (5) en este subcircuito el neurotransmisor es función exacta del tipo
 celular (Delta7 = glutamato, resto = acetilcolina). Detalle y retractaciones en
@@ -34,7 +34,7 @@ Versiones en inglés en [`docs/figures/en/`](docs/figures/en/); resumen en ingl�
 
 ![Un decodificador inerte supera a todos los modelos entrenados](docs/figures/fig1.png)
 ![Los dos hemisferios recorren el anillo en sentidos opuestos](docs/figures/fig2.png)
-![26 de 64 patrones integran; la asignación real es uno más](docs/figures/fig3.png)
+![28 de 64 patrones integran; la asignación real es uno más](docs/figures/fig3.png)
 ![Ningún signo por tipo basta](docs/figures/fig4.png)
 ![La solución con la química real usa Delta7 con tasa negativa](docs/figures/fig5.png)
 ![Las redes que integran mueven un bump ancho, más lento que el ideal](docs/figures/fig6.png)

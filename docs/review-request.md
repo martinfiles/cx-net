@@ -63,9 +63,11 @@ five methodological findings, and a set of retractions of my own earlier claims.
    uneven sampling), and should it be checked against hemibrain and the published tables?
 
 **Design and statistics**
-7. I enumerated all 2⁶ = 64 per-type sign patterns (one run each, seed 0). 26 "integrate"; the
-   real assignment ranks 22nd (exact rank p = 22/64). Is one run per pattern acceptable for an
-   exploratory note? How many seeds would you want per pattern before believing a rank?
+7. **Update (answers your own question):** I enumerated all 2⁶ = 64 per-type sign patterns with
+   3 seeds each (was 1). 28 "integrate" by majority vote (was 26); the real assignment now
+   ranks 14th by mean held-out loss (p = 14/64 = 0.22, was 22nd/0.34) and integrates in all 3
+   of its own seeds. 4 of the other 63 patterns flip verdict between seeds. Is 3 seeds enough,
+   or would you still want more before trusting this rank?
 8. Hyperparameters were chosen in regions where the real assignment worked, which if anything
    favours it. Do you agree that this makes the null more, not less, credible?
 
@@ -83,7 +85,7 @@ five methodological findings, and a set of retractions of my own earlier claims.
 | EPG glomeruli traverse the ring in opposite directions per hemisphere | `results/epg_glomerulus_angles.csv`; report §5; figure 2 |
 | Real signs do not integrate in any explored regime (588 evaluations) | `results/regime_search*.csv`; report §6 |
 | With per-type gains, real signs integrate (0.106–0.124, 3 seeds); 12 shuffled assignments do not (0.444–0.598) | `results/dose_analysis.json` |
-| 26 / 64 per-type patterns integrate; the real one ranks 22nd | `results/types_analysis.json`; figure 3 |
+| 28 / 64 per-type patterns integrate (3 seeds, majority vote); the real one ranks 14th of 64 | `results/types_analysis_3seeds.json`; figure 3 |
 | The real-assignment solution runs Delta7 below baseline 89% of the time | `results/rates_by_type.json`; figure 5 |
 | Integrating networks respond antisymmetrically and roughly proportionally, compressively | `results/bump_check.json` |
 | The integrating networks move a broad graded bump (FWHM ≈ 120–170°, no saturation); the non-integrating one is a frozen saturated pattern; phase memory does not discriminate | `results/bump_profile.json`; figure 6 |

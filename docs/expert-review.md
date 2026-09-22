@@ -10,8 +10,12 @@ el análisis, con el sesgo que eso implica. **Lo ideal es que la repita alguien 
 Un aprendiz de signos, restringido solo por la topología del núcleo del sistema de dirección de
 cabeza de *Drosophila*, no recupera el neurotransmisor anotado; el diseño original no lo permitía
 (tarea trivial, sin ancla, mapeo angular equivocado); con ganancias por tipo existe una solución
-que integra el rumbo, pero no es específica de la asignación real (26/64 patrones por tipo; la
-real, puesto 22); y un aprendiz genérico no la encuentra.
+que integra el rumbo, pero no es específica de la asignación real (28/64 patrones por tipo con
+3 semillas; la real, puesto 14 de 64); y un aprendiz genérico no la encuentra.
+
+*Actualización 2026-09-22:* replicadas las 63 corridas restantes con 2 semillas más (63×2=126
+corridas). El número sube de 26/64 a 28/64 y la real de puesto 22 a puesto 14; 4 patrones
+cambian de veredicto entre semillas (2 en cada sentido), la real es estable en las 3.
 
 ## Preocupaciones principales
 
