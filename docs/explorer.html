@@ -1,0 +1,325 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Patrones de signo por tipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f7f7f4; --surface: #fcfcfb; --ink: #0b0b0b; --ink2: #52514e; --muted: #7c7b76;
+  --grid: #e6e5e1; --line: #d9d8d3; --blue: #2a78d6; --orange: #eb6834; --gray: #b8b7b2; --aqua: #1baf7a;
+  --focus: #2a78d6; --tint: #f0efec;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141413; --surface: #1a1a19; --ink: #f4f4f1; --ink2: #c3c2b7; --muted: #8f8e88;
+    --grid: #2c2c2a; --line: #383835; --blue: #3987e5; --orange: #d95926; --gray: #6a6964; --aqua: #199e70;
+    --focus: #6da7ec; --tint: #232321;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141413; --surface: #1a1a19; --ink: #f4f4f1; --ink2: #c3c2b7; --muted: #8f8e88;
+  --grid: #2c2c2a; --line: #383835; --blue: #3987e5; --orange: #d95926; --gray: #6a6964; --aqua: #199e70;
+  --focus: #6da7ec; --tint: #232321;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.5;
+  padding-inline: 16px; padding-block: 28px 48px; }
+.wrap { max-width: 1000px; margin-inline: auto; }
+.top { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+h1 { font-size: clamp(22px, 3.4vw, 30px); line-height: 1.15; font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: -0.01em; max-width: 28ch; }
+.lede { color: var(--ink2); max-width: 66ch; margin: 0 0 20px; }
+.key { display: flex; flex-wrap: wrap; gap: 8px 28px; align-items: baseline; margin: 0 0 20px; padding: 14px 16px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+.key b { font-family: var(--mono); font-weight: 500; font-size: 26px; letter-spacing: -0.02em; }
+.key span.l { color: var(--ink2); font-size: 13.5px; }
+.key div { display: flex; align-items: baseline; gap: 10px; }
+.grid { display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start; }
+@media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; }
+.panel h2 { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink2); margin: 0 0 12px; }
+.row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--grid); }
+.row:first-of-type { border-top: 0; padding-top: 0; }
+.row .name { font-weight: 500; }
+.row .marg { grid-column: 1 / -1; font-size: 12.5px; color: var(--ink2); }
+.row .marg b { font-family: var(--mono); font-weight: 500; color: var(--ink); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
+.seg button { font: inherit; font-size: 13px; padding: 5px 12px; border: 0; background: transparent; color: var(--ink2); cursor: pointer; min-width: 62px; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); font-weight: 500; }
+.lang button { min-width: 44px; padding: 4px 10px; }
+.seg button:focus-visible, .btn:focus-visible, summary:focus-visible, td button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--grid); }
+.btn { font: inherit; font-size: 13px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); color: var(--ink); cursor: pointer; }
+.btn:hover { background: var(--tint); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink2); margin-bottom: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.chart { position: relative; }
+svg { display: block; width: 100%; height: auto; }
+svg text { fill: var(--ink2); font-family: var(--sans); font-size: 12px; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--surface); font-size: 12.5px; padding: 8px 10px; border-radius: 5px;
+  max-width: 240px; line-height: 1.4; box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+.tip .mono { font-family: var(--mono); }
+.read { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 14px 20px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--grid); }
+.read .k { font-size: 12px; color: var(--muted); }
+.read .v { font-family: var(--mono); font-size: 20px; font-weight: 500; }
+.read .v.small { font-size: 14px; font-family: var(--sans); font-weight: 500; }
+.badge { display: inline-flex; align-items: center; gap: 7px; font-weight: 600; font-size: 14px; }
+.badge i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+.badge.yes i { background: var(--blue); }
+.badge.no i { border: 2px solid var(--muted); background: transparent; }
+.note { margin-top: 22px; padding: 14px 16px; border-left: 3px solid var(--orange); background: var(--surface); border-radius: 0 6px 6px 0; color: var(--ink2); font-size: 14px; max-width: 78ch; }
+.note b { color: var(--ink); }
+details { margin-top: 22px; }
+summary { cursor: pointer; font-weight: 500; padding: 4px 0; }
+.tbl { overflow: auto; max-height: 360px; border: 1px solid var(--line); border-radius: 6px; margin-top: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { padding: 7px 12px; text-align: left; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th { position: sticky; top: 0; background: var(--tint); font-size: 12px; color: var(--ink2); font-weight: 600; }
+td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+tr.sel td { background: var(--tint); }
+td button { font: inherit; font-family: var(--mono); background: none; border: 0; color: var(--blue); cursor: pointer; padding: 0; text-decoration: underline; }
+.foot { margin-top: 26px; font-size: 12.5px; color: var(--muted); max-width: 78ch; }
+@media (prefers-reduced-motion: no-preference) { .seg button { transition: background .12s; } }
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <h1 id="h1"></h1>
+    <span class="seg lang" role="group" aria-label="Idioma / Language">
+      <button type="button" id="lES" aria-pressed="true">ES</button><button type="button" id="lEN" aria-pressed="false">EN</button>
+    </span>
+  </div>
+  <p class="lede" id="lede"></p>
+
+  <div class="key">
+    <div><b id="kInt"></b><span class="l" id="kIntL"></span></div>
+    <div><b id="kRank"></b><span class="l" id="kRankL"></span></div>
+    <div><b id="kP"></b><span class="l" id="kPL"></span></div>
+  </div>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="hc">
+      <h2 id="hc"></h2>
+      <div id="controls"></div>
+      <div class="presets">
+        <button class="btn" id="bReal" type="button"></button>
+        <button class="btn" id="bBest" type="button"></button>
+        <button class="btn" id="bWorst" type="button"></button>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="hg">
+      <h2 id="hg"></h2>
+      <div class="legend">
+        <span><i style="background:var(--blue)"></i><span id="lgYes"></span></span>
+        <span><i style="background:var(--gray)"></i><span id="lgNo"></span></span>
+        <span><i style="background:var(--orange)"></i><span id="lgReal"></span></span>
+        <span><i style="background:transparent;border:2px solid var(--ink)"></i><span id="lgSel"></span></span>
+      </div>
+      <div class="chart" id="chart"></div>
+      <div class="read" id="read" aria-live="polite"></div>
+    </section>
+  </div>
+
+  <div class="note" id="note"></div>
+
+  <details>
+    <summary id="sum"></summary>
+    <div class="tbl"><table id="tbl"><thead><tr id="thr"></tr></thead><tbody></tbody></table></div>
+  </details>
+
+  <p class="foot" id="foot"></p>
+</div>
+
+<script>
+(function () {
+  var TYPES = ["Delta7", "EPG", "EPGt", "PEG", "PEN_a", "PEN_b"];
+  var RAW = [{"m":0,"h":0.4651,"s":0.012,"a":3.3,"ok":false},{"m":1,"h":0.1125,"s":0.803,"a":4.3,"ok":true},{"m":2,"h":0.2379,"s":0.61,"a":7.0,"ok":true},{"m":3,"h":0.6856,"s":0.033,"a":4.7,"ok":false},{"m":4,"h":0.4606,"s":0.007,"a":3.2,"ok":false},{"m":5,"h":0.0984,"s":0.879,"a":3.5,"ok":true},{"m":6,"h":0.0654,"s":0.903,"a":6.6,"ok":true},{"m":7,"h":0.7707,"s":0.086,"a":3.8,"ok":false},{"m":8,"h":0.4636,"s":0.009,"a":3.6,"ok":false},{"m":9,"h":0.0764,"s":0.913,"a":6.4,"ok":true},{"m":10,"h":0.2027,"s":0.598,"a":5.3,"ok":true},{"m":11,"h":0.2125,"s":0.561,"a":5.3,"ok":true},{"m":12,"h":0.4698,"s":-0.003,"a":3.2,"ok":false},{"m":13,"h":0.0711,"s":0.846,"a":5.5,"ok":true},{"m":14,"h":0.2193,"s":0.584,"a":4.6,"ok":true},{"m":15,"h":0.2231,"s":0.611,"a":4.7,"ok":true},{"m":16,"h":0.4744,"s":-0.007,"a":3.4,"ok":false},{"m":17,"h":0.1311,"s":0.815,"a":4.8,"ok":true},{"m":18,"h":0.221,"s":0.522,"a":5.2,"ok":true},{"m":19,"h":0.1569,"s":0.737,"a":6.5,"ok":true},{"m":20,"h":0.4742,"s":0.006,"a":3.1,"ok":false},{"m":21,"h":0.1072,"s":0.805,"a":7.6,"ok":true},{"m":22,"h":0.1592,"s":0.735,"a":5.8,"ok":true},{"m":23,"h":0.0827,"s":0.898,"a":6.5,"ok":true},{"m":24,"h":0.4624,"s":0.004,"a":3.5,"ok":false},{"m":25,"h":0.1154,"s":0.838,"a":4.9,"ok":true},{"m":26,"h":0.1017,"s":0.808,"a":6.4,"ok":true},{"m":27,"h":0.071,"s":0.849,"a":8.2,"ok":true},{"m":28,"h":0.4608,"s":0.014,"a":3.9,"ok":false},{"m":29,"h":0.1204,"s":0.931,"a":5.9,"ok":true},{"m":30,"h":0.1205,"s":0.781,"a":5.9,"ok":true},{"m":31,"h":0.0712,"s":0.873,"a":7.3,"ok":true},{"m":32,"h":0.4508,"s":0.021,"a":3.3,"ok":false},{"m":33,"h":0.4735,"s":0.002,"a":4.5,"ok":false},{"m":34,"h":0.4211,"s":0.073,"a":4.7,"ok":false},{"m":35,"h":0.0617,"s":0.89,"a":8.2,"ok":true},{"m":36,"h":0.3495,"s":0.302,"a":3.5,"ok":false},{"m":37,"h":0.4783,"s":0.001,"a":4.7,"ok":false},{"m":38,"h":0.4015,"s":0.126,"a":4.6,"ok":false},{"m":39,"h":0.0602,"s":0.929,"a":6.8,"ok":true},{"m":40,"h":0.3574,"s":0.307,"a":4.0,"ok":false},{"m":41,"h":0.2283,"s":0.58,"a":5.4,"ok":true},{"m":42,"h":0.3876,"s":0.17,"a":4.6,"ok":false},{"m":43,"h":0.0534,"s":0.9,"a":8.3,"ok":true},{"m":44,"h":0.3431,"s":0.273,"a":4.3,"ok":false},{"m":45,"h":0.2838,"s":0.48,"a":5.2,"ok":false},{"m":46,"h":0.456,"s":0.014,"a":3.3,"ok":false},{"m":47,"h":0.0546,"s":0.921,"a":7.9,"ok":true},{"m":48,"h":0.4816,"s":0.008,"a":4.1,"ok":false},{"m":49,"h":0.4209,"s":0.124,"a":4.2,"ok":false},{"m":50,"h":0.4735,"s":-0.004,"a":3.0,"ok":false},{"m":51,"h":0.299,"s":0.469,"a":7.2,"ok":false},{"m":52,"h":0.474,"s":-0.001,"a":3.7,"ok":false},{"m":53,"h":0.4766,"s":0.003,"a":4.2,"ok":false},{"m":54,"h":0.4639,"s":0.009,"a":2.8,"ok":false},{"m":55,"h":0.271,"s":0.486,"a":6.7,"ok":false},{"m":56,"h":0.442,"s":0.089,"a":4.3,"ok":false},{"m":57,"h":0.3171,"s":0.397,"a":6.0,"ok":true},{"m":58,"h":0.4685,"s":-0.001,"a":3.5,"ok":false},{"m":59,"h":0.2884,"s":0.45,"a":6.8,"ok":false},{"m":60,"h":0.4611,"s":0.01,"a":3.2,"ok":false},{"m":61,"h":0.421,"s":0.195,"a":4.6,"ok":false},{"m":62,"h":0.4526,"s":0.012,"a":2.8,"ok":false},{"m":63,"h":0.2724,"s":0.458,"a":7.5,"ok":false}];
+  var MEM = 0.466, REAL = 1;
+
+  var T = {
+    es: {
+      title: "Patrones de signo por tipo",
+      h1: "¿Qué signos por tipo celular resuelven la tarea?",
+      lede: "Las seis clases de neuronas del núcleo del sistema de dirección de cabeza de <i>Drosophila</i> pueden excitar o inhibir: 64 combinaciones. Cada una se entrenó una vez y se midió cuánto integra el rumbo de un ensayo a otro.",
+      kIntL: "de 64 patrones integran el rumbo", kRankL: "puesto de la asignación real (solo Delta7 inhibe)", kPL: "rango exacto entre los 64",
+      ord: function (n) { return n + ".º"; },
+      hc: "Signo de cada tipo", exc: "excita", inh: "inhibe",
+      marg: function (a, b) { return 'integran <span class="dot" style="background:var(--blue)"></span>si excita <b>' + a + ' %</b> · <span class="dot" style="background:var(--aqua)"></span>si inhibe <b>' + b + ' %</b>'; },
+      bReal: "Asignación real", bBest: "Mejor patrón", bWorst: "Peor patrón",
+      hg: "Los 64 patrones, de mejor a peor", lgYes: "integra", lgNo: "no integra", lgReal: "asignación real", lgSel: "seleccionado",
+      mem: "memoria sin integrar (0.466)", xl: "patrón (ordenado por pérdida)", aria: "Pérdida held-out de los 64 patrones ordenados de mejor a peor",
+      rank: "Puesto", inhibiting: "inhiben", none: "ninguno", loss: "pérdida", slope: "pendiente",
+      rInhib: "Tipos que inhiben", rRank: "Puesto", rLoss: "Pérdida held-out", rSlope: "Pendiente", rRes: "Resultado", yes: "Integra", no: "No integra", realTag: "asignación real",
+      note: "<b>Cómo leerlo.</b> Cada punto es la media de 3 semillas; «integra» es el voto de mayoría (2 de 3), no un umbral sobre la media. Una sola corrida por patrón resultó ruidosa (4 de 64 patrones cambiaron de veredicto entre semillas). «Integra» significa pérdida por debajo de 0.466 (la de recordar la fase inicial sin integrar) y pendiente mayor que 0.5. Con activación <span style=\"font-family:var(--mono)\">tanh</span> las tasas son desviaciones respecto a una basal nula, y una neurona «inhibidora» por debajo de su basal acaba excitando: por eso patrones biológicamente absurdos, como que solo las EPG inhiban, funcionan mejor que la asignación real. Es una limitación del modelo (el signo del peso queda poco identificable), no un resultado sobre la mosca.",
+      sum: "Ver como tabla", th: ["Puesto", "Tipos que inhiben", "Pérdida", "Pendiente", "Anclaje (°)", "Resultado"],
+      tYes: "integra", tNo: "no integra",
+      foot: "3 semillas por patrón (media de pérdida y pendiente; «integra» por voto de mayoría), 600 épocas, ganancias por tipo entrenables con los signos fijos; pérdida en el conjunto held-out de la tarea anclada. Datos: male-cns:v1.0 (neuPrint, CC-BY 4.0). Informe y código en el repositorio del proyecto <i>cx-net</i>."
+    },
+    en: {
+      title: "Sign patterns by type",
+      h1: "Which per-type signs solve the task?",
+      lede: "The six neuron classes of the <i>Drosophila</i> head-direction core can each excite or inhibit: 64 combinations. Each was trained once, and we measured how well it integrates heading from trial to trial.",
+      kIntL: "of 64 patterns integrate heading", kRankL: "rank of the real assignment (only Delta7 inhibits)", kPL: "exact rank among the 64",
+      ord: function (n) { var v = n % 100, s = ["th", "st", "nd", "rd"]; return n + (s[(v - 20) % 10] || s[v] || s[0]); },
+      hc: "Sign of each type", exc: "excites", inh: "inhibits",
+      marg: function (a, b) { return 'integrating: <span class="dot" style="background:var(--blue)"></span>excitatory <b>' + a + '%</b> · <span class="dot" style="background:var(--aqua)"></span>inhibitory <b>' + b + '%</b>'; },
+      bReal: "Real assignment", bBest: "Best pattern", bWorst: "Worst pattern",
+      hg: "The 64 patterns, best to worst", lgYes: "integrates", lgNo: "does not integrate", lgReal: "real assignment", lgSel: "selected",
+      mem: "memory without integrating (0.466)", xl: "pattern (sorted by loss)", aria: "Held-out loss of the 64 patterns sorted from best to worst",
+      rank: "Rank", inhibiting: "inhibiting", none: "none", loss: "loss", slope: "slope",
+      rInhib: "Types that inhibit", rRank: "Rank", rLoss: "Held-out loss", rSlope: "Slope", rRes: "Result", yes: "Integrates", no: "Does not integrate", realTag: "real assignment",
+      note: "<b>How to read it.</b> Each point is the mean of 3 seeds; “integrates” is the majority vote (2 of 3), not a threshold on the mean. A single run per pattern was noisy (4 of 64 patterns flipped verdict between seeds). “Integrates” means loss below 0.466 (that of remembering the initial phase without integrating) and slope above 0.5. With <span style=\"font-family:var(--mono)\">tanh</span> activation, rates are deviations from a zero baseline, and an “inhibitory” neuron below its baseline ends up exciting its targets: that is why biologically absurd patterns, such as only EPG inhibiting, work better than the real assignment. It is a limitation of the model (the sign of the weight is poorly identifiable), not a result about the fly.",
+      sum: "View as table", th: ["Rank", "Types that inhibit", "Loss", "Slope", "Anchoring (°)", "Result"],
+      tYes: "integrates", tNo: "does not integrate",
+      foot: "3 seeds per pattern (mean loss and slope; “integrates” by majority vote), 600 epochs, trainable per-type gains with fixed signs; loss on the held-out set of the anchored task. Data: male-cns:v1.0 (neuPrint, CC-BY 4.0). Report and code in the <i>cx-net</i> project repository."
+    }
+  };
+
+  var lang = "es";
+  try { var saved = localStorage.getItem("cx-lang"); if (saved) lang = saved; else if (!/^es/i.test(navigator.language || "")) lang = "en"; }
+  catch (e) { if (!/^es/i.test(navigator.language || "")) lang = "en"; }
+  function L() { return T[lang]; }
+
+  var data = RAW.slice().sort(function (a, b) { return a.h - b.h; });
+  var byMask = {};
+  data.forEach(function (d, i) { d.rank = i + 1; d.ok = !!d.ok; byMask[d.m] = d; });
+  var nInt = data.filter(function (d) { return d.ok; }).length;
+  var sel = REAL;
+
+  function inh(mask) { var o = []; TYPES.forEach(function (t, i) { if ((mask >> i) & 1) o.push(t); }); return o; }
+  function fr(i, bit) {
+    var g = RAW.filter(function (d) { return ((d.m >> i) & 1) === bit; });
+    return Math.round(100 * g.filter(function (d) { return byMask[d.m].ok; }).length / g.length);
+  }
+  function $(id) { return document.getElementById(id); }
+
+  // ---- geometría del gráfico
+  var W = 760, H = 352, LM = 46, RM = 14, TM = 12, BM = 52, YMAX = 0.8;
+  function X(rank) { return LM + (rank - 1) / 63 * (W - LM - RM); }
+  function Y(v) { return TM + (1 - v / YMAX) * (H - TM - BM); }
+
+  function drawChart() {
+    var l = L();
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + l.aria + '">';
+    [0, 0.2, 0.4, 0.6, 0.8].forEach(function (v) {
+      svg += '<line x1="' + LM + '" x2="' + (W - RM) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="var(--grid)" stroke-width="1"/>' +
+             '<text x="' + (LM - 8) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + v.toFixed(1) + '</text>';
+    });
+    svg += '<line x1="' + LM + '" x2="' + (W - RM) + '" y1="' + Y(MEM) + '" y2="' + Y(MEM) + '" stroke="var(--ink2)" stroke-width="1"/>' +
+           '<text x="' + (LM + 6) + '" y="' + (Y(MEM) - 7) + '">' + l.mem + '</text>';
+    [1, 16, 32, 48, 64].forEach(function (r) {
+      svg += '<text x="' + X(r) + '" y="' + (H - 30) + '" text-anchor="middle">' + r + '</text>';
+    });
+    svg += '<text x="' + ((LM + W - RM) / 2) + '" y="' + (H - 8) + '" text-anchor="middle" style="font-size:11.5px">' + l.xl + '</text>';
+    data.forEach(function (d) {
+      var c = d.m === REAL ? "var(--orange)" : (d.ok ? "var(--blue)" : "var(--gray)");
+      svg += '<circle cx="' + X(d.rank) + '" cy="' + Y(d.h) + '" r="' + (d.m === REAL ? 7 : 5) + '" fill="' + c + '" stroke="var(--surface)" stroke-width="2"/>';
+    });
+    svg += '<circle id="ring" r="10" fill="none" stroke="var(--ink)" stroke-width="2"/>';
+    data.forEach(function (d) {
+      svg += '<circle class="hit" data-m="' + d.m + '" cx="' + X(d.rank) + '" cy="' + Y(d.h) + '" r="9" fill="transparent" style="cursor:pointer"/>';
+    });
+    svg += '</svg><div class="tip" id="tip" hidden></div>';
+    $("chart").innerHTML = svg;
+  }
+
+  function drawControls() {
+    var l = L(), ctl = $("controls");
+    ctl.innerHTML = "";
+    TYPES.forEach(function (t, i) {
+      var row = document.createElement("div"); row.className = "row";
+      row.innerHTML = '<span class="name">' + t + '</span>' +
+        '<span class="seg" role="group" aria-label="' + t + '">' +
+        '<button type="button" data-i="' + i + '" data-b="0" id="t' + i + 'e">' + l.exc + '</button>' +
+        '<button type="button" data-i="' + i + '" data-b="1" id="t' + i + 'i">' + l.inh + '</button></span>' +
+        '<span class="marg">' + l.marg(fr(i, 0), fr(i, 1)) + '</span>';
+      ctl.appendChild(row);
+    });
+  }
+
+  function drawTable() {
+    var l = L(), tb = document.querySelector("#tbl tbody");
+    $("thr").innerHTML = l.th.map(function (h) { return "<th>" + h + "</th>"; }).join("");
+    tb.innerHTML = "";
+    data.forEach(function (d) {
+      var tr = document.createElement("tr"); tr.id = "r" + d.m;
+      tr.innerHTML = '<td class="n"><button type="button" data-m="' + d.m + '">' + d.rank + '</button></td><td>' +
+        (inh(d.m).join(", ") || l.none) + (d.m === REAL ? ' <b style="color:var(--orange)">(' + l.realTag + ')</b>' : "") +
+        '</td><td class="n">' + d.h.toFixed(3) + '</td><td class="n">' + d.s.toFixed(2) + '</td><td class="n">' + d.a.toFixed(0) +
+        '</td><td>' + (d.ok ? l.tYes : l.tNo) + '</td>';
+      tb.appendChild(tr);
+    });
+  }
+
+  function texts() {
+    var l = L();
+    document.documentElement.lang = lang;
+    document.title = l.title;
+    $("h1").textContent = l.h1; $("lede").innerHTML = l.lede;
+    $("kInt").textContent = nInt; $("kIntL").textContent = l.kIntL;
+    $("kRank").textContent = l.ord(byMask[REAL].rank); $("kRankL").textContent = l.kRankL;
+    $("kP").textContent = "p = " + (byMask[REAL].rank / 64).toFixed(2); $("kPL").textContent = l.kPL;
+    $("hc").textContent = l.hc; $("hg").textContent = l.hg;
+    $("bReal").textContent = l.bReal; $("bBest").textContent = l.bBest; $("bWorst").textContent = l.bWorst;
+    $("lgYes").textContent = l.lgYes; $("lgNo").textContent = l.lgNo; $("lgReal").textContent = l.lgReal; $("lgSel").textContent = l.lgSel;
+    $("note").innerHTML = l.note; $("sum").textContent = l.sum; $("foot").innerHTML = l.foot;
+    $("lES").setAttribute("aria-pressed", lang === "es" ? "true" : "false");
+    $("lEN").setAttribute("aria-pressed", lang === "en" ? "true" : "false");
+  }
+
+  function update() {
+    var l = L();
+    TYPES.forEach(function (t, i) {
+      var on = (sel >> i) & 1;
+      $("t" + i + "e").setAttribute("aria-pressed", on ? "false" : "true");
+      $("t" + i + "i").setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    var d = byMask[sel], ring = $("ring");
+    ring.setAttribute("cx", X(d.rank)); ring.setAttribute("cy", Y(d.h));
+    var name = inh(sel).join(", ") || l.none;
+    $("read").innerHTML =
+      '<div><div class="k">' + l.rInhib + '</div><div class="v small">' + name + (sel === REAL ? ' <span style="color:var(--orange)">· ' + l.realTag + '</span>' : "") + '</div></div>' +
+      '<div><div class="k">' + l.rRank + '</div><div class="v">' + d.rank + ' / 64</div></div>' +
+      '<div><div class="k">' + l.rLoss + '</div><div class="v">' + d.h.toFixed(3) + '</div></div>' +
+      '<div><div class="k">' + l.rSlope + '</div><div class="v">' + d.s.toFixed(2) + '</div></div>' +
+      '<div><div class="k">' + l.rRes + '</div><div class="v small"><span class="badge ' + (d.ok ? "yes" : "no") + '"><i></i>' + (d.ok ? l.yes : l.no) + '</span></div></div>';
+    var prev = document.querySelector("tr.sel"); if (prev) prev.classList.remove("sel");
+    $("r" + sel).classList.add("sel");
+  }
+
+  function renderAll() { texts(); drawControls(); drawChart(); drawTable(); update(); }
+
+  // ---- eventos (delegados: se conservan al redibujar)
+  $("controls").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-i]"); if (!b) return;
+    var i = +b.dataset.i, bit = +b.dataset.b;
+    sel = bit ? (sel | (1 << i)) : (sel & ~(1 << i)); update();
+  });
+  $("bReal").onclick = function () { sel = REAL; update(); };
+  $("bBest").onclick = function () { sel = data[0].m; update(); };
+  $("bWorst").onclick = function () { sel = data[63].m; update(); };
+  $("lES").onclick = function () { lang = "es"; try { localStorage.setItem("cx-lang", lang); } catch (e) {} renderAll(); };
+  $("lEN").onclick = function () { lang = "en"; try { localStorage.setItem("cx-lang", lang); } catch (e) {} renderAll(); };
+  var chart = $("chart");
+  chart.addEventListener("click", function (e) { var h = e.target.closest(".hit"); if (h) { sel = +h.dataset.m; update(); } });
+  chart.addEventListener("mousemove", function (e) {
+    var h = e.target.closest(".hit"), tip = $("tip");
+    if (!h) { tip.hidden = true; return; }
+    var l = L(), d = byMask[+h.dataset.m], box = chart.getBoundingClientRect();
+    tip.innerHTML = '<b>' + l.rank + ' ' + d.rank + '</b><br>' + l.inhibiting + ': ' + (inh(d.m).join(", ") || l.none) +
+      '<br><span class="mono">' + l.loss + ' ' + d.h.toFixed(3) + ' · ' + l.slope + ' ' + d.s.toFixed(2) + '</span>';
+    tip.hidden = false;
+    var x = e.clientX - box.left + 14, y = e.clientY - box.top + 14;
+    if (x + 240 > box.width) x = e.clientX - box.left - 250;
+    tip.style.left = Math.max(0, x) + "px"; tip.style.top = y + "px";
+  });
+  chart.addEventListener("mouseleave", function () { $("tip").hidden = true; });
+  document.querySelector("#tbl tbody").addEventListener("click", function (e) { var b = e.target.closest("button[data-m]"); if (b) { sel = +b.dataset.m; update(); } });
+
+  renderAll();
+})();
+</script>
+</html>

@@ -30,7 +30,8 @@ Ver hoja de ruta más abajo.
 
 Se regeneran con `python -m src.cx_net.make_figures [--lang es|en|all]` (leen solo de `results/`).
 Versiones en inglés en [`docs/figures/en/`](docs/figures/en/); resumen en inglés en
-[`docs/summary-en.md`](docs/summary-en.md) (English summary).
+[`docs/summary-en.md`](docs/summary-en.md) (English summary). Explorador interactivo de los 64
+patrones de signo: [`docs/explorer.html`](docs/explorer.html) (abrir localmente en el navegador).
 
 ![Un decodificador inerte supera a todos los modelos entrenados](docs/figures/fig1.png)
 ![Los dos hemisferios recorren el anillo en sentidos opuestos](docs/figures/fig2.png)

@@ -76,4 +76,4 @@ Code: MIT. The connectome is licensed CC-BY 4.0 and is not redistributed here. P
 et al. (2026), *Sexual dimorphism in the complete Drosophila male central nervous system
 connectome*, Cell (bioRxiv 10.1101/2025.10.09.680999), and Eckstein et al. (2024) for the
 neurotransmitter predictions. Figures: [`figures/en/`](figures/en/). Interactive explorer of the
-64 patterns: see the project page.
+64 patterns: [`explorer.html`](explorer.html) (open locally in a browser; EN/ES toggle).
