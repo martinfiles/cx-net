@@ -1810,6 +1810,309 @@ glutamato inhibidor) no depende de esta cita, viene de neuPrint/Eckstein et al. 
 **Siguiente paso:** al escribir para bioRxiv, releer la entrada (3) del 2026-09-16 y buscar cual
 articulo se queria citar (¿Turner-Evans et al. 2017 solamente? ¿otro Green?).
 
+## 2026-09-28 — Correcciones tras la revisión externa (neurociencia computacional del sistema de dirección de cabeza)
+
+**Qué se hizo:** se recibió una revisión externa completa (recalculó cifras desde `results/`,
+reimplementó el generador de la tarea, regeneró las 6 figuras, verificó citas). Encontró 8
+errores de cifra/texto y 7 problemas de fondo; veredicto: informe negativo honesto pero con
+errores en el resultado principal y un hueco de reproducibilidad, publicable tras arreglarlos.
+Se corrigieron los 8 primeros en `docs/preprint-discussion.md`, `docs/summary-en.md`, `README.md`
+y `src/cx_net/make_figures.py` (figuras regeneradas):
+1. "4 de 63 cambian de veredicto, 2 y 2" → falso: son 16/63 no unánimes, y de esos 4 difieren
+   del voto de la semilla 0 (3 hacia "integra": mask14, 15, 57; 1 al revés: mask45).
+2. "28/64" depende del criterio de agregación: 20 en las 3 semillas, 28 por mayoría, 36 en
+   alguna. Ahora se da el rango, no un valor único.
+3. El puesto de la real depende de la agregación: 14 (media), 19 (mediana), 28 (mejor semilla).
+4. "Solo EPG inhibe: held-out 0.063" era la semilla 0; la media de las 3 es 0.238 (una semilla
+   no converge). "EPG+EPGt inhiben" media 0.065, no 0.062.
+5. "Green et al. 2017" existe (Nature 546:101); se retira la advertencia de la entrada
+   2026-09-22 (3) y se añade la cita.
+6. El desfase L/R de "≈22°" (fig. 2, resumen) es falso en general: las 16 posiciones se
+   intercalan alrededor del anillo, paso medio ≈22.5°; el desfase Ln-Rn crece con n y solo
+   vale ≈22° para n=1 y n=5. Corregido en el CSV-derivado, las figuras y el texto.
+7. Texto desactualizado en las secciones 1, 10, 11 y 12 del borrador ("26 de 64" junto a
+   "puesto 14"; bump sin caracterizar) y título de la figura 5 en inglés ("negative rates").
+8. `results/runs_summary.csv` y `results/types_analysis_3seeds.json` /
+   `types_explorer_3seeds.json` estaban desactualizados (139 filas, faltaban las 126 corridas
+   de réplica y las 20 de `edge_gain`); no existía script para regenerar los dos últimos. Se
+   creó `src/cx_net/analyze_types_3seeds.py` (lee `data/interim/results_*.json` ya guardados,
+   sin reentrenar; reproduce los valores de `types_analysis_3seeds.json`; el JSON gana el campo `anchor_err_deg`, así que no es idéntico byte a byte; solo el fichero del explorador lo es) y se volvió a correr
+   `collect_results.py` (139→286 filas). `requirements.txt` limpiado (quita `caveclient`,
+   `navis`, `networkx`, `torch-geometric`, no usados; añade `matplotlib`, que sí se usa).
+
+**Por qué:** todas las cifras y afirmaciones de texto de un informe negativo son parte de la
+evidencia; un revisor externo detectó que varias no coincidían con los datos ya versionados en
+`results/`, y que dos de los tres archivos que respaldan la cifra principal no eran
+reproducibles con el código del repo.
+
+**Resultado / número clave:** ninguna corrección cambia la conclusión cualitativa (la asignación
+real integra pero no es especial). El punto B (grafo por compartimento PB/EB) queda pendiente:
+requiere volver a consultar `fetch_adjacencies` por región en neuPrint (token pendiente). Se
+verificó además, con los datos ya versionados, la interacción Delta7×EPG×PEN_b que propuso el
+revisor (sección 6 del borrador): con PEN_b excitador, 0/8-8/8-8/8-6/8 según Delta7/EPG inhiban;
+con PEN_b inhibidor solo 6/32 integran. Reformula el resultado como "un bucle EPG↔Delta7 con
+signo neto negativo, más PEN_b excitador", no como ausencia de estructura.
+
+**Siguiente paso:** (a) token de neuPrint para recalcular el desfase de PEN solo con aristas
+PB→EB; (b) formalizar la simetría de signo y las clases de equivalencia por bucle (sección 11);
+(c) 4ª-5ª semilla para mask14/15/45/57 y selección de checkpoint por EMA; (d) rediseñar la tarea
+(velocidad correlada en el tiempo, varias vueltas, ruido de proceso) antes de reportar cualquier
+cifra de "gana margen" entre patrones.
+
+## 2026-09-28 (2) — Desfase de los PEN por compartimento (PB de entrada, EB de salida): el token de neuPrint confirma la sospecha del revisor
+
+**Qué se hizo:** `src/cx_net/pen_offset_by_region.py` (nuevo). Usando el desglose por
+`roi` que ya devuelve `fetch_adjacencies` (y que `build_topology_only_graph` descarta al
+sumar todas las regiones), se recalculó el desfase de cada neurona PEN sin mezclar
+compartimentos: fase de entrada = media circular ponderada de sus EPG/EPGt presinápticas
+SOLO en PB; fase de salida = lo mismo con sus EPG/EPGt postsinápticas SOLO en EB.
+
+**Por qué:** la revisión externa (2026-09-28) señaló que el desfase de ≈6° medido antes
+(entrada 2026-09-19 (5)) es sospechosamente pequeño frente al anatómico (varias decenas
+de grados), y que `fetch_adjacencies` ya da la tabla por región para comprobarlo.
+
+**Resultado / número clave:** [CORREGIDO 2026-09-29: solo 1.439 de ≈12.3k pesos EPG→PEN caen en PB; el resto en EB] las sinapsis EPG→PEN caen en PB (1.439 de
+pesos) y casi todas las PEN→EPG en EB (23.976 de pesos) — la separación por región tiene
+sentido. Con eso, el desfase sale mucho mayor y consistente: PEN_a −54.1°(L) / +54.3°(R)
+(n=10+10 neuronas con ambos lados medibles), PEN_b −51.4°(L) / +50.4°(R) (n=11+11) — cerca
+de un glomérulo (≈45°), con la misma antisimetría L/R perfecta que el ≈6° anterior. La
+fase propia de cada PEN (de sus propias sinapsis EB, independiente de la conectividad)
+coincide con la fase de salida hasta ~1°. **Confirma la sospecha: sumar PB+EB diluía el
+desfase real por un factor ≈9.** Salida: `results/pen_offset_by_region.json`.
+
+**Siguiente paso:** reconstruir `graph_no_sign.csv` completo por compartimento (no solo
+el desfase de fase) y reentrenar el modelo por tipo sobre ese grafo, para ver si un
+mecanismo de rotación más fuerte cambia la necesidad de ganancias por tipo entrenables
+(sección 6 del borrador).
+
+## 2026-09-28 (3) — Grafo por compartimento (PB+EB): reconstruido, y la búsqueda de régimen sin entrenar da el mismo negativo
+
+**Qué se hizo:** `src/cx_net/extract_graph_pb_eb.py` (nuevo) reconstruye
+`data/raw/malecns_pb_eb/graph_no_sign.csv` filtrando `conn_df` a `roi in {PB, EB}` antes
+de sumar pesos (mismas 152 neuronas y mismo `eb_angles.csv` que `data/raw/malecns/`, sin
+recalcular). `train.py` y `regime_search.py` ganaron un parámetro `graph_data_dir` /
+`graph_data_dir` (antes usaban `DATA_DIR` fijo) para poder apuntar a este grafo alternativo
+sin tocar el comportamiento por defecto. Se repitieron las rondas 1 y 2 de la búsqueda de
+régimen sin entrenar (336 evaluaciones, signos reales fijos, sin ganancias por tipo) sobre
+el nuevo grafo.
+
+**Por qué:** la entrada anterior (2026-09-28 (2)) mostró que el desfase de los PEN estaba
+diluido ≈9× al mezclar regiones; el siguiente paso lógico es ver si un grafo sin diluir
+cambia el resultado negativo de la sección 6 ("con signos reales fijos, ningún régimen
+dinámico integra sin ganancias por tipo").
+
+**Resultado / número clave:** peso total 141.014 → 122.158 (86.6% conservado; el resto son
+sinapsis en NO, FB, LAL(L/R) y CentralBrain-unspecified). Con ese grafo, la mejor pérdida de
+las 336 evaluaciones es 0.491-0.517 con pendiente entre −0.08 y +0.03 en las 10 mejores
+configuraciones de cada ronda — el mismo negativo que con el grafo mezclado (0.470-0.493,
+pendiente ≈0). **Un desfase de PEN anatómicamente correcto no basta por sí solo: hace falta
+además reponderar las magnitudes (ahora mismo, conteo de sinapsis) para que ese mecanismo se
+traduzca en integración.** Guardado en `results/regime_search_pbeb.csv` y
+`results/regime_search_r2_pbeb.csv`.
+
+**Siguiente paso:** lanzadas (en curso al escribir esto) 3 semillas reales + 4 barajados con
+ganancias por tipo entrenables sobre el mismo grafo (`data/interim/launch_pbeb.sh`,
+`pbeb_real_seed{0,1,2}_p`, `pbeb_shuf{5,6,7,8}_p`), misma receta que la sección 6
+(`recurrent_gain=2, tau=10, in_gain=10, cue_gain=10`, 600 épocas). Compara si el held-out /
+pendiente de la solución ENTRENADA cambia frente a 0.106-0.124 / 0.75-0.84 del grafo
+mezclado.
+
+## 2026-09-28 (4) — Con ganancias por tipo sobre el grafo PB+EB, la real va PEOR: resultado contrario a la hipótesis de partida
+
+**Qué se hizo:** terminaron las 7 corridas de la entrada anterior. `collect_results.py`
+vuelto a correr (293 filas, antes 286).
+
+**Por qué:** cerrar la pregunta de la entrada (3): ¿un mecanismo de rotación sin diluir
+(desfase de PEN ≈50°) hace que la asignación real integre mejor, o necesite menos ayuda de
+las ganancias por tipo, que con el grafo mezclado?
+
+**Resultado / número clave — inesperado, contrario a la hipótesis:** con los MISMOS
+hiperparámetros que en la sección 6 (elegidos para el grafo mezclado, sin volver a
+ajustar), la real va PEOR sobre el grafo PB+EB: held-out 0.281 / 0.299 / 0.339 (media
+0.306; antes 0.106-0.124) y pendiente 0.42 / 0.40 / 0.36 (media 0.39; antes 0.75-0.84).
+**Con el criterio de "integra" (held-out < 0.466 y pendiente > 0.5), NINGUNA de las 3
+semillas integra** sobre este grafo (el held-out mejora respecto a la memoria pero la
+pendiente no llega). Los 4 barajados tampoco integran (held-out 0.43-0.60, pendiente
+−0.02 a +0.07). Quitar el 13.4% del peso fuera de PB/EB (NO, FB, LAL(L/R),
+CentralBrain-unspecified) no "purifica" el mecanismo, lo debilita: esas sinapsis
+aparentemente contribuyen dinámica útil, no solo dilución del desfase de fase. **La
+hipótesis de la entrada 2026-09-28 (2) ("el grafo mezclado diluye y por tanto debilita
+el mecanismo") queda parcialmente refutada por este experimento**: diluir el desfase de
+fase (punto B del revisor) es real y se confirmó, pero no implica que restringir el grafo
+mejore el entrenamiento — el efecto neto es el contrario, al menos con este régimen
+dinámico.
+
+**Salvedad importante, sin resolver:** los hiperparámetros dinámicos no se volvieron a
+ajustar para este grafo (mismo "criterio A" de sesgo declarado que en la sección 6, pero
+esta vez sin siquiera intentar favorecer a la real). No se puede distinguir todavía entre
+"el núcleo PB+EB es dinámicamente insuficiente" y "hace falta un régimen distinto (quizás
+`recurrent_gain` mayor, para compensar el 13.4% de recurrencia perdida) para este grafo
+más pequeño".
+
+**Siguiente paso:** repetir la búsqueda de régimen tunable (no solo la versión sin
+entrenar de la entrada (3)) específicamente para el grafo PB+EB antes de sacar
+conclusiones sobre si el núcleo PB+EB es insuficiente o solo necesita otro régimen.
+
+## 2026-09-28 (5) — Búsqueda de régimen reajustada para PB+EB (recurrent_gain hasta 24): mismo negativo, [etiqueta «salvedad cerrada» retirada 2026-09-29]
+
+**Qué se hizo:** nueva rejilla en `regime_search.py`
+(`regime_search_pbeb_r3.csv`): `recurrent_gain` ∈ {1.5, 2, 3, 4, 6, 8, 12, 16, 24} (el
+grafo mezclado solo llegaba a 16), `tau` ∈ {5, 10, 20}, `in_gain` ∈ {10, 30, 100, 300},
+`cue_gain=10`; 216 evaluaciones sin entrenar, signos reales fijos, sobre
+`data/raw/malecns_pb_eb`.
+
+**Por qué:** cerrar la salvedad de la entrada (4): ¿la real entrenaba peor sobre PB+EB
+porque el régimen dinámico (`recurrent_gain=2`) estaba mal ajustado para el 13.4% de
+recurrencia perdida, o el núcleo PB+EB es insuficiente para cualquier régimen razonable?
+
+**Resultado / número clave:** el mismo negativo, incluso empujando `recurrent_gain` a 24
+(1.5× el máximo probado con el grafo completo): mejor pérdida 0.498 (`rec_gain=2, tau=5,
+in_gain=100, ring_sign=-1`), pendiente −0.12 en esa configuración y entre −0.14 y +0.01
+en las 20 mejores. **Ningún régimen explorado, ni siquiera con recurrencia muy alta,
+logra que los signos reales solos integren sobre el grafo PB+EB** — el mismo patrón que
+con el grafo mezclado (sección 6) y que con la rejilla anterior sobre este mismo grafo
+(entrada (3)). Cierra la salvedad: no es un problema de `recurrent_gain` insuficiente;
+el núcleo PB+EB, con las magnitudes fijas al conteo de sinapsis, no alcanza a integrar
+en ningún punto de una rejilla de 388+216=604 evaluaciones combinadas (corregido 2026-09-29; antes 336/552). Sigue sin probarse
+`tau` fuera de {5,10,20} ni `in_gain` > 300, pero el patrón (techo de pérdida ≈0.49-0.52,
+pendiente ≈0 en todo el rango) ya está muy saturado como para esperar que un punto
+aislado más allá cambie la conclusión cualitativa.
+
+**Siguiente paso:** ninguno pendiente de este bloque concreto. La pregunta que sigue
+abierta (sección 11 del borrador) es por qué las ganancias por tipo entrenadas SÍ
+resuelven la tarea sobre el grafo mezclado (0.106-0.124) y fallan sobre PB+EB
+(0.28-0.34): eso apunta a que el papel de NO/FB/LAL no es solo "más recurrencia" (ya
+descartado aquí) sino algo más específico de esas conexiones, que ni las ganancias por
+tipo entrenables logran compensar sobre el grafo restringido con este régimen.
+
+## 2026-09-28 (6) — Rediseño de la tarea (punto C del revisor): implementado, cierra el hueco teórico, pero nada converge con 600 épocas
+
+**Qué se hizo:** `task.py` gana `velocity_process="ou"` (proceso Ornstein-Uhlenbeck con
+tiempo de correlación `tau_v`, en vez de ruido blanco independiente por paso) y
+`model.py` gana `state_noise_std` (ruido de proceso aditivo a la dinámica recurrente,
+tras la actualización). `train.py` y `task.py` pasan ambos parámetros de punta a punta
+(comportamiento anterior exacto si se dejan por defecto). `task_v2_reference.py`
+(nuevo) calcula las referencias de la tarea nueva.
+
+**Por qué:** el revisor señaló 4 problemas de la tarea original: velocidad sin
+correlación temporal (cambia casi de signo cada paso), ningún ensayo exige recorrer el
+anillo completo (mediana ~60°), la dinámica no tiene ruido, y por eso un integrador
+imperfecto (ganancia 0.54) pasa el criterio de "integra" con pérdida 0.138.
+
+**Resultado / número clave — la referencia SÍ cierra el hueco:** con `T=300`,
+`tau_v=30`, `max_av=0.15`, `hold_prob=0.3` (mediana 1.68 vueltas por ensayo, 63%
+superan una vuelta completa), un integrador de ganancia 0.54 da pérdida 0.85 (memoria
+sin integrar: 0.98; decodificador constante: 1.12) — ya no se cuela. Hace falta una
+ganancia dentro de ±5% de 1.0 para pérdida < 0.2 (antes, ganancia 0.54 ya bastaba).
+`results/task_v2_reference.json`.
+
+**Pero la validación entrenada (3 semillas reales + 4 barajados, `launch_taskv2.sh`,
+mismos hiperparámetros dinámicos y 600 épocas de siempre) no convergió NINGUNA:**
+held-out 0.83-1.06 (todas cerca o peor que la memoria sin integrar, 0.98), pendiente
+≈0 en las 7. La tarea nueva es más difícil de lo que el presupuesto de entrenamiento
+actual puede resolver — ni siquiera la real se distingue de los barajados. Sin
+converger nada, no se puede leer esto como confirmación ni como refutación de que el
+rediseño cambie qué patrones integran.
+
+**Siguiente paso (decisión con el usuario: más épocas, no currículo):** relanzadas
+las mismas 7 corridas con 1400 épocas en vez de 600 (`launch_taskv2b.sh`,
+`patience=200`), en curso al escribir esto.
+
+## 2026-09-29 — Con 1400 épocas tampoco converge nada: no es presupuesto, es la receta
+
+**Qué se hizo:** terminaron las 7 corridas de `launch_taskv2b.sh` (1400 épocas,
+`patience=200`, mismos hiperparámetros dinámicos que siempre).
+
+**Resultado / número clave:** prácticamente igual que con 600 épocas: held-out
+0.82-1.04, pendiente entre −0.05 y +0.08 en las 7 (incluida la real). **Más del
+doble de épocas no movió la aguja.** Descarta que fuera solo un problema de
+presupuesto de entrenamiento; algo en la receta de hiperparámetros (`recurrent_gain`,
+`tau`, `in_gain`, `cue_gain`, todos heredados de la tarea vieja, sin volver a
+ajustar) o en la dificultad de optimización de la tarea nueva (BPTT sobre T=300 con
+velocidad correlada, quizás un paisaje mucho más plano o con más mesetas que la tarea
+original) impide que el descenso de gradiente encuentre la solución que sí existe con
+los signos reales (la referencia de `task_v2_reference.json` confirma que una
+ganancia cercana a 1.0 da pérdida ~0, aunque ese integrador ideal (cumsum) no es una red de esta clase de modelos: no demuestra que la solución exista en el espacio de
+búsqueda; ver 2026-09-29 (3)).
+
+**No se lanzó una tercera ronda sin confirmar con el usuario** (el patrón de la
+sesión: cada ronda de cómputo grande se decide con él, no por iniciativa propia). El
+rediseño de tarea queda como lo que es: cierra el hueco teórico (`task_v2_reference.json`),
+pero no se ha podido entrenar nada sobre él con dos presupuestos de cómputo distintos;
+haría falta currículo (empezar con parámetros más parecidos a la tarea vieja e ir
+subiendo `tau_v`/T durante el entrenamiento) o repetir la búsqueda de régimen para
+esta tarea, ninguno de los dos intentado todavía.
+
+**Siguiente paso:** ninguno lanzado. Pendiente de decisión: ¿currículo, búsqueda de
+régimen para la tarea nueva, o dejarlo declarado como limitación abierta?
+
+## 2026-09-29 (2) — Currículo probado: tampoco converge. Tres intentos, mismo negativo
+
+**Qué se hizo:** `train.py` gana `curriculum_epochs` / `curriculum_T_start` /
+`curriculum_tau_v_start`: durante las primeras `curriculum_epochs` interpola
+linealmente `T` y `tau_v` desde un punto de partida fácil hasta el objetivo; el
+held-out siempre se evalúa en el objetivo. `launch_taskv2c.sh`: 1400 épocas, primeras
+800 interpolando T 200->300 y tau_v 5->30 (T=200/tau_v=5 es casi tan fácil como la
+tarea vieja: 0.52 vueltas medianas en vez de 1.57), las 600 restantes en el objetivo
+fijo. Mismas 3 semillas reales + 4 barajados que las dos rondas anteriores.
+
+**Por qué:** ni 600 ni 1400 épocas con T=300/tau_v=30 fijos desde el inicio
+convergieron (entrada anterior); un currículo que empieza por la versión fácil de la
+tarea es la vía estándar para evitar quedarse atascado en un óptimo local malo desde
+el arranque.
+
+**Resultado / número clave: tampoco converge nada.** held-out 0.93-1.07, pendiente
+entre −0.04 y +0.02 en las 7 (incluida la real) — el mismo rango que sin currículo.
+El progreso vigilado en vivo mostró `best_loss` estancado desde la época 0 hasta al
+menos la 175 (22% del currículo) en la semilla 0, sin mejora visible después.
+
+**Van tres intentos con el mismo resultado (600 épocas fijas, 1400 épocas fijas,
+currículo de 800+600): ninguno consigue que el descenso de gradiente encuentre la
+solución que sabemos que existe** (la referencia de ganancia ≈1.0 da pérdida ≈0,
+`task_v2_reference.json`). Esto ya no parece un problema de presupuesto ni de
+programa de entrenamiento, sino de la receta de hiperparámetros dinámicos
+(`recurrent_gain=2`, `tau=10`, `in_gain=10`, `cue_gain=10`, heredados sin ajustar de
+la tarea vieja) o de algo más estructural en cómo BPTT sobre T=300 con velocidad
+correlada interactúa con esta red. No se ha intentado todavía: otra tasa de
+aprendizaje, otro `recurrent_gain`/`tau` para esta tarea específicamente (equivalente
+a la búsqueda de régimen que sí funcionó para diagnosticar el grafo PB+EB), u otra
+inicialización.
+
+**Se para aquí esta línea de trabajo sin lanzar una cuarta ronda de cómputo por
+iniciativa propia.** El rediseño de tarea queda documentado como limitación abierta,
+con el hueco teórico cerrado (`task_v2_reference.json`) pero sin ningún entrenamiento
+que lo confirme empíricamente, tras tres intentos razonables.
+
+**Siguiente paso:** decisión pendiente con el usuario. Opciones: (a) búsqueda de
+régimen (sin entrenar, barata, igual que se hizo para PB+EB) específica para esta
+tarea antes de reintentar el entrenamiento; (b) dejarlo declarado como limitación y
+pasar el paquete al revisor tal como está.
+
+## 2026-09-29 (3) — Tercera revisión externa: diagnóstico por regiones, tarea OU corregida y matices de simetría
+
+**Qué se hizo:** (a) `region_analysis.py`: desfase PEN sin filtrar, peso por región/par de tipos y
+ablación por región sobre los 3 modelos reales entrenados; `make_region_graphs.py` +
+`launch_regions.sh`: reentrenar la real (3 semillas) sobre grafo completo sin NO y sobre PB+EB+NO.
+(b) `task.py`: `increment_loss`; `model.py`/`task.py`: ruido de estado con semilla propia en held-out;
+`task_v3_reference.py`, `transfer_check_v3.py`, `launch_taskv3.sh`. (c) `sign_symmetry_analysis.pair_strength`.
+(d) Correcciones de texto (recuento 388/604, «salvedad cerrada», regla Delta7×EPG, explorer, figuras 5 y 6,
+expert-review marcado histórico).
+
+**Resultados clave:** desfase sin filtrar ≈6° (la dilución es real; la premisa del revisor de que EPG→PEN
+está casi todo en PB era falsa, y el cuaderno también: solo 12 % está en PB). Ablación del NO: 0/3 integran
+(held-out 0.43, pendiente 0.10); FB/LAL/CentralBrain: sin efecto. Reentrenando: sin NO 0/3 (0.30-0.36),
+PB+EB+NO 3/3 (0.10-0.13). El NO solo tiene sinapsis PEN↔PEN. Tarea OU: velocidad filtrada p90 0.19 (anterior)
+vs 0.047 (antigua) vs 0.055 (nueva); con la nueva y pérdida incremental, 3 reales convergen (0.12, pendiente
+0.73-0.75) y 4 barajados no (0.35-0.46). Especificidad en PB+EB: real 0.31 vs 0.43-0.60. Simetría: pares casi
+nulos y PEG/EPGt de salida débil; cambiar solo su signo mueve el held-out una mediana de 0.055.
+
+**Limitaciones:** ablación sin reentrenar y reentrenamiento con hiperparámetros sin reajustar; 4 barajados
+por neurona en la tarea nueva (no se repitió la enumeración de 64 patrones); no se ha probado por qué la
+recurrencia PEN↔PEN es necesaria.
+
+**Siguiente paso:** repetir la enumeración de 64 patrones sobre la tarea OU corregida; el revisor puede
+repetir los cálculos con `results/region_analysis.json`.
+
 ## Plantilla para próximas entradas
 
 ```

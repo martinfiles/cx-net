@@ -54,13 +54,15 @@ pérdida que depende de `max_av` (0.55 con 0.15); la red tiene que anclar,
 mantener e integrar.
 """
 
+import math
+
 import numpy as np
 import torch
 
 
 def generate_trial(T: int = 200, max_av: float = 0.08, hold_prob: float = 0.0,
                     hold_block: int = 20, perturb_amp: float = 0.0,
-                    seed: int | None = None):
+                    seed: int | None = None, velocity_process: str = "white", tau_v: float = 15.0):
     """Devuelve (velocidad_angular_de_manejo[T], rumbo_real[T]) en radianes.
 
     Con `hold_prob > 0`: se divide T en bloques de `hold_block` pasos: cada
@@ -74,9 +76,33 @@ def generate_trial(T: int = 200, max_av: float = 0.08, hold_prob: float = 0.0,
     el ruido llega a la red (vía `build_external_input`) pero NO cuenta para
     el rumbo objetivo, así que la red debe integrarlo sin dejarse arrastrar
     por él. `perturb_amp=0` (default) reproduce el comportamiento original.
-    """
+
+    `velocity_process` (2026-09-28, respuesta a la revisión externa: "la
+    velocidad es ruido blanco independiente en cada paso, casi cambia de
+    signo en cada paso"; ver docs/lab-notebook.md): `"white"` (defecto)
+    reproduce exactamente el comportamiento original -- cada paso de
+    velocidad es N(0, max_av) i.i.d., sin correlación temporal, así que un
+    integrador perfecto y uno que solo filtra paso a paso se parecen mucho.
+    `"ou"` genera un proceso de Ornstein-Uhlenbeck con tiempo de correlación
+    `tau_v` pasos (desviación estacionaria ≈ max_av, para que ambos procesos
+    sean comparables en escala): v_t = rho*v_{t-1} + sigma*eps_t, con
+    rho=exp(-1/tau_v). La velocidad cambia de signo con mucha menos
+    frecuencia y el rumbo acumulado es mucho mayor a igualdad de T (ver
+    `n_laps` más abajo), así que sí exige integrar, no solo filtrar ruido de
+    alta frecuencia paso a paso."""
     rng = np.random.default_rng(seed)
-    av_true = rng.normal(0.0, max_av, size=T)
+    if velocity_process == "white":
+        av_true = rng.normal(0.0, max_av, size=T)
+    elif velocity_process == "ou":
+        rho = math.exp(-1.0 / tau_v)
+        sigma = max_av * math.sqrt(max(1.0 - rho ** 2, 1e-12))
+        av_true = np.empty(T)
+        av_true[0] = rng.normal(0.0, max_av)
+        eps = rng.normal(0.0, 1.0, size=T - 1)
+        for t in range(1, T):
+            av_true[t] = rho * av_true[t - 1] + sigma * eps[t - 1]
+    else:
+        raise ValueError(f"velocity_process desconocido: {velocity_process}")
     if hold_prob > 0:
         n_blocks = T // hold_block
         for b in range(n_blocks):
@@ -94,12 +120,13 @@ ANCHOR_SEED_OFFSET = 500_000_000
 
 def generate_anchored_trial(T: int = 200, max_av: float = 0.15, hold_prob: float = 0.0,
                              hold_block: int = 20, perturb_amp: float = 0.0,
-                             seed: int = 0):
+                             seed: int = 0, velocity_process: str = "white", tau_v: float = 15.0):
     """(velocidad_angular, rumbo_real, theta0). Igual que `generate_trial` pero
     el rumbo parte de una fase inicial aleatoria theta0 (sorteada con una
     semilla derivada, para no alterar la secuencia de `generate_trial`)."""
-    av, heading = generate_trial(T=T, max_av=max_av, hold_prob=hold_prob,
-                                  hold_block=hold_block, perturb_amp=perturb_amp, seed=seed)
+    av, heading = generate_trial(T=T, max_av=max_av, hold_prob=hold_prob, hold_block=hold_block,
+                                  perturb_amp=perturb_amp, seed=seed,
+                                  velocity_process=velocity_process, tau_v=tau_v)
     theta0 = float(np.random.default_rng(ANCHOR_SEED_OFFSET + seed).uniform(-np.pi, np.pi))
     return av, heading + theta0, theta0
 
@@ -154,6 +181,25 @@ def circular_loss(decoded: torch.Tensor, target: torch.Tensor, warmup: int = 20)
     return (1 - torch.cos(diff)).mean()
 
 
+def increment_loss(decoded: torch.Tensor, target, windows=(20, 50), warmup: int = 20,
+                   anchor_steps: int = 40) -> torch.Tensor:
+    """Pérdida sobre INCREMENTOS de rumbo en ventanas cortas (2026-09-29, 3ª
+    revisión: 1-cos del rumbo absoluto tras varias vueltas no da gradiente útil
+    y exigir ±5% de ganancia es demasiado estricto). Para cada ventana w se
+    compara el cambio decodificado dec[t+w]-dec[t] con el cambio real
+    heading[t+w]-heading[t] (ambos módulo 2π): media de 1-cos del error. Más un
+    término de anclaje (1-cos absoluto en pasos [warmup, anchor_steps)) para que
+    la fase inicial siga contando. No acumula error a lo largo de las vueltas."""
+    tgt = torch.as_tensor(target, dtype=torch.float32)
+    terms = []
+    for w in windows:
+        d_dec = decoded[warmup + w:] - decoded[warmup:-w]
+        d_tgt = tgt[warmup + w:] - tgt[warmup:-w]
+        terms.append((1 - torch.cos(d_dec - d_tgt)).mean())
+    anchor = (1 - torch.cos(decoded[warmup:anchor_steps] - tgt[warmup:anchor_steps])).mean()
+    return torch.stack(terms).mean() + 0.5 * anchor
+
+
 # Rango de semillas reservado para el set de validación held-out: disjunto de
 # cualquier semilla que pueda generarse durante entrenamiento (train.py usa
 # seed_run * SEED_STRIDE + epoch * trials_per_step + i, con SEED_STRIDE muy
@@ -163,47 +209,56 @@ HELD_OUT_SEED_BASE = 900_000_000
 
 
 def generate_held_out_set(n_trials: int = 30, T: int = 200, hold_prob: float = 0.0,
-                           perturb_amp: float = 0.0, anchor: bool = False, max_av: float = 0.08):
+                           perturb_amp: float = 0.0, anchor: bool = False, max_av: float = 0.08,
+                           velocity_process: str = "white", tau_v: float = 15.0):
     """Conjunto FIJO de ensayos de validación: mismas semillas siempre, para
     poder comparar configuraciones/semillas de entrenamiento entre sí sin que
     la comparación esté confundida por qué ensayos le tocaron a cada una."""
     if anchor:
         return [generate_anchored_trial(T=T, max_av=max_av, hold_prob=hold_prob, perturb_amp=perturb_amp,
-                                        seed=HELD_OUT_SEED_BASE + i) for i in range(n_trials)]
-    return [generate_trial(T=T, hold_prob=hold_prob, perturb_amp=perturb_amp, seed=HELD_OUT_SEED_BASE + i)
-            for i in range(n_trials)]
+                                        seed=HELD_OUT_SEED_BASE + i, velocity_process=velocity_process,
+                                        tau_v=tau_v) for i in range(n_trials)]
+    return [generate_trial(T=T, hold_prob=hold_prob, perturb_amp=perturb_amp, seed=HELD_OUT_SEED_BASE + i,
+                            velocity_process=velocity_process, tau_v=tau_v) for i in range(n_trials)]
 
 
-def evaluate_on_trials(model, nodes, trials, in_gain: float = 3.0, cue_gain: float = 3.0) -> float:
-    """Pérdida media (sin gradiente) sobre un conjunto de ensayos fijo."""
+def evaluate_on_trials(model, nodes, trials, in_gain: float = 3.0, cue_gain: float = 3.0,
+                        state_noise_std: float = 0.0, loss_type: str = "circular") -> float:
+    """Pérdida media (sin gradiente) sobre un conjunto de ensayos fijo. El ruido
+    de estado (si lo hay) usa una semilla propia por ensayo (HELD_OUT_SEED_BASE + i)
+    para que la validación sea comparable entre corridas."""
+    loss_fn = increment_loss if loss_type == "increment" else circular_loss
     with torch.no_grad():
         total = 0.0
-        for trial in trials:
+        for i, trial in enumerate(trials):
             av, heading = trial[0], trial[1]
             theta0 = trial[2] if len(trial) > 2 else None  # tarea anclada: (av, rumbo, theta0)
             ext_input = build_external_input(av, nodes, gain=in_gain, cue_phase=theta0, cue_gain=cue_gain)
-            states = model(ext_input)
+            states = model(ext_input, state_noise_std=state_noise_std, noise_seed=HELD_OUT_SEED_BASE + i)
             decoded = decode_heading(states, nodes)
-            total += circular_loss(decoded, heading).item()
+            total += loss_fn(decoded, heading).item()
         return total / len(trials)
 
 
-def integration_diagnostics(model, nodes, trials, in_gain: float = 3.0, cue_gain: float = 3.0) -> dict:
+def integration_diagnostics(model, nodes, trials, in_gain: float = 3.0, cue_gain: float = 3.0,
+                             state_noise_std: float = 0.0) -> dict:
     """Solo tarea anclada: pérdida, error de anclaje a t=20 (grados) y pendiente
     sum(dd*hc)/sum(hc*hc) entre el cambio decodificado dd y el cambio real hc
     desde t=20 (1 = integra a velocidad correcta, 0 = no integra)."""
     import math
-    losses, anchor_err, num, den = [], [], 0.0, 0.0
+    losses, inc_losses, anchor_err, num, den = [], [], [], 0.0, 0.0
     with torch.no_grad():
-        for av, heading, theta0 in trials:
-            states = model(build_external_input(av, nodes, gain=in_gain, cue_phase=theta0, cue_gain=cue_gain))
+        for i, (av, heading, theta0) in enumerate(trials):
+            states = model(build_external_input(av, nodes, gain=in_gain, cue_phase=theta0, cue_gain=cue_gain),
+                            state_noise_std=state_noise_std, noise_seed=HELD_OUT_SEED_BASE + i)
             dec = decode_heading(states, nodes)
             losses.append(circular_loss(dec, heading).item())
+            inc_losses.append(increment_loss(dec, heading).item())
             d = np.unwrap(dec.numpy())
             anchor_err.append(abs(math.degrees(np.angle(np.exp(1j * (d[20] - theta0))))))
             dd = d[20:] - d[20]
             hc = heading[20:] - heading[20]
             num += float((dd * hc).sum())
             den += float((hc * hc).sum())
-    return {"loss": float(np.mean(losses)), "anchor_err_deg": float(np.mean(anchor_err)),
+    return {"loss": float(np.mean(losses)), "increment_loss": float(np.mean(inc_losses)), "anchor_err_deg": float(np.mean(anchor_err)),
             "slope": num / max(den, 1e-9)}

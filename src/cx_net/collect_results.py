@@ -26,10 +26,13 @@ COPY = ["types_analysis.json", "dose_analysis.json", "regime_search.csv", "regim
         "real_sign_offset_check.json", "signreg05_sweep_summary_8seeds.json"] + [
         f"h1_evaluation_signreg05_seed{s}.json" for s in range(8)]
 
+# results/pen_offset_by_region.json se genera directamente en results/ (necesita
+# NEUPRINT_TOKEN, no vive en data/interim/), no se copia desde aquí.
+
 KEYS = ["n_epochs", "seed", "hold_prob", "sign_reg", "anchor", "max_av", "ring_source", "ring_sign",
         "activation", "type_params", "real_sign_control", "control_shuffle_seed", "control_swap_fraction",
         "control_type_mask", "edge_gain", "frac_edges_changed", "recurrent_gain", "tau", "in_gain", "cue_gain",
-        "mean_abs_sign", "frac_polarized_gt_0.9"]
+        "mean_abs_sign", "frac_polarized_gt_0.9", "velocity_process", "tau_v", "state_noise_std"]
 
 
 def runs_table():

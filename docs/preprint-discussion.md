@@ -34,9 +34,10 @@ cuales invalida una versión anterior del experimento:
 3. Con una tarea bien planteada, el modelo original no puede integrar el rumbo
    ni siquiera con los signos reales en ningún régimen dinámico explorado (588
    evaluaciones); con ganancias por tipo celular sí, pero **la asignación real
-   de neurotransmisor no es especial**: 26 de los 64 patrones de signo por tipo
-   integran y la real queda en el puesto 14 de 64 (p = 0.22; 26/64 y puesto 22 con
-   una sola semilla), apoyándose en
+   de neurotransmisor no es especial**: 28 de los 64 patrones de signo por tipo
+   integran por mayoría de 3 semillas y la real queda en el puesto 14 de 64 por
+   held-out medio (p = 0.22; el rango según el criterio de agregación es 14-28,
+   sección 6; con una sola semilla, 26/64 y puesto 22), apoyándose en
    tasas con signo (desviaciones respecto a un nivel basal nulo) que hacen el
    signo del peso poco identificable (sección 6).
 4. Un aprendiz de signos genérico no encuentra esa solución (sección 7).
@@ -172,9 +173,12 @@ confianza, cada neurona queda en una cuña (concentración 0.89-0.99).
 
 - Los EPG de L recorren el anillo en un sentido (L1…L8 ≈ 137°, 177°, 216°,
   265°, 313°, 356°, 47°, 90°) y los de R en el **sentido contrario** (R1…R8 ≈
-  115°, 65°, 22°, 335°, 291°, 239°, 194°, 156°): un espejo, con pasos de ≈45° y
-  un desfase L/R de ≈22° entre glomérulos homólogos. EPGt (glomérulo 9) queda en
-  113-148°, la fase del glomérulo 1.
+  115°, 65°, 22°, 335°, 291°, 239°, 194°, 156°): un espejo, con pasos de ≈45°.
+  Las 16 posiciones (L y R juntos) se intercalan alrededor del anillo,
+  alternando hemisferio, con un paso medio de ≈22.5° entre posiciones
+  consecutivas (no un desfase constante de 22° entre glomérulos homólogos:
+  la diferencia Ln−Rn crece con n, ≈22° + 90°·(n−1), y solo coincide con 22°
+  para n=1 y n=5). EPGt (glomérulo 9) queda en 113-148°, la fase del glomérulo 1.
 - Es consistente con lo descrito para el sistema (cada hemisferio muestrea el anillo
   completo a ≈45° con desfase L/R de 22.5°, Hulse et al., 2021, y la proyección alterna
   de las cuñas del EB a los dos hemisferios del PB viene de trabajos anteriores) y **no
@@ -182,10 +186,30 @@ confianza, cada neurona queda en una cuña (concentración 0.89-0.99).
   MaleCNS y la corrección de nuestros mapeos previos, que colocaban L y R en mitades
   del círculo (el original) o suponían el mismo sentido en ambos hemisferios (el
   «intercalado» descartado el 2026-09-16).
-- Validación con los PEN (no usados para construir el mapa): los PEN de L y R
-  se desplazan en sentidos opuestos con consistencia perfecta (≈ −6° y +5.5°;
-  magnitud pequeña, probablemente por sinapsis EPG↔PEN recíprocas en el EB que
-  el grafo no distingue de las del PB).
+- **Validación con los PEN, separando regiones (2026-09-28, respuesta a la revisión
+  externa; `src/cx_net/pen_offset_by_region.py`, `results/pen_offset_by_region.json`).**
+  La primera validación (no usados para construir el mapa) mezclaba, sin darse cuenta,
+  sinapsis de todas las regiones al pesar los vecinos EPG de cada PEN, y daba un
+  desfase diluido de ≈ −6° / +5.5° entre hemisferios. `fetch_adjacencies` da un
+  desglose por ROI que esa versión descartaba. **Corrección (3ª revisión, 2026-09-29,
+  `results/region_analysis.json`):** este párrafo decía que «casi todas las sinapsis
+  EPG→PEN caen en PB»; es falso. De las ≈12.3k sinapsis EPG→PEN, solo 1.439 (12 %) están en
+  el PB y ≈10.9k en el EB; las PEN→EPG sí están casi todas en el EB (≈24k). Por eso el
+  cálculo sin filtrar da ≈6°: la mayor parte del peso EPG→PEN cae en el EB, donde la fase
+  de entrada coincide con la de la propia PEN. Repetido SIN filtrar por región
+  (comprobación pedida por el revisor) da |desfase| medio 6.3° (PEN_a) y 6.2° (PEN_b),
+  0 % de neuronas en 40-60°, es decir, reproduce el valor antiguo: la dilución es real y no
+  un artefacto de la validación anterior. Separando la fase de entrada (vecinas EPG presinápticas, solo
+  PB) de la fase de salida (vecinas EPG postsinápticas, solo EB) por neurona PEN, el
+  desfase sale mucho mayor y consistente entre las dos poblaciones: PEN_a −54.1°(L) /
+  +54.3°(R) (n=10+10), PEN_b −51.4°(L) / +50.4°(R) (n=11+11) — cerca de un glomérulo
+  (≈45°), no de los ≈6° del grafo mezclado, y con la misma antisimetría L/R perfecta.
+  La fase propia de cada PEN (medida de sus propias sinapsis en el EB, independiente
+  de la conectividad) coincide con la fase de salida hasta ~1°. Confirma la sospecha
+  de la revisión: al sumar todas las regiones en `build_topology_only_graph`, el peso
+  EPG→PEN del EB (sin desfase) domina sobre el del PB y diluye el desfase de fase; medido
+  por región, el circuito sí desplaza la fase en una magnitud anatómicamente razonable.
+  Esto es una medida de fase por vecindad, no un resultado de dinámica.
 - El sentido de giro global es arbitrario en el método (`ring_sign`); ambos
   sentidos dan resultados equivalentes en la comprobación de realizabilidad.
 - Limitaciones del método: el ajuste de plano por PCA supone un EB aproximadamente
@@ -203,6 +227,74 @@ conjunto de ajuste 0.537) con pendiente ≈ 0; las configuraciones con pendiente
 ≈ 1 tenían recurrencia débil y perdían el ancla (pérdida 0.76-1.02). Mantener
 el bump exige recurrencia fuerte; moverlo con velocidad proporcional, régimen
 casi lineal. **En este modelo la red con signos reales no integra.**
+
+**Repetido sobre el grafo por compartimento (2026-09-28, tras confirmar que el desfase de
+los PEN estaba diluido, sección 5).** Con el mismo protocolo (rondas 1 y 2, 288 + 100 = 388
+evaluaciones sin entrenar) pero sobre `data/raw/malecns_pb_eb` (solo sinapsis PB+EB, sin
+NO/FB/LAL/CentralBrain-unspecified), el resultado es el mismo: mejor pérdida 0.491-0.517,
+pendiente siempre entre −0.08 y +0.03 en las 10 mejores configuraciones de cada ronda
+(`results/regime_search_pbeb.csv`, `results/regime_search_r2_pbeb.csv`,
+`src/cx_net/regime_search.py` con `graph_data_dir`). **Un mecanismo de rotación
+anatómicamente más fuerte (desfase de PEN ≈50° en vez de ≈6°) no es suficiente por sí
+solo: la red con signos reales y magnitudes fijas, sin ganancias por tipo entrenables,
+sigue sin integrar en ningún régimen dinámico explorado.** Esto acota la hipótesis de la
+sección 11: no basta con "el grafo diluye el mecanismo"; hace falta además normalizar o
+reponderar las magnitudes (conteo de sinapsis) para que ese mecanismo más fuerte se
+traduzca en dinámica, algo que las ganancias por tipo entrenadas sí hacen.
+
+**Con ganancias por tipo entrenables, sobre el mismo grafo por compartimento (2026-09-28,
+`data/interim/launch_pbeb.sh`; mismos hiperparámetros que la fila `tanh, ring_sign=+1` de
+la tabla de arriba, sin re-ajustar para este grafo).** Resultado inesperado: la asignación
+real va PEOR, no mejor, que con el grafo mezclado: held-out 0.281 / 0.299 / 0.339 (media
+0.306, frente a 0.106-0.124 antes) y pendiente 0.42 / 0.40 / 0.36 (media 0.39, frente a
+0.75-0.84 antes). **Con el criterio de "integra" (held-out < 0.466 y pendiente > 0.5),
+ninguna de las 3 semillas integra sobre este grafo** (el held-out mejora respecto a la
+memoria, pero la pendiente se queda corta). Los 4 barajados por neurona sobre el mismo
+grafo tampoco integran (held-out 0.43-0.60, pendiente entre −0.02 y +0.07). **Sí hay
+especificidad** (corrección de la 3ª revisión): la real se separa de los barajados
+(held-out 0.31 frente a 0.43-0.60; pendiente 0.39 frente a ≤ 0.07); solo se queda por debajo
+del umbral arbitrario de «integra» (pendiente > 0.5). Lectura: quitar el 13.4% del peso sináptico que cae fuera
+de PB/EB (en NO, FB, LAL(L/R) y CentralBrain-unspecified) no "purifica" el mecanismo de
+rotación, lo debilita: esas conexiones descartadas por parecer ajenas al núcleo PB-EB
+aparentemente contribuyen a sostener la dinámica que las ganancias por tipo explotan sobre
+el grafo completo. **Contradice la hipótesis de partida** ("el grafo mezclado diluye y por
+tanto debilita el mecanismo; sin diluir, debería integrar mejor o necesitar menos ayuda de
+las ganancias"); el resultado es el opuesto. Salvedad importante: los hiperparámetros
+dinámicos (`recurrent_gain`, `tau`, `in_gain`, `cue_gain`) se eligieron para el grafo
+mezclado (sección 6, "criterio A") y no se volvieron a ajustar para este grafo — no se
+puede descartar que un régimen distinto sí integre; hace falta repetir la búsqueda de
+régimen tunable (no solo sin entrenar) o una nueva sección de la búsqueda de hiperparámetros
+sobre este grafo antes de concluir que el circuito PB+EB por sí solo es insuficiente.
+
+**Qué falta en PB+EB: las sinapsis PEN↔PEN del NO (3ª revisión, 2026-09-29; `src/cx_net/region_analysis.py`,
+`results/region_analysis.json`).** El NO solo contiene sinapsis entre PEN (PEN_a→PEN_a, PEN_b→PEN_b,
+PEN_a↔PEN_b: 15.440 sinapsis, ≈11 % del peso total; el resto de regiones fuera de PB/EB suman ≈2 %).
+*Ablación sin reentrenar* sobre los 3 modelos reales del grafo completo, con la normalización
+original: quitar el NO hace que ninguno integre (held-out 0.43, pendiente 0.10, 0/3); quitar FB,
+LAL(L), LAL(R) o CentralBrain-unspecified por separado no cambia nada (0.11-0.12, 3/3). *Reentrenando*
+la asignación real (3 semillas, misma receta, `data/interim/launch_regions.sh`): grafo completo SIN NO:
+held-out 0.331 / 0.296 / 0.357, pendiente 0.42 / 0.43 / 0.33 (0/3 integran, como PB+EB); PB+EB+NO:
+held-out 0.127 / 0.104 / 0.113, pendiente 0.77 / 0.82 / 0.80 (3/3 integran, como el grafo completo).
+Es decir, las sinapsis PEN↔PEN del NO son necesarias y, junto con PB+EB, suficientes para la solución
+entrenada con la asignación real. Es una comprobación de necesidad/suficiencia de una región, no una
+explicación mecanística de por qué la recurrencia PEN↔PEN ayuda. Esto sustituye a la lectura anterior
+(«NO/FB/LAL aportan algo más específico»): FB, LAL y CentralBrain no intervienen.
+
+**Búsqueda de régimen sin entrenar, reajustada para PB+EB (2026-09-28). Retirada la etiqueta «salvedad
+cerrada» (3ª revisión): esta búsqueda no descarta nada sobre la versión ENTRENADA.** Rejilla propia (`recurrent_gain` hasta 24, 1.5× el máximo probado con el grafo
+mezclado; `tau` ∈ {5,10,20}; `in_gain` ∈ {10,30,100,300}; 216 evaluaciones,
+`results/regime_search_pbeb_r3.csv`; 388 + 216 = 604 en total): mismo negativo en todo el rango — mejor pérdida 0.498,
+pendiente entre −0.14 y +0.01 en las 20 mejores configuraciones. Ningún régimen explorado (604 evaluaciones sin
+entrenar en total sobre este grafo) logra que los signos reales solos integren sobre PB+EB.
+**Pero ese mismo negativo ya se daba en el grafo completo, donde la versión entrenada sí
+integra, así que no dice nada sobre por qué falla la versión entrenada; y las ganancias por
+par de tipos pueden multiplicar hasta ×148 (log acotado a ±5), así que `recurrent_gain`
+difícilmente era la explicación.** Queda
+abierta una pregunta más interesante que la de partida: las ganancias por tipo entrenadas SÍ
+resuelven la tarea sobre el grafo mezclado pero fallan sobre PB+EB, así que el papel de
+NO/FB/LAL no parece ser solo aportar más recurrencia (ya descartado aquí) sino algo más
+específico de esas conexiones que ni las ganancias por tipo compensan sobre el grafo
+restringido — sin explicación mecanística todavía.
 
 **Parámetros por tipo.** Se añadieron ≈43 parámetros compartidos por tipo
 celular, nunca por arista: una ganancia positiva por par de tipos
@@ -232,19 +324,35 @@ después replicados con 2 semillas más (2026-09-22, tras la revisión externa:
 "¿cuántas semillas por patrón antes de creer un ranking?"), 3 en total:
 
 - **Con una sola semilla, 26/64 integran y la real es el puesto 22 (p =
-  22/64 = 0.344).** Con las 3 semillas (criterio: mayoría, held-out medio) el
-  número sube a **28/64, y la real pasa al puesto 14 (p = 14/64 = 0.219)**,
-  con held-out medio 0.113 (0.106-0.124) y **la asignación real integra en
-  las 3 semillas** (mientras que 4 de los otros 63 patrones cambian de
-  veredicto entre semillas: 2 pasan de "no integra" a "integra" y 2 al
-  revés, evidencia de que una sola corrida por patrón es ruidosa, como ya se
-  sospechaba). Patrones biológicamente absurdos la siguen superando (p. ej.
-  "solo EPG inhibe": held-out medio 0.063; "EPG+EPGt inhiben": 0.062).
+  22/64 = 0.344).** Con las 3 semillas, el número de patrones que integran
+  depende del criterio de agregación: 20/64 lo hacen en las 3 semillas,
+  28/64 por mayoría (≥2 de 3) y 36/64 en al menos una. El puesto de la real
+  por held-out medio es 14/64 (p = 0.22); por mediana, 19/64 (p = 0.30); por
+  la mejor semilla, 28/64 (p = 0.44) — se da el rango, no un único valor. La
+  real integra en las 3 semillas (held-out 0.106-0.124, media 0.113). De los
+  otros 63 patrones, **16 no son unánimes entre semillas** (confirma que una
+  sola corrida por patrón es ruidosa, como ya se sospechaba); de esos, en 4
+  el voto de mayoría difiere del de la semilla 0: 3 pasan de "no integra" a
+  "integra" (máscaras 14, 15, 57) y 1 al revés (máscara 45). Patrones
+  biológicamente absurdos la siguen superando (p. ej. "solo EPG inhibe":
+  held-out 0.063/0.061/0.589, media 0.238, dominada por una semilla que no
+  converge; "EPG+EPGt inhiben": media 0.065).
 - Fracción de patrones que integran (mayoría de 3 semillas) según el signo del
   tipo (excitador / inhibidor, de 32 cada uno): Delta7 8 / 20; EPG 10 / 18;
   EPGt 15 / 13; PEG 12 / 16; PEN_a 15 / 13; PEN_b 22 / 6. Descriptivo, sin
   test. Delta7 inhibidor ayuda pero no es necesario ni suficiente; PEN_b
   excitador es el sesgo individual más fuerte.
+- **Interacción Delta7 × EPG × PEN_b (propuesta por la revisión externa, verificada
+  aquí sobre `types_analysis_3seeds.json`).** Con PEN_b excitador (32 patrones), la
+  fracción que integra según el signo de Delta7 y EPG es: ninguno inhibe 0/8; solo
+  Delta7 inhibe 8/8; solo EPG inhibe 8/8; ambos inhiben 6/8. Con PEN_b inhibidor solo
+  integran 6/32 en total, y de ellos casi todos tienen Delta7 inhibidor (2/8 y 4/8 en
+  las mismas dos celdas). Es decir, con PEN_b excitador la regla empírica es «al
+  menos uno de EPG o Delta7 inhibe»: 22 de 24 patrones integran, frente a 0 de 8 cuando
+  ninguno inhibe. (Corrección del revisor: no es «retroalimentación negativa del bucle»;
+  cuando inhiben los dos, el bucle EPG→Delta7→EPG es positivo —negativo por negativo— y
+  aun así integran 6 de 8.) Es una regularidad descriptiva, sin explicación mecanística,
+  que reformula el resultado negativo como una afirmación comprobable.
 - Los 12 barajados fallan porque rompen la coherencia por tipo, no porque la
   química real sea especial: **la lectura de "suficiencia funcional" de la v1 se
   retracta.**
@@ -257,25 +365,71 @@ con efecto neto excitador. Es una lectura legítima si la neurona real tuviera u
 actividad basal tónica suficiente, pero el modelo ni la representa ni la limita, y hace
 que el signo del peso deje de ser identificable a partir de la función: muchos patrones
 de signo se vuelven funcionalmente equivalentes (comprobación descriptiva sobre 5
-ensayos; la simetría de gauge no se ha demostrado formalmente). Con el patrón sin
+ensayos).
+
+**Enunciado formal de la simetría, y por qué NO se aplica tal cual a este modelo
+(propuesto por la revisión externa; formalizado y verificado el 2026-09-28,
+`src/cx_net/sign_symmetry_analysis.py`).** Con una activación impar (`tanh(-x) =
+-tanh(x)`) y sesgo entrenable, la dinámica `r_{t+1} = tanh(W r_t + I_t + b)` es
+invariante ante `r → Dr`, `W → DWD`, `b → Db`, `I → DI` para cualquier `D` diagonal con
+entradas ±1 ("switching" de grafos con signo) **si las ganancias que absorben `D` pueden
+tomar cualquier signo**. Pero en este modelo las ganancias son `exp(log_pair_gain)`,
+siempre positivas, una por cada PAR DE TIPOS (36 parámetros), y el signo va por tipo (no
+por arista). Para que `D` (uniforme dentro de cada tipo, `D_tipo ∈ {±1}⁶`) siga siendo una
+simetría de ESTA parametrización, hace falta `D_tipo(a) · D_tipo(b) = +1` para todo par de
+tipos `(a,b)` con al menos una arista — si no, la ganancia compensatoria tendría que ser
+negativa, y el modelo lo prohíbe. La matriz de conectividad entre los 6 tipos es un grafo
+COMPLETO (las 36 combinaciones dirigidas, incluidos los 6 lazos consigo mismo, tienen peso
+> 0; verificado también sobre el grafo PB+EB de la sección 5, igual de completo), así que
+esa condición para todos los pares fuerza `D_tipo` a ser constante: **los únicos `D`
+compatibles con las ganancias positivas son el trivial y el global (los 6 tipos a la vez);
+no existe ninguna simetría EXACTA de signo por tipo no trivial en este modelo.** (Comprobación
+por fuerza bruta sobre los 2⁶=64 vectores `D` posibles: solo esos 2 son compatibles, en
+ambos grafos.)
+
+**Esto corrige la lectura anterior de este párrafo (versión previa a 2026-09-28), que
+enunciaba la simetría sin comprobar la restricción de positividad.** Consecuencia: los 64
+patrones NO son gauge-equivalentes EXACTOS entre sí. **Matiz de la 3ª revisión (2026-09-29):
+de «no hay simetría exacta» no se sigue «las diferencias son dinámicas reales».** El script
+solo comprueba peso > 0 por par de tipos; con muy pocas sinapsis un par cuenta igual (los
+pares PEN→Delta7 suman 12-14 aristas y 14-15 sinapsis), y las matrices 6×6 muestran que PEG
+y EPGt tienen acoplamiento de salida efectivo ≤ 0.1 hacia casi todos los tipos
+(`results/sign_symmetry_pairs.json`; ninguna semilla real lleva más de 1 par a la cota
+inferior de la ganancia, pero varias ganancias de PEN→Delta7 saturan en la cota superior,
+×148, sobre pesos casi nulos). Existen, por tanto, simetrías aproximadas. Empíricamente,
+cambiar solo el signo de EPGt y PEG mueve el held-out una mediana de 0.055 (frente a una sd
+global de 0.17), aunque en 3 de los 16 grupos cambia el veredicto, con rangos de hasta 0.56.
+Además 16 de 63 patrones no son unánimes entre semillas: parte de la variación es ruido de
+optimización. Las diferencias de rendimiento (held-out de 0.05 a 0.77) están, pues,
+dominadas por el signo de Delta7, EPG, PEN_a y PEN_b, pero no se puede afirmar que todas sean
+«dinámicas reales». La tabla Delta7 × EPG × PEN_b
+de arriba sigue siendo una regularidad empírica genuina —no una consecuencia de la
+simetría formal— sobre qué patrones sostienen la dinámica, y queda sin explicación
+mecanística. El argumento de simetría sí seguiría aplicando en un modelo con ganancias
+libres por arista y de signo libre (no el de este proyecto); con ganancias por tipo y
+restringidas a ser positivas, que es lo que se entrenó aquí, no aplica. Con el patrón sin
 ninguna inhibición (que no integra), Delta7 tiene fracción > 0 = 1.00. Por tanto la
 solución con la asignación real no debe leerse como una solución mecanísticamente
 biológica.
 
 **Validación mecanística (descriptiva; `bump_check.py`).** Con velocidad constante
 dentro del rango de entrenamiento (±0.01 a ±0.08 por paso durante 90 pasos), la red con
-la asignación real desplaza el bump en el sentido correcto, de forma antisimétrica y
-aproximadamente proporcional (ganancia 0.54 respecto a un integrador ideal de 1; R² =
-0.84), con saturación para desplazamientos grandes (esperado ±7.2 rad, decodificado −2.8
-/ +3.3). Otros patrones que integran dan ganancia 0.75-0.76 (R² 0.92-0.93). La red sin
-inhibición no responde (desplazamiento ≈ −0.2 rad a todas las velocidades). La
-localización del bump (|Σ r e^{iθ}| / Σ|r| sobre EPG/EPGt) es 0.62 en la solución con la
-asignación real y 0.34-0.37 en «solo EPG inhibe» y «EPG+EPGt inhiben». Es decir: las
-redes que «integran» implementan una integración compresiva (ganancia < 1, saturante),
-no un integrador perfecto; y con una velocidad constante grande (±0.3 durante 180
+la asignación real desplaza el bump en el sentido correcto, de forma antisimétrica, pero
+**no proporcional: la ganancia por velocidad es sigmoidal**, no una recta por el origen.
+Por paso: ×1.65 a 0.01, ×1.24 a 0.02, ×0.80 a 0.04, ×0.46 a 0.08 — sobrepasa el
+desplazamiento esperado a velocidades bajas y satura a las altas (esperado ±7.2 rad,
+decodificado −2.8 / +3.3). La recta ajustada por el origen (pendiente 0.54, R² = 0.84,
+la cifra citada en secciones previas de este documento) resume mal esa forma: hay que
+leerla como una cifra agregada de una respuesta no lineal, no como una ganancia
+constante. Otros patrones que integran (pendiente agregada 0.75-0.76, R² 0.92-0.93)
+muestran el mismo patrón de sobrepaso/saturación en su tabla de ganancias por velocidad
+(`results/bump_check.json`). La red sin inhibición no responde (desplazamiento ≈ −0.2
+rad a todas las velocidades). La localización del bump (|Σ r e^{iθ}| / Σ|r| sobre
+EPG/EPGt) es 0.62 en la solución con la asignación real y 0.34-0.37 en «solo EPG
+inhibe» y «EPG+EPGt inhiben». Con una velocidad constante grande (±0.3 durante 180
 pasos) ningún modelo desplaza el bump. La pendiente de las secciones anteriores mide la
-integración en el rango de entrenamiento, no un integrador general. Se comprobó que no
-es un artefacto del decodificador.
+integración agregada en el rango de entrenamiento, no un integrador general ni lineal.
+Se comprobó que no es un artefacto del decodificador.
 
 **Perfil del bump, kymographs y memoria de fase (`bump_profile.py`,
 `results/bump_profile.json`, figura 6).** Respuesta a la objeción de que una pérdida baja
@@ -288,8 +442,9 @@ un paquete estrecho, y la resolución (30°) es gruesa. La fracción de neuronas
 (|r| > 0.95) es 0.00 en los tres modelos que integran y 0.83 en el que no integra: este
 último es un patrón binario congelado (media anillo a +1 y la otra media a −1), no un
 bump graduado. En los kymographs (figura 6) los tres modelos que integran arrastran la
-banda de actividad y la fase decodificada en el sentido correcto, más despacio que el
-ideal en la asignación real (ganancia 0.54) y algo por debajo en los otros dos (0.75-0.76);
+banda de actividad y la fase decodificada en el sentido correcto, con la respuesta
+sigmoidal (sobrepaso a baja velocidad, saturación a alta) descrita arriba, algo menos
+marcada en los otros dos patrones (pendiente agregada 0.75-0.76);
 el que no integra no se mueve con ninguna velocidad. La memoria de una fase arbitraria
 (8 fases de pista, velocidad 0) no discrimina: los cuatro modelos, incluido el que no
 integra, sostienen la fase con error circular medio de 0.06-0.15 rad a t = 60 y 0.18-0.40
@@ -371,22 +526,44 @@ es evaluable.
 
 No se ha hecho una revisión sistemática. Trabajos de partida que un lector esperaría ver
 discutidos: la descripción anatómica del circuito (Wolff et al., 2015; Hulse et al.,
-2021); los modelos de anillo atractor basados en el conectoma del sistema de dirección de
-cabeza, entre ellos Kakaria y de Bivort (2017), Turner-Evans et al. (2020) y Pisokas et
-al. (2020), que obtienen dinámica de bump con parámetros ajustados y una inhibición de
-Delta7 específica; modelos entrenados con restricción de conectoma (Lappalainen et al.,
+2021; Turner-Evans et al., 2017); los modelos de anillo atractor basados en el conectoma
+del sistema de dirección de cabeza, entre ellos Kakaria y de Bivort (2017), Turner-Evans
+et al. (2020) y Pisokas et al. (2020), y Green, Adachi, Shah, Hirokawa, Magani y Maimon
+(2017, *Nature* 546:101, «A neural circuit architecture for angular integration in
+Drosophila»), que obtienen dinámica de bump con parámetros ajustados y una inhibición de
+Delta7 específica; Chang, Huang y Lo (2023, *J. Comp. Physiol. A*, «Global inhibition in
+head-direction neural circuits: a systematic comparison between connectome-based spiking
+neural circuit models»), que comparan explícitamente la inhibición global por Delta7
+frente a la de las ring neurons — directamente relevante porque nuestro modelo excluye
+las ring neurons; Noorman, Hulse, Jayaraman, Romani y Hermundstad (2024, *Nat. Neurosci.*
+27(11):2207-2217, «Maintaining and updating accurate internal representations of
+continuous variables with a handful of neurons»), un modelo mínimo de referencia; Vafidis,
+Owald, D'Albis y Kempter (2022, *eLife* 11:e69841, «Learning accurate path integration in
+ring attractor models of the head direction system»), sobre aprendizaje de la integración
+en el anillo de la mosca; Beiran y Litwin-Kumar (2025, *Nat. Neurosci.* 28:2561-2574,
+«Prediction of neural activity in connectome-constrained recurrent networks»), sobre la
+identificabilidad de la dinámica a partir solo del conectoma, muy cercano a nuestra
+pregunta central; modelos entrenados con restricción de conectoma (Lappalainen et al.,
 2024) y la sensibilidad topológica de esos modelos (Dhiman, 2026); la predicción de
 neurotransmisor (Eckstein et al., 2024); y el conectoma MaleCNS (Berg et al., 2026). La
 comparación de nuestra dinámica con la de esos modelos ajustados a mano (¿qué parámetros
 e inhibición requieren?) es la vía más directa para entender por qué el modelo original
 no integra.
 
-Estado de verificación (2026-09-21). Existencia de las referencias confirmada en la web
-del editor: Pisokas, Heinze y Webb (2020), *eLife* 9:e53985, «The head direction circuit
-of two insect species»; Turner-Evans et al. (2020), *Neuron* 108(1):145-163, «The
-neuroanatomical ultrastructure and function of a biological ring attractor»; Franconville,
-Beron y Jayaraman (2018), *eLife* 7:e37017, «Building a functional connectome of the
-Drosophila central complex». Su contenido NO está verificado contra el texto completo. Lo
+Estado de verificación (2026-09-21, ampliado 2026-09-28 tras la revisión externa).
+Existencia de las referencias confirmada en la web del editor: Pisokas, Heinze y Webb
+(2020), *eLife* 9:e53985, «The head direction circuit of two insect species»;
+Turner-Evans et al. (2020), *Neuron* 108(1):145-163, «The neuroanatomical ultrastructure
+and function of a biological ring attractor»; Franconville, Beron y Jayaraman (2018),
+*eLife* 7:e37017, «Building a functional connectome of the Drosophila central complex»;
+Turner-Evans, Wegener, Rouault, Franconville, Wolff, Seelig, Druckmann y Jayaraman
+(2017), *eLife* 6:e23496, «Angular velocity integration in a fly heading circuit»;
+Chang, Huang y Lo (2023), *J. Comp. Physiol. A*, «Global inhibition in head-direction
+neural circuits: a systematic comparison between connectome-based spiking neural circuit
+models»; Noorman, Hulse, Jayaraman, Romani y Hermundstad (2024), *Nat. Neurosci.*
+27(11):2207-2217; Vafidis, Owald, D'Albis y Kempter (2022), *eLife* 11:e69841; Beiran y
+Litwin-Kumar (2025), *Nat. Neurosci.* 28:2561-2574. Su contenido NO está verificado
+contra el texto completo (salvo lo indicado explícitamente abajo). Lo
 poco que se leyó de la página de Pisokas et al. corrige mi descripción anterior: son
 neuronas de integración y disparo (LIF), no un modelo de tasas, y los pesos no se ajustan a
 mano sino que se optimizan (agrupando varias optimizaciones con k-means); los pesos
@@ -399,12 +576,14 @@ disparo del puente protocerebral completo, recapitula la dinámica de anillo atr
 al. (2017, *Science* 356:849; es un trabajo experimental con calcio + optogenética, no un
 modelo mecanicista: muestra excitación local e inhibición global) y Prinz, Bucher y Marder
 (2004, *Nat. Neurosci.* 7:1345; circuitos con parámetros muy distintos dan actividad similar),
-que respalda que varios patrones de signo resuelvan la tarea. Corrección: en el cuaderno
-(2026-09-16) cito dos veces "Green et al. (2017)" para Delta7 inhibidor / resto excitador en
-modelos analíticos; no encuentro ese artículo — el trabajo que existe con ese apellido y tema es
-Green et al. (2019, *Nat. Neurosci.* 22:1460), tres años más tarde. Puede ser un año mal
-recordado o una referencia equivocada; no lo doy por bueno sin volver a verificarlo, y **no debe
-citarse "Green et al. 2017" en ninguna versión pública** hasta confirmarlo.
+que respalda que varios patrones de signo resuelvan la tarea. Corrección (2026-09-28, revisión
+externa): en el cuaderno (2026-09-16) cité dos veces "Green et al. (2017)" para Delta7
+inhibidor / resto excitador en modelos analíticos y luego, al no localizarlo por su cuenta,
+un revisor interno marcó la cita como posiblemente errónea. El artículo sí existe: Green,
+Adachi, Shah, Hirokawa, Magani y Maimon (2017), *A neural circuit architecture for angular
+integration in Drosophila*, *Nature* 546:101 — uno de los trabajos fundacionales sobre PEN.
+Se retira la advertencia anterior; la cita es correcta y debe usarse en el posicionamiento
+(añadida arriba).
 
 ## 9. Retractaciones respecto a la v1
 
@@ -420,13 +599,17 @@ citarse "Green et al. 2017" en ninguna versión pública** hasta confirmarlo.
 
 ## 10. Limitaciones
 
-- **Enumeración de 64 patrones con 3 semillas (2026-09-22):** 4 de 63 patrones
-  distintos del real cambian de veredicto entre semillas, lo que confirma que
-  una sola corrida es ruidosa (limitación que se mantenía abierta). La real
-  es estable en las 3 (0.106-0.124, siempre integra). Un solo `ring_sign` (+1)
-  en las corridas de refuerzo y de enumeración; el criterio de "integra"
-  sigue siendo el umbral binario arbitrario (M5) y las 3 semillas no
-  sustituyen a un test formal con más réplicas.
+- **Enumeración de 64 patrones con 3 semillas (2026-09-22):** 16 de 63 patrones
+  distintos del real no son unánimes entre semillas (de esos, en 4 el voto de
+  mayoría difiere del de la semilla 0), lo que confirma que una sola corrida es
+  ruidosa (limitación que se mantenía abierta). La real es estable en las 3
+  (0.106-0.124, siempre integra). Un solo `ring_sign` (+1) en las corridas de
+  refuerzo y de enumeración; el criterio de "integra" sigue siendo el umbral
+  binario arbitrario (M5) y las 3 semillas no sustituyen a un test formal con
+  más réplicas. Además, la selección del checkpoint dentro de cada corrida
+  (el lote de 16 ensayos de menor pérdida, `best_state`) es en sí misma una
+  fuente de varianza entre semillas: no se comparó con seleccionar por media
+  móvil (EMA) o con un conjunto de validación aparte.
 - **Hiperparámetros dinámicos** (`recurrent_gain=2`, `tau=10`, `in_gain=10`,
   `cue_gain=10`) elegidos en zonas seleccionadas con ayuda de los signos reales
   (criterio A): grado de libertad del investigador, declarado. Más ≈30
@@ -458,8 +641,10 @@ citarse "Green et al. 2017" en ninguna versión pública** hasta confirmarlo.
   real varían 0.106-0.124).
 - **Las fracciones por tipo (sección 6) son marginales de patrones no independientes**:
   cada patrón entra en seis marginales; no son efectos causales de cada tipo.
-- **Integración compresiva**: ganancia 0.54-0.76 y saturación; no se compararon las
-  redes con integradores ajustados a mano ni se caracterizó el perfil del bump.
+- **Integración no lineal**: respuesta sigmoidal a la velocidad (sobrepaso a baja
+  velocidad, saturación a alta; sección 6), no una ganancia constante; el perfil del
+  bump y su memoria de fase sí se caracterizaron (`bump_profile.py`, figura 6), pero
+  no se compararon con redes con integradores ajustados a mano.
 - **Entorno**: con torch 2.4.1 (Python del sistema) el gradiente de
   `atan2(0,0)` es `nan`; el entorno del proyecto (`.venv`, torch 2.14) da 0. Los
   entrenamientos por defecto deben ejecutarse con el `.venv`
@@ -474,14 +659,93 @@ citarse "Green et al. 2017" en ninguna versión pública** hasta confirmarlo.
   sigmoide no lo logra.
 - Validar el mapeo de fase aplicando el mismo procedimiento a hemibrain y comparándolo
   con las tablas publicadas; comparar la dinámica con modelos de anillo ajustados a mano.
-- Replicar cada patrón con varias semillas y ambos sentidos de giro.
+- ~~Recalcular el grafo por compartimento (PB vs. EB) para el desfase de los PEN~~:
+  hecho el 2026-09-28 (sección 5); confirma la dilución (repetido sin filtrar el 2026-09-29: ≈6°). ~~Reconstruir
+  `graph_no_sign.csv` por compartimento y repetir la búsqueda de régimen sin
+  entrenar~~: hecho el mismo día (sección 6); el mecanismo más fuerte no basta por sí
+  solo. ~~Repetir con ganancias por tipo entrenables sobre ese grafo~~: hecho el mismo
+  día (sección 6) — resultado inesperado, la real va peor (ninguna de 3 semillas
+  integra) con los hiperparámetros tal cual, sin volver a ajustarlos para este grafo.
+  ~~Repetir la búsqueda de régimen reajustada (recurrent_gain hasta 24) específicamente
+  para PB+EB~~: hecho el mismo día (sección 6) — mismo negativo, pero no cierra la salvedad: no
+  es un problema de `recurrent_gain` insuficiente (etiqueta retirada en la 3ª revisión). Resuelto el 2026-09-29: lo que falta en PB+EB son las sinapsis PEN↔PEN del NO (ablación y reentrenamiento, sección 6); FB, LAL y CentralBrain no intervienen.
+- ~~Formalizar la simetría de signo (`r → Dr`, `D` diagonal ±1) y calcular las clases
+  de equivalencia de los 64 patrones~~: hecho el 2026-09-28
+  (`src/cx_net/sign_symmetry_analysis.py`, sección 6) — con resultado negativo pero
+  informativo: dado que las ganancias del modelo son positivas y por PAR DE TIPO (no
+  libres por arista) y la conectividad entre los 6 tipos es un grafo completo, no existe
+  ningún `D` no trivial compatible con la parametrización; **los 64 patrones no son
+  gauge-equivalentes exactos; de ello no se sigue que todas las diferencias sean reales
+  (simetrías aproximadas por pares casi nulos y ruido de optimización; ver sección 6)**. Sigue pendiente
+  incluir formalmente la entrada de velocidad (signo opuesto en PEN L/R) en el
+  argumento, y explicar mecanísticamente (no solo describir) por qué el bucle
+  EPG↔Delta7 con PEN_b excitador selecciona los patrones que integran.
+- ~~Selección de checkpoint por media móvil (EMA) en vez del lote de menor pérdida
+  (`best_state`)~~: implementado el 2026-09-28 (`train.py`, `checkpoint_selection="ema"`,
+  compatible con el comportamiento anterior por defecto). Falta repetir con ella la
+  enumeración completa de 64 patrones (ahora mismo se validó junto con el rediseño de
+  tarea, ver abajo, no en aislamiento). 4ª-5ª semilla para los patrones cerca del
+  umbral (mask14, mask15, mask45, mask57) sigue sin hacerse.
+- ~~Rediseñar la tarea para que discrimine mejor entre integradores parciales y
+  perfectos~~: implementado el 2026-09-28 (`task.py`: `velocity_process="ou"` con
+  `tau_v` configurable, en vez de ruido blanco independiente por paso; `model.py`:
+  `state_noise_std` para ruido de proceso; entrenamientos con `T` mayor para que el
+  rumbo cubra varias vueltas con frecuencia). Con la tarea nueva (T=300, `tau_v`=30,
+  `state_noise_std`=0.02), un integrador con ganancia 0.54 (el que antes pasaba el
+  criterio de "integra" con pérdida 0.138) da pérdida 0.85 (frente a 0.98 de "memoria
+  sin integrar" y 1.12 del decodificador constante) — mucho peor que integrar de
+  verdad — y hace falta una ganancia dentro de ±5% de 1.0 para pérdida < 0.2
+  (`results/task_v2_reference.json`); acota el hueco que señaló la revisión, aunque el integrador ideal (cumsum) no es una red de esta clase de modelos y no demuestra que la solución exista en el espacio de búsqueda. **Pero no se ha podido entrenar nada sobre ella en tres intentos.** Con
+  3 semillas reales + 4 barajados, mismos hiperparámetros dinámicos de siempre: 600
+  épocas no converge (held-out 0.83-1.06, pendiente ≈0 en las 7); 1400 épocas (más del
+  doble) tampoco (held-out 0.82-1.04, pendiente ≈0); un currículo de 1400 épocas
+  (primeras 800 interpolando desde T=200/`tau_v`=5, casi tan fácil como la tarea
+  vieja, hasta el objetivo T=300/`tau_v`=30) tampoco (held-out 0.93-1.07, pendiente
+  entre −0.04 y +0.02) — ni siquiera la real se distingue de los barajados en ninguno
+  de los tres intentos, así que ni más épocas ni un programa de dificultad creciente
+  son el problema por sí solos. La solución existe en el espacio de búsqueda (la
+  referencia de ganancia ≈1.0 da pérdida ≈0), pero el descenso de gradiente con esta
+  receta de hiperparámetros dinámicos (heredada de la tarea vieja, sin volver a
+  ajustar) no la encuentra con ninguno de los tres programas de entrenamiento
+  probados. **El rediseño de tarea queda como una limitación abierta, no como un
+  resultado**: cierra el hueco teórico que motivó el cambio, pero no se pudo usar para
+  repetir ningún análisis de este informe (cuaderno, 2026-09-28 (6), 2026-09-29 y
+  2026-09-29 (2)). Pendiente, sin intentar: una búsqueda de régimen (sin entrenar,
+  como la de la sección 6) específica para esta tarea, u otra tasa de aprendizaje /
+  inicialización. La re-enumeración completa de los 64 patrones sobre la tarea nueva
+  sigue sin poder hacerse (≈192 corridas, y antes hace falta una receta que converja).
+  No se implementaron los "barridos de velocidad constante" como parte de la tarea de
+  entrenamiento — `bump_check.py` ya los usa como diagnóstico aparte (sección 6).
+- **Tarea OU corregida (3ª revisión, 2026-09-29; `launch_taskv3.sh`, `task_v3_reference.py`,
+`transfer_check_v3.py`).** Las tres tentativas anteriores fallaron probablemente por VELOCIDAD, no por
+correlación temporal: la velocidad que ve la red (filtrada con τ=10) tenía media 0.078 y p90 0.19
+(37 % del tiempo por encima de 0.08) frente a 0.019 / 0.047 / 1 % en la tarea antigua, y ninguna red
+había movido el bump a más de ≈0.037-0.055 rad/paso (`bump_check.json`). Con `max_av=0.04`, `T=500`,
+`tau_v=50` la velocidad vuelve al rango antiguo (p90 0.055; 43 % de los ensayos llegan a una vuelta
+completa; mediana 0.40 vueltas netas) y se usa una pérdida sobre incrementos en ventanas de 20 y 50 pasos
+más anclaje (`increment_loss`), que no exige acumular la ganancia a lo largo de varias vueltas; el ruido
+de estado del held-out tiene ahora semilla propia. Control previo, sin reentrenar: las 3 redes reales
+entrenadas en la tarea antigua ya dan pendiente 0.73-0.78 en esta (pérdida incremental 0.20-0.21,
+frente a 0.54 de «recordar theta0»). Reentrenando (800 épocas, 3 reales + 4 barajados por neurona):
+**las 3 reales convergen** (pérdida incremental 0.115 / 0.122 / 0.126; pendiente 0.74 / 0.73 / 0.75;
+error de anclaje 14-16°) y **los 4 barajados no** (0.35-0.46; pendiente 0.10-0.20). La pérdida circular
+absoluta sigue alta en las reales (0.45-0.54): se acumula la desviación de fase a lo largo de las vueltas,
+como ya avisaba el revisor. Límites: solo 4 barajados por neurona (no se ha repetido la enumeración de
+los 64 patrones por tipo sobre esta tarea), y sigue sin demostrarse que la tarea discrimine entre
+patrones por tipo. Lo que queda establecido es que el fallo anterior era de velocidad y no de la receta
+ni del presupuesto.
+- **Trabajo futuro (pendiente):** repetir la enumeración de los 64 patrones por tipo sobre la tarea OU corregida (`max_av=0.04`, T=500, `tau_v=50`, pérdida incremental) para ver si discrimina entre patrones; explicar mecanísticamente por qué la recurrencia PEN↔PEN del NO es necesaria; reajustar hiperparámetros por grafo.
 - Atacar la aprendibilidad (currículo sobre T, otro inicio, tasas de aprendizaje
   por grupo de parámetros, más épocas).
 - Medir la potencia del test de H1 para señal a nivel de tipo y usar una nula
-  sobre patrones por tipo.
+  sobre patrones por tipo; comparar el aprendiz de 9.160 ganancias libres por arista
+  contra un aprendiz de 6 signos por tipo (más comparable a H1), no solo contra los 64
+  patrones enumerados con signos fijos.
 - Ampliar el circuito (ring neurons, fan-shaped body) y permitir magnitud
   entrenable como análisis complementario; comparar con el modelo nulo que
-  preserva el grado (Dhiman, 2026).
+  preserva el grado (Dhiman, 2026); comparar en particular con Chang, Huang y Lo (2023)
+  y su contraste entre inhibición global por Delta7 e inhibición por ring neurons, que
+  este modelo excluye.
 
 ## 12. Enunciado propuesto (borrador de texto)
 
@@ -494,10 +758,11 @@ citarse "Green et al. 2017" en ninguna versión pública** hasta confirmarlo.
 > y usaba un mapeo angular que la anatomía medida en sinapsis contradice (los
 > hemisferios recorren el anillo en sentidos opuestos). Con una tarea anclada y
 > ganancias por tipo celular existe una solución que integra el rumbo, pero no
-> es específica de la química real: 26 de los 64 patrones de signo por tipo la
-> alcanzan (la asignación real, en el puesto 14 de 64; p = 0.22), apoyándose en tasas
-> con signo (desviaciones respecto a un nivel basal nulo) que hacen el signo del peso
-> poco identificable; y un aprendiz de signos genérico no la encuentra.
+> es específica de la química real: 28 de los 64 patrones de signo por tipo la
+> alcanzan por mayoría de 3 semillas (la asignación real, en el puesto 14 de 64
+> por held-out medio; p = 0.22), apoyándose en tasas con signo (desviaciones
+> respecto a un nivel basal nulo) que hacen el signo del peso poco identificable;
+> y un aprendiz de signos genérico no la encuentra.
 > Dado que en este subcircuito el neurotransmisor es función exacta del tipo
 > celular, la pregunta se reduce a un dato de tipo, y los cálculos de potencia
 > por neurona no son aplicables. Proponemos una lista de comprobaciones previas

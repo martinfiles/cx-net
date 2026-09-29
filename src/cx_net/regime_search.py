@@ -67,16 +67,21 @@ GRIDS = {
     "regime_search_r2.csv": ([0.75, 1.0, 1.5, 2.0, 3.0], [10.0, 20.0], [3.0, 10.0, 30.0, 100.0, 300.0], [10.0]),
     # Ronda 3: activación rectificada (tasas >= 0), rejilla propia.
     "regime_search_r3_rect.csv": ([1.0, 2.0, 4.0, 8.0, 16.0], [2.0, 5.0, 10.0, 20.0], [1.0, 3.0, 10.0, 30.0, 100.0], [10.0]),
+    # Grafo PB+EB (2026-09-28 (4)): reajustada, empuja recurrent_gain más alto para
+    # compensar el 13.4% de peso perdido frente al grafo mezclado (rondas 1/2 usaban
+    # hiperparámetros elegidos para el grafo completo, sin volver a ajustar).
+    "regime_search_pbeb_r3.csv": ([1.5, 2.0, 3.0, 4.0, 6.0, 8.0, 12.0, 16.0, 24.0],
+                                   [5.0, 10.0, 20.0], [10.0, 30.0, 100.0, 300.0], [10.0]),
 }
 
 
-def run(n_trials=20, out_name="regime_search.csv"):
-    grid = list(itertools.product(*GRIDS[out_name]))
+def run(n_trials=20, out_name="regime_search.csv", graph_data_dir: str | None = None, grid_key: str | None = None):
+    grid = list(itertools.product(*GRIDS[grid_key or out_name]))
     activation = "rectified" if "rect" in out_name else "tanh"
     trials = tuning_set(n_trials)
     rows = []
     for ring_sign in (+1.0, -1.0):
-        graph = load_cx_graph(ring_source="eb_synapses", ring_sign=ring_sign)
+        graph = load_cx_graph(data_dir=graph_data_dir or DATA_DIR, ring_source="eb_synapses", ring_sign=ring_sign)
         nodes = attach_ground_truth(graph["nodes"], DATA_DIR)
         signs = nodes["expected_sign"].to_numpy()[graph["edge_index"][0].numpy()]
         for k, (rg, tau, ig, cg) in enumerate(grid):

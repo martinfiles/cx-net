@@ -112,13 +112,31 @@ class CXRingNetwork(nn.Module):
         dr = (-r + drive) * (self.dt / self.tau)
         return r + dr
 
-    def forward(self, ext_input_seq: torch.Tensor) -> torch.Tensor:
-        """ext_input_seq: [T, n_nodes] -> devuelve estados [T, n_nodes]."""
+    def forward(self, ext_input_seq: torch.Tensor, state_noise_std: float = 0.0,
+                noise_seed: int | None = None) -> torch.Tensor:
+        """ext_input_seq: [T, n_nodes] -> devuelve estados [T, n_nodes].
+
+        `state_noise_std` (2026-09-28, respuesta a la revisión externa: "la
+        dinámica no tiene ruido; por eso la memoria de fase no discrimina").
+        Con `state_noise_std > 0` se suma ruido gaussiano i.i.d. (media 0,
+        ese desvío) al estado `r` en cada paso, DESPUÉS de la actualización
+        recurrente -- ruido de proceso, no de medida. `0.0` (defecto)
+        reproduce exactamente el comportamiento anterior.
+
+        `noise_seed` (2026-09-29, 3ª revisión): con semilla, el ruido sale de un
+        generador propio, así que el held-out es reproducible y comparable entre
+        corridas; `None` (defecto) usa el generador global como antes."""
+        gen = None
+        if noise_seed is not None:
+            gen = torch.Generator().manual_seed(noise_seed)
         T = ext_input_seq.shape[0]
         r = torch.zeros(self.n_nodes, device=ext_input_seq.device)
         states = []
         for t in range(T):
             r = self.step(r, ext_input_seq[t])
+            if state_noise_std > 0:
+                noise = torch.randn(r.shape, generator=gen) if gen is not None else torch.randn_like(r)
+                r = r + noise * state_noise_std
             states.append(r)
         return torch.stack(states)
 

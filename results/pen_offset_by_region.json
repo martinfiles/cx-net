@@ -1,0 +1,372 @@
+{
+ "PEN_a": {
+  "n_with_both_sides": 20,
+  "by_hemisphere": {
+   "L": {
+    "n_neurons": 10,
+    "mean_offset_out_minus_in_deg": -54.11052203407958,
+    "mean_own_minus_in_deg": -53.80359915907111
+   },
+   "R": {
+    "n_neurons": 10,
+    "mean_offset_out_minus_in_deg": 54.25128098144167,
+    "mean_own_minus_in_deg": 53.59979014205417
+   }
+  },
+  "per_neuron": [
+   {
+    "bodyId": 12358,
+    "hemisphere": "L",
+    "n_in_pb": 53,
+    "n_out_eb": 718,
+    "offset_out_minus_in_deg": -48.38048970812041,
+    "own_minus_in_deg": -48.857674219847866
+   },
+   {
+    "bodyId": 17454,
+    "hemisphere": "L",
+    "n_in_pb": 16,
+    "n_out_eb": 436,
+    "offset_out_minus_in_deg": -55.251174083268495,
+    "own_minus_in_deg": -55.901492820458955
+   },
+   {
+    "bodyId": 18419,
+    "hemisphere": "L",
+    "n_in_pb": 43,
+    "n_out_eb": 978,
+    "offset_out_minus_in_deg": -57.12108600136974,
+    "own_minus_in_deg": -59.04130465738377
+   },
+   {
+    "bodyId": 18504,
+    "hemisphere": "R",
+    "n_in_pb": 39,
+    "n_out_eb": 965,
+    "offset_out_minus_in_deg": 59.335378144472976,
+    "own_minus_in_deg": 55.87818655782742
+   },
+   {
+    "bodyId": 18744,
+    "hemisphere": "L",
+    "n_in_pb": 39,
+    "n_out_eb": 896,
+    "offset_out_minus_in_deg": -65.0362268321867,
+    "own_minus_in_deg": -65.13827773947365
+   },
+   {
+    "bodyId": 18779,
+    "hemisphere": "R",
+    "n_in_pb": 36,
+    "n_out_eb": 818,
+    "offset_out_minus_in_deg": 50.44096110544159,
+    "own_minus_in_deg": 46.70320872656914
+   },
+   {
+    "bodyId": 19189,
+    "hemisphere": "L",
+    "n_in_pb": 37,
+    "n_out_eb": 784,
+    "offset_out_minus_in_deg": -49.73900382986217,
+    "own_minus_in_deg": -45.413276447462536
+   },
+   {
+    "bodyId": 20818,
+    "hemisphere": "L",
+    "n_in_pb": 38,
+    "n_out_eb": 805,
+    "offset_out_minus_in_deg": -30.87957405580928,
+    "own_minus_in_deg": -27.811866451254858
+   },
+   {
+    "bodyId": 25792,
+    "hemisphere": "R",
+    "n_in_pb": 22,
+    "n_out_eb": 544,
+    "offset_out_minus_in_deg": 54.63249135538956,
+    "own_minus_in_deg": 53.2694978112298
+   },
+   {
+    "bodyId": 27296,
+    "hemisphere": "R",
+    "n_in_pb": 39,
+    "n_out_eb": 480,
+    "offset_out_minus_in_deg": 66.16044267295334,
+    "own_minus_in_deg": 63.7664431774927
+   },
+   {
+    "bodyId": 34949,
+    "hemisphere": "L",
+    "n_in_pb": 32,
+    "n_out_eb": 551,
+    "offset_out_minus_in_deg": -58.93912804939629,
+    "own_minus_in_deg": -60.77682954323397
+   },
+   {
+    "bodyId": 35743,
+    "hemisphere": "R",
+    "n_in_pb": 36,
+    "n_out_eb": 551,
+    "offset_out_minus_in_deg": 55.646115719221136,
+    "own_minus_in_deg": 57.17554211203951
+   },
+   {
+    "bodyId": 37142,
+    "hemisphere": "L",
+    "n_in_pb": 23,
+    "n_out_eb": 546,
+    "offset_out_minus_in_deg": -68.11299702974014,
+    "own_minus_in_deg": -64.66927887588503
+   },
+   {
+    "bodyId": 53086,
+    "hemisphere": "L",
+    "n_in_pb": 28,
+    "n_out_eb": 530,
+    "offset_out_minus_in_deg": -52.49798817207578,
+    "own_minus_in_deg": -55.379183646939026
+   },
+   {
+    "bodyId": 76194,
+    "hemisphere": "R",
+    "n_in_pb": 62,
+    "n_out_eb": 930,
+    "offset_out_minus_in_deg": 56.705515351888806,
+    "own_minus_in_deg": 54.9975262411736
+   },
+   {
+    "bodyId": 512927,
+    "hemisphere": "R",
+    "n_in_pb": 44,
+    "n_out_eb": 697,
+    "offset_out_minus_in_deg": 57.2821465465749,
+    "own_minus_in_deg": 60.76985896972981
+   },
+   {
+    "bodyId": 513283,
+    "hemisphere": "L",
+    "n_in_pb": 70,
+    "n_out_eb": 1177,
+    "offset_out_minus_in_deg": -55.14755257896675,
+    "own_minus_in_deg": -55.04680718877154
+   },
+   {
+    "bodyId": 514045,
+    "hemisphere": "R",
+    "n_in_pb": 30,
+    "n_out_eb": 770,
+    "offset_out_minus_in_deg": 57.310570910630396,
+    "own_minus_in_deg": 58.71270377824901
+   },
+   {
+    "bodyId": 514405,
+    "hemisphere": "R",
+    "n_in_pb": 36,
+    "n_out_eb": 574,
+    "offset_out_minus_in_deg": 63.04255708923618,
+    "own_minus_in_deg": 61.98347329673338
+   },
+   {
+    "bodyId": 521814,
+    "hemisphere": "R",
+    "n_in_pb": 41,
+    "n_out_eb": 718,
+    "offset_out_minus_in_deg": 21.95663091860779,
+    "own_minus_in_deg": 22.741460749497286
+   }
+  ]
+ },
+ "PEN_b": {
+  "n_with_both_sides": 22,
+  "by_hemisphere": {
+   "L": {
+    "n_neurons": 11,
+    "mean_offset_out_minus_in_deg": -51.432651170929404,
+    "mean_own_minus_in_deg": -52.10363973897094
+   },
+   "R": {
+    "n_neurons": 11,
+    "mean_offset_out_minus_in_deg": 50.39384914161894,
+    "mean_own_minus_in_deg": 49.97424241631532
+   }
+  },
+  "per_neuron": [
+   {
+    "bodyId": 15176,
+    "hemisphere": "R",
+    "n_in_pb": 58,
+    "n_out_eb": 522,
+    "offset_out_minus_in_deg": 50.92740541272796,
+    "own_minus_in_deg": 51.605616418349335
+   },
+   {
+    "bodyId": 18932,
+    "hemisphere": "R",
+    "n_in_pb": 26,
+    "n_out_eb": 465,
+    "offset_out_minus_in_deg": 69.5582683253977,
+    "own_minus_in_deg": 69.1137195332435
+   },
+   {
+    "bodyId": 19760,
+    "hemisphere": "L",
+    "n_in_pb": 92,
+    "n_out_eb": 691,
+    "offset_out_minus_in_deg": -55.16023961408382,
+    "own_minus_in_deg": -59.91662277073484
+   },
+   {
+    "bodyId": 21932,
+    "hemisphere": "L",
+    "n_in_pb": 52,
+    "n_out_eb": 560,
+    "offset_out_minus_in_deg": -50.940884045407934,
+    "own_minus_in_deg": -48.87168130273674
+   },
+   {
+    "bodyId": 22240,
+    "hemisphere": "R",
+    "n_in_pb": 59,
+    "n_out_eb": 628,
+    "offset_out_minus_in_deg": 53.81874079897496,
+    "own_minus_in_deg": 50.844505385980085
+   },
+   {
+    "bodyId": 23273,
+    "hemisphere": "L",
+    "n_in_pb": 20,
+    "n_out_eb": 439,
+    "offset_out_minus_in_deg": -53.28065904478755,
+    "own_minus_in_deg": -48.64890618942894
+   },
+   {
+    "bodyId": 23619,
+    "hemisphere": "R",
+    "n_in_pb": 38,
+    "n_out_eb": 368,
+    "offset_out_minus_in_deg": 16.488797847620667,
+    "own_minus_in_deg": 18.184220307674654
+   },
+   {
+    "bodyId": 24382,
+    "hemisphere": "R",
+    "n_in_pb": 53,
+    "n_out_eb": 462,
+    "offset_out_minus_in_deg": 56.703089764014585,
+    "own_minus_in_deg": 51.77905069744965
+   },
+   {
+    "bodyId": 25184,
+    "hemisphere": "L",
+    "n_in_pb": 24,
+    "n_out_eb": 285,
+    "offset_out_minus_in_deg": -60.669138510455014,
+    "own_minus_in_deg": -56.06723313978035
+   },
+   {
+    "bodyId": 26417,
+    "hemisphere": "L",
+    "n_in_pb": 16,
+    "n_out_eb": 371,
+    "offset_out_minus_in_deg": -35.73076920037069,
+    "own_minus_in_deg": -40.38748124759534
+   },
+   {
+    "bodyId": 28791,
+    "hemisphere": "R",
+    "n_in_pb": 23,
+    "n_out_eb": 416,
+    "offset_out_minus_in_deg": 58.416831869182104,
+    "own_minus_in_deg": 52.78139954580118
+   },
+   {
+    "bodyId": 29135,
+    "hemisphere": "R",
+    "n_in_pb": 30,
+    "n_out_eb": 324,
+    "offset_out_minus_in_deg": 63.3771575932056,
+    "own_minus_in_deg": 64.41820643034669
+   },
+   {
+    "bodyId": 30310,
+    "hemisphere": "R",
+    "n_in_pb": 31,
+    "n_out_eb": 409,
+    "offset_out_minus_in_deg": 59.25021892373369,
+    "own_minus_in_deg": 55.647944047338065
+   },
+   {
+    "bodyId": 30807,
+    "hemisphere": "L",
+    "n_in_pb": 23,
+    "n_out_eb": 325,
+    "offset_out_minus_in_deg": -48.90714480877502,
+    "own_minus_in_deg": -50.1652348359637
+   },
+   {
+    "bodyId": 32258,
+    "hemisphere": "L",
+    "n_in_pb": 32,
+    "n_out_eb": 355,
+    "offset_out_minus_in_deg": -37.294613536543054,
+    "own_minus_in_deg": -40.55029384307969
+   },
+   {
+    "bodyId": 39813,
+    "hemisphere": "L",
+    "n_in_pb": 43,
+    "n_out_eb": 549,
+    "offset_out_minus_in_deg": -60.43677235621111,
+    "own_minus_in_deg": -58.38774637431675
+   },
+   {
+    "bodyId": 40390,
+    "hemisphere": "R",
+    "n_in_pb": 52,
+    "n_out_eb": 588,
+    "offset_out_minus_in_deg": 56.74533775592752,
+    "own_minus_in_deg": 59.397366723292265
+   },
+   {
+    "bodyId": 55527,
+    "hemisphere": "R",
+    "n_in_pb": 34,
+    "n_out_eb": 320,
+    "offset_out_minus_in_deg": 54.66092838611745,
+    "own_minus_in_deg": 57.87079651703427
+   },
+   {
+    "bodyId": 514125,
+    "hemisphere": "L",
+    "n_in_pb": 27,
+    "n_out_eb": 354,
+    "offset_out_minus_in_deg": -52.92724233897779,
+    "own_minus_in_deg": -55.000442886617755
+   },
+   {
+    "bodyId": 518194,
+    "hemisphere": "R",
+    "n_in_pb": 41,
+    "n_out_eb": 338,
+    "offset_out_minus_in_deg": 14.385563880906025,
+    "own_minus_in_deg": 18.07384097295897
+   },
+   {
+    "bodyId": 524717,
+    "hemisphere": "L",
+    "n_in_pb": 24,
+    "n_out_eb": 274,
+    "offset_out_minus_in_deg": -52.27845864250518,
+    "own_minus_in_deg": -54.09443508164183
+   },
+   {
+    "bodyId": 529385,
+    "hemisphere": "L",
+    "n_in_pb": 63,
+    "n_out_eb": 646,
+    "offset_out_minus_in_deg": -58.133240782106355,
+    "own_minus_in_deg": -61.049959456784464
+   }
+  ]
+ }
+}

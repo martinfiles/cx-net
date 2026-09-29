@@ -21,7 +21,7 @@ from .graph_utils import DATA_DIR, load_cx_graph
 from .model import CXRingNetwork
 from .task import (
     build_external_input, circular_loss, decode_heading, evaluate_on_trials,
-    generate_anchored_trial, generate_held_out_set, generate_trial, integration_diagnostics,
+    generate_anchored_trial, generate_held_out_set, generate_trial, increment_loss, integration_diagnostics,
 )
 
 INTERIM_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data", "interim")
@@ -47,7 +47,11 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
           control_shuffle_seed: int | None = None,
           control_swap_fraction: float | None = None,
           control_type_mask: int | None = None, edge_gain: bool = False,
-          edge_gain_lr: float | None = None) -> dict:
+          edge_gain_lr: float | None = None, graph_data_dir: str | None = None,
+          velocity_process: str = "white", tau_v: float = 15.0, state_noise_std: float = 0.0,
+          checkpoint_selection: str = "best_batch", curriculum_epochs: int = 0,
+          curriculum_T_start: int | None = None, curriculum_tau_v_start: float | None = None,
+          loss_type: str = "circular") -> dict:
     """
     ema_alpha / patience: el primer intento uso ReduceLROnPlateau directamente
     sobre la pérdida cruda de cada época, que es muy ruidosa (cada época usa
@@ -89,9 +93,46 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
     es SOLO un control de realizabilidad: fija los signos al neurotransmisor
     real y entrena únicamente los parámetros por tipo; nunca debe usarse para
     obtener nada que se le pase a un aprendiz de signos.
+
+    `velocity_process` / `tau_v` / `state_noise_std` (2026-09-28, respuesta a la
+    revisión externa: la velocidad era ruido blanco sin correlación temporal, un
+    ensayo nunca exigía recorrer el anillo completo, y la dinámica no tenía
+    ruido). `velocity_process="ou"` (ver `task.py`) da una velocidad correlada en
+    el tiempo (tiempo de correlación `tau_v` pasos); combinado con `T` más largo
+    el rumbo acumulado cubre varias vueltas completas con frecuencia (verificado
+    empíricamente, no garantizado por ensayo). `state_noise_std > 0` añade ruido
+    de proceso a la dinámica recurrente (`model.py`). Por defecto
+    (`"white"`, `state_noise_std=0.0`) reproduce exactamente el comportamiento
+    anterior.
+
+    `curriculum_epochs` / `curriculum_T_start` / `curriculum_tau_v_start`
+    (2026-09-29: la tarea con `velocity_process="ou"` no convergió ni con 600 ni con
+    1400 épocas y los hiperparámetros dinámicos de siempre -- ver lab-notebook,
+    2026-09-28 (6) y 2026-09-29). Con `curriculum_epochs > 0`, los primeros
+    `curriculum_epochs` interpolan linealmente `T` y `tau_v` desde
+    (`curriculum_T_start`, `curriculum_tau_v_start`) hasta (`T`, `tau_v`); el resto
+    de las épocas usa `T`/`tau_v` directamente. El held-out y los diagnósticos SIEMPRE
+    usan el `T`/`tau_v` final (el objetivo), nunca los valores del currículo, para que
+    la comparación entre corridas sea consistente. `curriculum_epochs=0` (defecto)
+    reproduce el comportamiento anterior exactamente.
+
+    `loss_type` (2026-09-29, 3ª revisión): `"circular"` (defecto) es la pérdida de
+    siempre; `"increment"` usa `task.increment_loss` (incrementos de rumbo en
+    ventanas de 20 y 50 pasos + anclaje), que no depende de acumular la ganancia
+    a lo largo de varias vueltas. El held-out reporta siempre las dos.
+
+    `checkpoint_selection` (2026-09-28, respuesta a la revisión externa: elegir
+    el checkpoint por el lote de menor pérdida -- 16 ensayos -- es en sí mismo
+    ruido de selección, y el propio cuaderno ya lo reconocía). `"best_batch"`
+    (defecto) reproduce el comportamiento anterior exactamente. `"ema"` guarda
+    el checkpoint en el mínimo de `ema_loss` (la misma media móvil exponencial
+    que ya se usaba para el scheduler de tasa de aprendizaje, no una métrica
+    nueva), mucho menos ruidosa que un solo lote.
     """
+    if curriculum_epochs > 0 and (curriculum_T_start is None or curriculum_tau_v_start is None):
+        raise ValueError("curriculum_epochs > 0 requiere curriculum_T_start y curriculum_tau_v_start")
     torch.manual_seed(seed)
-    graph = load_cx_graph(ring_source=ring_source, ring_sign=ring_sign)
+    graph = load_cx_graph(data_dir=graph_data_dir or DATA_DIR, ring_source=ring_source, ring_sign=ring_sign)
     nodes = graph["nodes"]
 
     type_ids = torch.as_tensor(pd.factorize(nodes["type"])[0]) if type_params else None
@@ -144,20 +185,29 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
     loss_history = []
     ema_loss = None
     for epoch in range(n_epochs):
+        if curriculum_epochs > 0 and epoch < curriculum_epochs:
+            frac = epoch / curriculum_epochs
+            T_epoch = round(curriculum_T_start + frac * (T - curriculum_T_start))
+            tau_v_epoch = curriculum_tau_v_start + frac * (tau_v - curriculum_tau_v_start)
+        else:
+            T_epoch, tau_v_epoch = T, tau_v
+
         optimizer.zero_grad()
         batch_loss = 0.0
         for i in range(trials_per_step):
             trial_seed = seed * SEED_STRIDE + epoch * trials_per_step + i
             if anchor:
                 av, heading, theta0 = generate_anchored_trial(
-                    T=T, max_av=max_av, hold_prob=hold_prob, perturb_amp=perturb_amp, seed=trial_seed)
+                    T=T_epoch, max_av=max_av, hold_prob=hold_prob, perturb_amp=perturb_amp, seed=trial_seed,
+                    velocity_process=velocity_process, tau_v=tau_v_epoch)
             else:
-                av, heading = generate_trial(T=T, hold_prob=hold_prob, perturb_amp=perturb_amp, seed=trial_seed)
+                av, heading = generate_trial(T=T_epoch, hold_prob=hold_prob, perturb_amp=perturb_amp, seed=trial_seed,
+                                              velocity_process=velocity_process, tau_v=tau_v_epoch)
                 theta0 = None
             ext_input = build_external_input(av, nodes, gain=in_gain, cue_phase=theta0, cue_gain=cue_gain)
-            states = model(ext_input)
+            states = model(ext_input, state_noise_std=state_noise_std)
             decoded = decode_heading(states, nodes)
-            loss = circular_loss(decoded, heading)
+            loss = increment_loss(decoded, heading) if loss_type == "increment" else circular_loss(decoded, heading)
             (loss / trials_per_step).backward()
             batch_loss += loss.item() / trials_per_step
 
@@ -174,8 +224,9 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
         scheduler.step(ema_loss)
 
         loss_history.append(batch_loss)
-        if batch_loss < best_loss:
-            best_loss = batch_loss
+        checkpoint_metric = ema_loss if checkpoint_selection == "ema" else batch_loss
+        if checkpoint_metric < best_loss:
+            best_loss = checkpoint_metric
             best_state = {k: v.clone() for k, v in model.state_dict().items()}
         if epoch % 25 == 0 or epoch == n_epochs - 1:
             current_lr = optimizer.param_groups[0]["lr"]
@@ -200,10 +251,12 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
     # limpia, sin que la comparación esté sesgada por qué ensayos de
     # ENTRENAMIENTO le tocaron a cada corrida (ver entrada 11 del cuaderno).
     held_out_trials = generate_held_out_set(T=T, hold_prob=hold_prob, perturb_amp=perturb_amp,
-                                            anchor=anchor, max_av=max_av)
-    held_out_loss = evaluate_on_trials(model, nodes, held_out_trials, in_gain=in_gain, cue_gain=cue_gain)
-    diagnostics = integration_diagnostics(model, nodes, held_out_trials, in_gain=in_gain,
-                                          cue_gain=cue_gain) if anchor else None
+                                            anchor=anchor, max_av=max_av,
+                                            velocity_process=velocity_process, tau_v=tau_v)
+    held_out_loss = evaluate_on_trials(model, nodes, held_out_trials, in_gain=in_gain, cue_gain=cue_gain,
+                                       state_noise_std=state_noise_std)
+    diagnostics = integration_diagnostics(model, nodes, held_out_trials, in_gain=in_gain, cue_gain=cue_gain,
+                                          state_noise_std=state_noise_std) if anchor else None
 
     os.makedirs(INTERIM_DIR, exist_ok=True)
     signs = model.learned_signs().numpy()
@@ -233,6 +286,14 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
         "control_type_mask": control_type_mask,
         "edge_gain": edge_gain,
         "edge_gain_lr": edge_gain_lr,
+        "velocity_process": velocity_process,
+        "tau_v": tau_v,
+        "state_noise_std": state_noise_std,
+        "checkpoint_selection": checkpoint_selection,
+        "curriculum_epochs": curriculum_epochs,
+        "curriculum_T_start": curriculum_T_start,
+        "curriculum_tau_v_start": curriculum_tau_v_start,
+        "loss_type": loss_type,
         "frac_nodes_changed": frac_nodes_changed if real_sign_control else None,
         "frac_edges_changed": frac_edges_changed if real_sign_control else None,
         "in_gain": in_gain,

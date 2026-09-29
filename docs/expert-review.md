@@ -1,5 +1,7 @@
 # Revisión crítica interna (2026-09-20)
 
+> **Documento histórico.** Refleja el estado del 2026-09-20/22. Cifras posteriormente corregidas: con 3 semillas y recuento revisado, 20/28/36 patrones integran según el criterio (unánime/mayoría/alguna), la real ocupa el puesto 14 de 64 por held-out medio, 16 de 63 patrones no son unánimes entre semillas (no «4»), y la ganancia de la referencia sigue siendo 0.54 solo en la tarea antigua. Ver `docs/preprint-discussion.md` y `docs/lab-notebook.md` para las cifras vigentes.
+
 Lectura adversarial del borrador (`docs/preprint-discussion.md`, v2) desde el punto de vista de
 un revisor de neurociencia computacional del sistema de dirección de cabeza y del modelado
 con restricción de conectoma. Es una revisión propia, no independiente: la hizo quien construyó

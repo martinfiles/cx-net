@@ -37,12 +37,12 @@ patrones de signo: [`docs/explorer.html`](docs/explorer.html) (abrir localmente 
 ![Los dos hemisferios recorren el anillo en sentidos opuestos](docs/figures/fig2.png)
 ![28 de 64 patrones integran; la asignación real es uno más](docs/figures/fig3.png)
 ![Ningún signo por tipo basta](docs/figures/fig4.png)
-![La solución con la química real usa Delta7 con tasa negativa](docs/figures/fig5.png)
-![Las redes que integran mueven un bump ancho, más lento que el ideal](docs/figures/fig6.png)
+![La solución con la química real mantiene Delta7 por debajo de la basal](docs/figures/fig5.png)
+![Las redes que integran mueven un bump ancho, con ganancia sigmoidal](docs/figures/fig6.png)
 
 ## Datos
 
-- Conectividad del subcircuito CX (PB, EB, FB, NO) vía [neuprint-python](https://github.com/connectome-neuprint/neuprint-python) (hemibrain, dataset piloto) y [caveclient](https://github.com/CAVEconnectome/CAVEclient) (MaleCNS v1.0).
+- Conectividad del subcircuito CX (PB, EB, FB, NO) vía [neuprint-python](https://github.com/connectome-neuprint/neuprint-python), tanto para el piloto en hemibrain como para `male-cns:v1.0` (ambos expuestos por neuprint.janelia.org).
 - Neurotransmisor real anotado por síntesis (Eckstein et al., 2024) — reservado como *ground truth* oculto, nunca visto durante el entrenamiento.
 
 ## Roadmap
@@ -81,7 +81,8 @@ Fases posteriores (módulos en `src/cx_net/`; los resultados se escriben en
 python -m src.cx_net.train          # entrena el modelo de signo libre
 python -m src.cx_net.evaluate       # H1 (test de permutación) y H2 (por tipo celular)
 python -m src.cx_net.extract_eb_angles  # fase angular real de cada neurona (sinapsis del EB, neuPrint)
-python -m src.cx_net.analyze_types      # análisis de los 64 patrones de signo por tipo
+python -m src.cx_net.analyze_types           # análisis de los 64 patrones (1 semilla)
+python -m src.cx_net.analyze_types_3seeds    # agregado de los 64 patrones con 3 semillas
 ```
 
 Los barridos multi-semilla y las variantes (`hold_prob`, `perturb_amp`,
@@ -97,11 +98,17 @@ Registro de decisiones y resultados: [`docs/lab-notebook.md`](docs/lab-notebook.
 - **Datos.** No se redistribuyen: `data/` está fuera del repositorio. Hace falta un
   token personal de neuPrint (`.env`) y `python -m src.cx_net.extract_graph` (por defecto `--dataset male-cns:v1.0`) para
   regenerar el grafo de `male-cns:v1.0`; `python -m src.cx_net.extract_eb_angles` regenera
-  la fase angular de cada neurona.
+  la fase angular de cada neurona; `python -m src.cx_net.pen_offset_by_region` (también
+  necesita el token) regenera el desfase de fase de los PEN separado por compartimento
+  (PB de entrada, EB de salida; sección 5).
 - **Resultados.** `results/` contiene los resúmenes que respaldan el borrador
   (`runs_summary.csv`: una fila por corrida; análisis de los 64 patrones, del refuerzo
   y de la búsqueda de régimen; ángulos agregados por glomérulo). `python -m
-  src.cx_net.collect_results` los reconstruye desde `data/interim/`.
+  src.cx_net.collect_results` reconstruye `runs_summary.csv` y los JSON/CSV pequeños
+  desde `data/interim/`; `python -m src.cx_net.analyze_types_3seeds` reconstruye
+  `types_analysis_3seeds.json` y `types_explorer_3seeds.json` (la cifra principal,
+  28/64 y puesto 14, sección 6) a partir de las mismas corridas. Ninguno de los dos
+  requiere reentrenar: leen los `results_*.json` ya guardados en `data/interim/`.
 - **Entorno.** Fija tu versión de PyTorch: con `torch` 2.4.1 el gradiente de `atan2(0,0)`
   era `nan` (corregido en `task.decode_heading`; el entrenamiento por defecto reproduce
   exactamente `epoch 0/25` de `signreg05_seed0` en `torch` 2.4.1 y 2.14).
@@ -131,7 +138,7 @@ Registro de decisiones y resultados: [`docs/lab-notebook.md`](docs/lab-notebook.
 
 ## Stack
 
-Python · PyTorch · PyTorch Geometric · neuprint-python · caveclient · navis · NetworkX
+Python · PyTorch · pandas/NumPy · neuprint-python · matplotlib
 
 ## Autor
 
