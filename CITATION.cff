@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "Si usas este trabajo, cítalo como sigue."
+title: "CX-Net: aprendizaje de signos sinápticos restringido por el conectoma del complejo central de Drosophila (informe metodológico y negativo)"
+authors:
+  - family-names: "Barros Iglesias"
+    given-names: "Martín"
+repository-code: "https://github.com/martinfiles/cx-net"
+license: MIT
+abstract: "Una red con la topología real del complejo central de Drosophila y signo libre por conexión no recupera el neurotransmisor anotado; con ganancias por tipo aparece una solución que integra el rumbo pero no es específica de la química real."
+keywords:
+  - connectomics
+  - Drosophila
+  - central complex
+  - head direction
+  - negative results
