@@ -8,7 +8,7 @@ inglesa en `docs/figures/en/`). Idealmente, publica el preprint/Zenodo antes y e
 
 ## Versión en español (recomendada)
 
-Pasé semanas intentando que una IA adivinara qué conexiones de un cerebro excitan y cuáles frenan. No lo consiguió. Y lo que aprendí por el camino vale más que si hubiera funcionado.
+Pasé semanas intentando que una IA adivinara cómo funciona el cerebro de una mosca: qué conexiones excitan y cuáles frenan. No lo consiguió. Y lo que aprendí por el camino vale más que si hubiera funcionado.
 
 La idea: tenemos el mapa completo de cableado del cerebro de la mosca de la fruta (el conectoma). Cada conexión es un cable, pero el mapa no dice si empuja o frena. ¿Puede una red neuronal deducirlo sola, solo con la forma del cableado y una tarea que resolver (orientarse, como una brújula interna)?
 
@@ -33,7 +33,7 @@ Si trabajas con conectomas, modelos de dirección de cabeza o simplemente con ev
 
 ## Versión en inglés
 
-I spent weeks trying to get an AI to work out which connections in a brain excite and which inhibit. It didn't. What I learned on the way is worth more than if it had worked.
+I spent weeks trying to get an AI to work out how a fruit fly's brain works: which connections excite and which inhibit. It didn't. What I learned on the way is worth more than if it had worked.
 
 The idea: we have the complete wiring map of the fruit-fly brain (the connectome). Every connection is a wire, but the map doesn't say whether it pushes or brakes. Can a neural network infer that on its own, from the wiring shape plus one task (keeping track of heading, like an internal compass)?
 
