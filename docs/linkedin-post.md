@@ -1,6 +1,6 @@
 # Post de LinkedIn — borrador
 
-**Antes de publicar:** sube el repositorio (`git push`; ya apunta a github.com/martinfiles/cx-net), comprueba
+**Antes de publicar:** haz `git push` del repositorio (hay commits locales sin subir; ya apunta a github.com/martinfiles/cx-net), comprueba
 que el enlace funciona, y elige UNA imagen (recomendada: `docs/figures/fig3.png` o `fig6.png`; versión
 inglesa en `docs/figures/en/`). Idealmente, publica el preprint/Zenodo antes y enlaza ese DOI.
 
@@ -8,24 +8,24 @@ inglesa en `docs/figures/en/`). Idealmente, publica el preprint/Zenodo antes y e
 
 ## Versión en español (recomendada)
 
-¿Puede una red neuronal descubrir sola qué sinapsis son excitadoras y cuáles inhibidoras, viendo solo el cableado?
+Pasé semanas intentando que una IA adivinara qué conexiones de un cerebro excitan y cuáles frenan. No lo consiguió. Y lo que aprendí por el camino vale más que si hubiera funcionado.
 
-Lo probé con el complejo central de *Drosophila* (conectoma male-CNS, 152 neuronas): entrené una red con la topología real, dejando libre el signo de cada conexión, y comparé lo aprendido con el neurotransmisor anotado.
+La idea: tenemos el mapa completo de cableado del cerebro de la mosca de la fruta (el conectoma). Cada conexión es un cable, pero el mapa no dice si empuja o frena. ¿Puede una red neuronal deducirlo sola, solo con la forma del cableado y una tarea que resolver (orientarse, como una brújula interna)?
 
-Resultado: **no lo recupera.** Y lo más útil del proyecto fue entender por qué:
+Respuesta corta: **no.** Respuesta útil: por qué.
 
-🔹 Mi primera tarea era trivial: un decodificador constante superaba a los modelos entrenados.
-🔹 Con ganancias por tipo celular sí aparece una solución que integra el rumbo, pero no es específica de la química real: 28 de 64 patrones de signo por tipo también la alcanzan (la real, puesto 14).
-🔹 Al cambiar de grafo, la solución depende de las sinapsis PEN↔PEN del neuropilo noduli: sin ellas 0/3 integran, con ellas 3/3.
-🔹 Parte de mis conclusiones tuvieron que retractarse tras tres rondas de revisión externa (incluida la de una tarea que fallaba por la velocidad, no por la receta).
+🔹 Mi primera tarea era tan fácil que un decodificador sin cerebro ganaba a todos los modelos entrenados.
+🔹 Cuando la arreglé, aparece una solución que sí se orienta... pero no es especial: probé las 64 combinaciones posibles de "quién excita y quién inhibe" por tipo de neurona y 37 también consiguen orientarse (varias, mejor que la real). La real queda en el puesto 30 de 64: una más entre muchas.
+🔹 Lo repetí con una versión corregida de la tarea (y 189 entrenamientos) y la conclusión aguantó. Eso es lo que quiero que se vea: lo comprobé contra mí mismo.
+🔹 Hubo hallazgos que tuve que retractar tras tres rondas de revisión externa. Están todos documentados.
 
-Lo publico como informe metodológico y negativo, con el cuaderno de laboratorio completo, las retractaciones y un explorador interactivo de los 64 patrones.
+Por qué importa fuera de la neurociencia: si usas IA para "descubrir" estructura en un sistema (biología, finanzas, ingeniería), un buen control nulo te dice más que un resultado bonito. Aquí el control nulo fue probar todas las alternativas.
 
-Lo que me llevo: en modelado con conectoma, un buen control nulo y una revisión adversarial valen más que un resultado bonito.
+Lo publico como informe metodológico y negativo: código, cuaderno de laboratorio con los errores incluidos y un explorador interactivo de los 64 patrones.
 
-Código, datos derivados y cuaderno: https://github.com/martinfiles/cx-net
+👉 https://github.com/martinfiles/cx-net
 
-¿Trabajas en modelos de dirección de cabeza o en neurociencia con conectomas? Me encantaría que rompieras esto.
+Si trabajas con conectomas, modelos de dirección de cabeza o simplemente con evaluación rigurosa de modelos: me encantaría que lo rompieras.
 
 #Neurociencia #Conectómica #Drosophila #MachineLearning #CienciaAbierta #Reproducibilidad
 
@@ -33,24 +33,24 @@ Código, datos derivados y cuaderno: https://github.com/martinfiles/cx-net
 
 ## Versión en inglés
 
-Can a neural network figure out which synapses are excitatory and which inhibitory from wiring alone?
+I spent weeks trying to get an AI to work out which connections in a brain excite and which inhibit. It didn't. What I learned on the way is worth more than if it had worked.
 
-I tested it on the *Drosophila* central complex (male-CNS connectome, 152 neurons): a network with the real topology and a free sign on every connection, compared against the annotated neurotransmitter.
+The idea: we have the complete wiring map of the fruit-fly brain (the connectome). Every connection is a wire, but the map doesn't say whether it pushes or brakes. Can a neural network infer that on its own, from the wiring shape plus one task (keeping track of heading, like an internal compass)?
 
-Result: **it doesn't recover it.** And the useful part was understanding why:
+Short answer: **no.** Useful answer: why.
 
-🔹 My first task was trivial: a constant decoder beat the trained models.
-🔹 With per-cell-type gains a heading-integrating solution exists, but it isn't specific to the real chemistry: 28 of 64 per-type sign patterns reach it too (the real one ranks 14th).
-🔹 The solution depends on PEN↔PEN synapses in the noduli: without them 0/3 seeds integrate, with them 3/3.
-🔹 Several of my conclusions had to be retracted over three rounds of external review (including a task that failed because of velocity, not the training recipe).
+🔹 My first task was so easy that a brainless constant decoder beat every trained model.
+🔹 Once fixed, a solution that does track heading appears... but it isn't special: I tried all 64 combinations of "which cell type excites, which inhibits", and 37 also manage to track heading (several better than the real one). The real assignment ranks 30th of 64: one among many.
+🔹 I repeated it on a corrected version of the task (189 training runs) and the conclusion held. That's the point: I checked it against myself.
+🔹 Some findings had to be retracted after three rounds of external review. All documented.
 
-I'm publishing it as a methodological, negative-result report, with the full lab notebook, the retractions and an interactive explorer of the 64 patterns.
+Why it matters beyond neuroscience: if you use AI to "discover" structure in a system (biology, finance, engineering), a good null control tells you more than a pretty result. Here the null control was trying every alternative.
 
-Takeaway: in connectome-constrained modelling, a good null control and adversarial review are worth more than a pretty result.
+I'm publishing it as a methodological, negative-result report: code, a lab notebook with the mistakes included, and an interactive explorer of the 64 patterns.
 
-Code, derived data and notebook: https://github.com/martinfiles/cx-net
+👉 https://github.com/martinfiles/cx-net
 
-Working on head-direction models or connectome neuroscience? I'd love you to break this.
+If you work on connectomes, head-direction models, or just rigorous model evaluation: I'd love you to break this.
 
 #Neuroscience #Connectomics #Drosophila #MachineLearning #OpenScience #Reproducibility
 
