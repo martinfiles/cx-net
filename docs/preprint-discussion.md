@@ -39,7 +39,9 @@ cuales invalida una versión anterior del experimento:
    held-out medio (p = 0.22; el rango según el criterio de agregación es 14-28,
    sección 6; con una sola semilla, 26/64 y puesto 22), apoyándose en
    tasas con signo (desviaciones respecto a un nivel basal nulo) que hacen el
-   signo del peso poco identificable (sección 6).
+   signo del peso poco identificable (sección 6). Repetida la enumeración sobre la tarea OU
+   corregida (3ª revisión; sección 11), la conclusión se mantiene: 37 de 64 patrones integran por
+   mayoría de 3 semillas (32 en las 3) y la real queda en el puesto 30 de 64 (p = 0.47).
 4. Un aprendiz de signos genérico no encuentra esa solución (sección 7).
 5. El neurotransmisor es función exacta del tipo celular en este subcircuito
    (Delta7 = glutamato, resto = acetilcolina), lo que reduce la "química real"
@@ -734,7 +736,21 @@ como ya avisaba el revisor. Límites: solo 4 barajados por neurona (no se ha rep
 los 64 patrones por tipo sobre esta tarea), y sigue sin demostrarse que la tarea discrimine entre
 patrones por tipo. Lo que queda establecido es que el fallo anterior era de velocidad y no de la receta
 ni del presupuesto.
-- **Trabajo futuro (pendiente):** repetir la enumeración de los 64 patrones por tipo sobre la tarea OU corregida (`max_av=0.04`, T=500, `tau_v=50`, pérdida incremental) para ver si discrimina entre patrones; explicar mecanísticamente por qué la recurrencia PEN↔PEN del NO es necesaria; reajustar hiperparámetros por grafo.
+- **Enumeración de los 64 patrones sobre la tarea OU corregida (2026-10-09/12; `launch_types_v3.sh`,
+`analyze_types_v3.py`, `results/types_analysis_v3.json`).** Criterio fijado antes de ver resultados:
+«integra» = pérdida incremental held-out < 0.538 («recordar theta0» en esta tarea) y pendiente > 0.5,
+voto de mayoría de 3 semillas (189 corridas, ninguna excluida). **37/64 patrones integran por mayoría
+(32/64 en las 3 semillas); la real (pérdida incremental 0.121, pendiente 0.74, integra en 3/3) es el
+puesto 30 de 64 (p = 0.47).** La conclusión de la sección 6 se mantiene en la tarea corregida: la real
+integra pero no es especial (29 patrones la superan, con pendiente ≈0.95 frente a 0.74). Por tipo (de 32
+patrones, integran con el tipo excitador / inhibidor): Delta7 7/30, EPG 20/17, EPGt 19/18, PEG 18/19,
+PEN_a 15/22, PEN_b 18/19; solo Delta7 separa (inhibidor casi suficiente, no necesario) y el contraste de
+PEN_b de la tarea antigua (20/32 vs 6/32) desaparece. Concordancia con el veredicto de la tarea antigua:
+23 integran en ambas, 5 solo en la antigua, 14 solo en la nueva, 22 en ninguna. Límites: 3 semillas
+(con la semilla 0 sola eran 41/64 y puesto 37, así que las cifras se mueven); el umbral de pérdida es
+laxo (los barajados por neurona dieron 0.35-0.46) y discrimina la pendiente; descriptivos por tipo sin
+test; hiperparámetros elegidos con la real y signo por tipo de origen, como en la sección 6.
+- **Trabajo futuro (pendiente):** explicar mecanísticamente por qué la recurrencia PEN↔PEN del NO es necesaria; reajustar hiperparámetros por grafo.
 - Atacar la aprendibilidad (currículo sobre T, otro inicio, tasas de aprendizaje
   por grupo de parámetros, más épocas).
 - Medir la potencia del test de H1 para señal a nivel de tipo y usar una nula
@@ -761,7 +777,9 @@ ni del presupuesto.
 > es específica de la química real: 28 de los 64 patrones de signo por tipo la
 > alcanzan por mayoría de 3 semillas (la asignación real, en el puesto 14 de 64
 > por held-out medio; p = 0.22), apoyándose en tasas con signo (desviaciones
-> respecto a un nivel basal nulo) que hacen el signo del peso poco identificable;
+> respecto a un nivel basal nulo) que hacen el signo del peso poco identificable
+> (con la tarea de velocidad corregida la conclusión se mantiene: 37 de 64 patrones por mayoría,
+> la real en el puesto 30);
 > y un aprendiz de signos genérico no la encuentra.
 > Dado que en este subcircuito el neurotransmisor es función exacta del tipo
 > celular, la pregunta se reduce a un dato de tipo, y los cálculos de potencia
@@ -785,3 +803,4 @@ ni del presupuesto.
 | aprendibilidad | 2026-09-19 (9) | `train.py` |
 | 64 patrones por tipo | 2026-09-20, 2026-09-20 (2) | `analyze_types.py` |
 | validación mecanística; tasas no negativas | 2026-09-20 (3) | `bump_check.py`, `rate_stats.py` |
+| 64 patrones sobre la tarea OU corregida | 2026-10-09, 2026-10-09 (2), 2026-10-12 | `analyze_types_v3.py` |

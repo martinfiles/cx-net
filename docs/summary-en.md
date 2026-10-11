@@ -74,9 +74,8 @@ Comparing the bump profile with hand-tuned connectome ring-attractor models; val
 phase map on hemibrain; a search for a dynamical regime that integrates with non-negative rates
 (a first sigmoid attempt was inconclusive); explaining *why* the trained per-type-gain solution
 fails on the PB+EB-only graph below, now that "insufficient recurrent_gain" has been ruled out;
-re-running the full 64-pattern enumeration under the redesigned task below (only a bounded
-validation — real assignment + a handful of shuffles — has been run so far); review by someone
-from the field.
+review by someone from the field. (The 64-pattern enumeration under the redesigned task
+has now been run; see the update of 2026-10-12.)
 
 **Sign-flip symmetry, formalised and checked against this model's actual constraints
 (2026-09-28).** The external review proposed that with an odd activation and trainable biases,
@@ -164,6 +163,12 @@ neurotransmitter predictions. Figures: [`figures/en/`](figures/en/). Interactive
 - **The region missing in PB+EB is the NO.** The NO holds only PEN-PEN synapses (about 11% of total weight). Zeroing it in the three trained real-assignment models breaks integration (held-out 0.43, slope 0.10, 0/3); zeroing FB, LAL or CentralBrain changes nothing. Retraining confirms it: full graph without NO 0/3 integrate (held-out 0.30-0.36), PB+EB+NO 3/3 (0.10-0.13). `results/region_analysis.json`, `data/interim/launch_regions.sh`.
 - **PEN offset without region filtering** is about 6 deg (mean |offset| 6.3 PEN_a, 6.2 PEN_b): the dilution is real. Correction: only 12% of EPG-to-PEN synapses are in the PB (1,439 of about 12.3k), so the mixed-graph offset is dominated by EB synapses.
 - **PB+EB specificity exists** (real held-out 0.31, slope 0.39, vs shuffled 0.43-0.60 and <=0.07); it just falls short of the arbitrary integrates threshold. The untrained-search count is 388+216=604 evaluations, and that search says nothing about the trained model (the "caveat closed" wording is withdrawn).
-- **OU task, corrected.** The earlier OU failures were about velocity (filtered p90 0.19 vs 0.047 in the old task; no trained network moved the bump faster than about 0.037-0.055 rad/step). With `max_av=0.04`, T=500, `tau_v=50` (p90 0.055) and an increment-based loss, the 3 real seeds converge (increment loss 0.12, slope 0.73-0.75) and the 4 per-neuron shuffles do not (0.35-0.46, slope 0.10-0.20). Real networks trained on the old task already transfer (slope 0.73-0.78). The 64-pattern enumeration on this task has not been redone.
+- **OU task, corrected.** The earlier OU failures were about velocity (filtered p90 0.19 vs 0.047 in the old task; no trained network moved the bump faster than about 0.037-0.055 rad/step). With `max_av=0.04`, T=500, `tau_v=50` (p90 0.055) and an increment-based loss, the 3 real seeds converge (increment loss 0.12, slope 0.73-0.75) and the 4 per-neuron shuffles do not (0.35-0.46, slope 0.10-0.20). Real networks trained on the old task already transfer (slope 0.73-0.78). The 64-pattern enumeration on this task was redone afterwards: see the update of 2026-10-12.
 - **Symmetry.** "No exact per-type symmetry" does not imply "the differences are real": some type pairs are near zero (PEN to Delta7: 14-15 synapses) and PEG/EPGt outputs are weak, so approximate symmetries exist; changing only their sign moves held-out by a median 0.055 (global sd 0.17); 16/63 patterns are not unanimous across seeds. `results/sign_symmetry_pairs.json`.
 - **Delta7 x EPG rule (PEN_b excitatory):** at least one of EPG or Delta7 inhibits - 22/24 integrate vs 0/8 when neither does. It is not "negative loop feedback": when both inhibit, the loop is positive and 6/8 still integrate.
+
+## Update 2026-10-12 (64 patterns on the corrected OU task)
+
+- **Same conclusion on the corrected task.** All 64 sign patterns by cell type x 3 seeds (189 runs, none excluded; `src/cx_net/analyze_types_v3.py`, `results/types_analysis_v3.json`). Criterion fixed beforehand: "integrates" = held-out increment loss < 0.538 (remembering the initial phase) and slope > 0.5, majority vote over 3 seeds. **37/64 patterns integrate by majority (32/64 in all 3 seeds); the real assignment (increment loss 0.121, slope 0.74, integrates in 3/3) ranks 30th of 64 (p = 0.47).** 29 patterns beat it, with slopes around 0.95 against 0.74, so the real network is a more compressive integrator.
+- **By type** (of 32 patterns, number that integrate with the type excitatory / inhibitory): Delta7 7/30, EPG 20/17, EPGt 19/18, PEG 18/19, PEN_a 15/22, PEN_b 18/19. Only Delta7 separates (inhibitory is nearly sufficient, not necessary); the PEN_b contrast seen on the old task (20/32 vs 6/32) disappears. Agreement with the old-task verdict: 23 integrate in both, 5 only on the old task, 14 only on the new one, 22 on neither.
+- **Caveats.** Three seeds (seed 0 alone gave 41/64 and rank 37, so the figures move); the loss threshold is loose and the slope does the discriminating; per-type descriptives are untested; hyperparameters were chosen with the real assignment.

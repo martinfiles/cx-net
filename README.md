@@ -18,7 +18,8 @@ superaba a los modelos entrenados); (2) la fase angular real de cada neurona en
 el EB, medida con coordenadas de sinapsis, es un espejo entre hemisferios que
 los mapeos asumidos no recogían; (3) con ganancias por tipo celular existe una
 solución que integra el rumbo, pero no es específica de la química real (28 de
-64 patrones de signo por tipo la alcanzan, con 3 semillas; la real, puesto 14) y usa tasas con
+64 patrones de signo por tipo la alcanzan, con 3 semillas; la real, puesto 14; con la tarea de
+velocidad corregida, 37 de 64 y puesto 30) y usa tasas con
 signo (desviaciones de una basal nula) que hacen el signo poco identificable; (4) un aprendiz de signos genérico no la
 encuentra; (5) en este subcircuito el neurotransmisor es función exacta del tipo
 celular (Delta7 = glutamato, resto = acetilcolina). Detalle y retractaciones en
@@ -83,6 +84,7 @@ python -m src.cx_net.evaluate       # H1 (test de permutación) y H2 (por tipo c
 python -m src.cx_net.extract_eb_angles  # fase angular real de cada neurona (sinapsis del EB, neuPrint)
 python -m src.cx_net.analyze_types           # análisis de los 64 patrones (1 semilla)
 python -m src.cx_net.analyze_types_3seeds    # agregado de los 64 patrones con 3 semillas
+python -m src.cx_net.analyze_types_v3        # los 64 patrones sobre la tarea OU corregida (3 semillas)
 ```
 
 Los barridos multi-semilla y las variantes (`hold_prob`, `perturb_amp`,

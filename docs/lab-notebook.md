@@ -2113,6 +2113,84 @@ recurrencia PEN↔PEN es necesaria.
 **Siguiente paso:** repetir la enumeración de 64 patrones sobre la tarea OU corregida; el revisor puede
 repetir los cálculos con `results/region_analysis.json`.
 
+## 2026-10-09 — Enumeración de los 64 patrones sobre la tarea OU corregida (DISEÑO, fijado antes de ver resultados)
+
+**Qué se hizo:** `data/interim/launch_types_v3.sh`: los 63 patrones de signo por tipo distintos de la
+real (`control_type_mask` 0..63 salvo 1) × semillas 0, 1, 2 = 189 corridas (`taskv3_mask{m}_s{s}_p`),
+con la receta exacta de `launch_taskv3.sh` (800 épocas, `T=500`, `tau_v=50`, `max_av=0.04`,
+`state_noise_std=0.02`, `loss_type='increment'`, `checkpoint_selection='ema'`, mismos hiperparámetros
+dinámicos). La máscara 1 se reutiliza de `taskv3_real_seed{0,1,2}_p` (prueba de humo de 3 épocas con
+`control_type_mask=1`: 0 % de aristas cambiadas respecto a la real). Orden por semilla (primero las 63
+de la semilla 0), 14 en paralelo, reanudable.
+
+**Por qué:** era la limitación declarada de la tarea corregida (solo 4 barajados por neurona); el
+resultado central del informe (la real no es especial entre los 64 patrones) solo estaba medido en la
+tarea antigua, que la 3ª revisión cuestionó.
+
+**Criterio primario (fijado antes):** análogo directo del de la entrada 2026-09-20. Métrica: pérdida
+incremental en held-out (la que se entrena). «Integra» = pérdida incremental < 0.538 («recordar
+theta0» en esta tarea, `task_v3_reference.json`) Y pendiente > 0.5; por patrón, voto de mayoría de
+3 semillas. p exacto = puesto de la máscara 1 por pérdida incremental media / 64. Descriptivos: nº de
+patrones que integran, fracción por signo de cada tipo, y concordancia con el veredicto de la tarea
+antigua (`types_analysis_3seeds.json`). No se excluye ninguna corrida. Si el cómputo se corta antes
+de las 3 semillas, se informa con las semillas completas que haya, diciéndolo.
+
+**Riesgos declarados:** los mismos que en 2026-09-20 (hiperparámetros elegidos con la real, signo por
+tipo de origen, `ring_sign=+1`); además el umbral de pérdida es laxo (los barajados por neurona dieron
+0.35-0.46) y es la pendiente la que discrimina.
+
+**Siguiente paso:** analizar con `analyze_types_v3.py` cuando terminen.
+
+## 2026-10-09 (2) — 64 patrones sobre la tarea OU corregida, semilla 0: la real baja al puesto 37 de 64
+
+**Qué se hizo:** terminaron las 63 corridas de la semilla 0 (ninguna con error); `analyze_types_v3.py`
+-> `results/types_analysis_v3.json` con el criterio de la entrada anterior. Semillas 1 y 2 en curso.
+
+**Resultado / número clave (1 semilla, provisional):** **41/64 patrones integran** (pérdida incremental
+< 0.538 y pendiente > 0.5). La real (máscara 1): 0.115, pendiente 0.74, **puesto 37 de 64
+(p = 37/64 = 0.578)**. Mejores: máscaras 25, 49, 45, 61, 37, 15, 33, 26 (0.029-0.040, pendiente
+0.94-1.03); la 26 (EPG+PEG+PEN_a inhiben, Delta7 excita) está entre ellas. Por tipo (integran con el
+tipo excitador / inhibidor, de 32): D7 11/30; EPG 23/18; EPGt 19/22; PEG 20/21; PEN_a 15/26; PEN_b
+20/21. Concordancia con la tarea antigua (mayoría de 3 semillas): 24 integran en ambas, 4 solo en la
+antigua, 17 solo en la nueva, 19 en ninguna.
+
+**Lectura:** la conclusión del informe se mantiene y se refuerza en la tarea corregida (la real integra
+pero no es especial; 36 patrones la superan). Cambia el descriptivo por tipo: el contraste de PEN_b
+excitador de la tarea antigua (20/32 vs 6/32) desaparece (20 vs 21) y Delta7 inhibidor pasa a ser casi
+suficiente (30/32) sin ser necesario (11/32 integran con Delta7 excitador). Varios patrones alcanzan
+pendiente ≈1 frente a 0.74 de la real: la real es un integrador más compresivo que muchas alternativas.
+
+**Limitaciones:** una semilla (en la tarea antigua 16/63 patrones no fueron unánimes entre semillas);
+el umbral de pérdida es laxo y discrimina la pendiente; descriptivos por tipo sin test.
+
+**Siguiente paso:** rehacer el análisis con las 3 semillas y llevar las cifras al borrador, al resumen
+en inglés y al README.
+
+## 2026-10-12 — 64 patrones sobre la tarea OU corregida, 3 semillas: la real, puesto 30 de 64
+
+**Qué se hizo:** terminaron las 189 corridas (semillas 0, 1, 2; ninguna con error en los logs);
+`analyze_types_v3.py` -> `results/types_analysis_v3.json` con el criterio fijado el 2026-10-09 (sin cambios).
+La semilla 2 se había cortado a 28/63 y se completó relanzando `launch_types_v3.sh` (reanudable).
+
+**Resultado / número clave:** **37/64 patrones integran por mayoría** (32/64 en las 3 semillas). La real
+(máscara 1): pérdida incremental media 0.121, pendiente 0.74, integra en 3/3, **puesto 30 de 64
+(p = 30/64 = 0.469)**. Mejores: máscaras 25, 49, 45, 41, 53, 37, 15, 61 (0.032-0.044, pendiente
+0.93-0.99), todas con Delta7 inhibidor. Por tipo (integran con el tipo excitador / inhibidor, de 32):
+D7 7/30; EPG 20/17; EPGt 19/18; PEG 18/19; PEN_a 15/22; PEN_b 18/19. Concordancia con la tarea antigua
+(mayoría de 3 semillas): 23 en ambas, 5 solo en la antigua, 14 solo en la nueva, 22 en ninguna.
+
+**Lectura:** se mantiene la conclusión del informe: la real integra pero no es especial (29 patrones la
+superan). Respecto a la semilla 0 sola (41 integran, puesto 37) las cifras se mueven, como se advirtió.
+Descriptivo por tipo: solo Delta7 separa (inhibidor 30/32 vs excitador 7/32); el contraste de PEN_b de la
+tarea antigua (20/32 vs 6/32) desaparece (18 vs 19). Delta7 inhibidor es casi suficiente, no necesario.
+La pendiente de los mejores (≈0.95) supera a la de la real (0.74): la real es más compresiva.
+
+**Limitaciones:** 3 semillas; umbral de pérdida laxo (discrimina la pendiente); descriptivos por tipo sin
+test; el nº que integra depende del criterio de agregación (mayoría 37, unánime 32).
+
+**Siguiente paso:** llevar estas cifras al borrador (`docs/preprint-discussion.md`: ítem «Trabajo futuro
+(pendiente)» de la línea ~737), a `docs/summary-en.md` y al README.
+
 ## Plantilla para próximas entradas
 
 ```
