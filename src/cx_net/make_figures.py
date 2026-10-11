@@ -1,7 +1,7 @@
 """
 Figuras del informe (PNG, 1200x675, tema claro), en español e inglés. Lee SOLO de `results/`
 (versionado), así que se pueden regenerar sin `data/interim/`.
-Salida: docs/figures/fig{1..6}.png (es) y docs/figures/en/fig{1..6}.png (en).
+Salida: docs/figures/fig{1..7}.png (es) y docs/figures/en/fig{1..7}.png (en).
 Uso: python -m src.cx_net.make_figures [--lang es|en|all]
 
 Convenciones (guía de visualización del proyecto): un color por función;
@@ -29,6 +29,7 @@ RES = os.path.join(ROOT, "results")
 SURFACE, INK, INK2, MUTED, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#8a8985", "#e6e5e1"
 BLUE, ORANGE, AQUA, GRAY = "#2a78d6", "#eb6834", "#1baf7a", "#b8b7b2"
 MEMORY = 0.466  # held-out de "recordar theta0 sin integrar"
+MEMORY_V3 = 0.538  # pérdida incremental de "recordar theta0" en la tarea OU corregida
 
 TEXT = {
     "es": {
@@ -61,6 +62,9 @@ TEXT = {
         "f6_cols": ["velocidad −0.04/paso", "velocidad 0", "velocidad +0.04/paso"],
         "f6_x": "tiempo (pasos)", "f6_y": "fase (rad)", "f6_ideal": "integración ideal", "f6_dec": "fase decodificada",
         "f6_cbar": "tasa (desviación de la basal)",
+        "f7_title": "Tarea corregida: {n} de 64 integran; la real, puesto {r}",
+        "f7_sub": "Pérdida incremental held-out media (3 semillas) de cada patrón, ordenados de mejor a peor",
+        "f7_mem": "memoria sin integrar (0.538)", "f7_y": "pérdida incremental held-out",
     },
     "en": {
         "source": "cx-net · data: male-cns:v1.0 (neuPrint)",
@@ -92,6 +96,9 @@ TEXT = {
         "f6_cols": ["velocity −0.04/step", "velocity 0", "velocity +0.04/step"],
         "f6_x": "time (steps)", "f6_y": "phase (rad)", "f6_ideal": "ideal integration", "f6_dec": "decoded phase",
         "f6_cbar": "rate (deviation from baseline)",
+        "f7_title": "Corrected task: {n} of 64 integrate; the real one is #{r}",
+        "f7_sub": "Mean held-out increment loss (3 seeds) of each pattern, sorted best to worst",
+        "f7_mem": "memory without integrating (0.538)", "f7_y": "held-out increment loss",
     },
 }
 L = TEXT["es"]  # idioma activo (se fija en main)
@@ -317,6 +324,36 @@ def fig6():
     return fig
 
 
+# ---------------------------------------------------------------- fig 7
+def fig7():
+    t = json.load(open(os.path.join(RES, "types_analysis_v3.json")))["patterns"]
+    t = sorted(t, key=lambda x: x["mean_increment_loss"])
+    ho = np.array([x["mean_increment_loss"] for x in t])
+    integra = np.array([x["integra_majority"] for x in t])
+    real_rank = [i for i, x in enumerate(t) if x["mask"] == 1][0] + 1
+    n_int = int(integra.sum())
+    fig = frame(L["f7_title"].format(n=n_int, r=real_rank), L["f7_sub"])
+    ax = fig.add_axes([0.09, 0.16, 0.86, 0.62])
+    clean(ax, "y")
+    ax.axhline(MEMORY_V3, color=INK2, linewidth=1, zorder=1)
+    ax.text(64.5, MEMORY_V3 + 0.025, L["f7_mem"], ha="right", fontsize=9.5, color=INK2)
+    xs = np.arange(1, 65)
+    ax.scatter(xs[integra], ho[integra], s=46, color=BLUE, edgecolor=SURFACE, linewidth=1.5, zorder=3, label=L["f3_yes"])
+    ax.scatter(xs[~integra], ho[~integra], s=46, color=GRAY, edgecolor=SURFACE, linewidth=1.5, zorder=3, label=L["f3_no"])
+    ax.scatter([real_rank], [ho[real_rank - 1]], s=120, color=ORANGE, edgecolor=SURFACE, linewidth=2, zorder=4,
+               label=L["f3_leg_real"])
+    ax.annotate(L["f3_real"].format(r=real_rank, p=real_rank / 64), (real_rank, ho[real_rank - 1]),
+                xytext=(real_rank - 1, 0.03), fontsize=10, color=INK, va="center",
+                arrowprops=dict(arrowstyle="-", color=MUTED, linewidth=1, shrinkA=2, shrinkB=6))
+    ax.set_xlim(0, 65)
+    ax.set_ylim(0, max(0.66, float(ho.max()) + 0.1))
+    ax.set_xticks([1, 16, 32, 48, 64])
+    ax.set_xlabel(L["f3_x"], fontsize=9.5)
+    ax.set_ylabel(L["f7_y"], fontsize=9.5)
+    ax.legend(loc="upper left", frameon=False, fontsize=10, handletextpad=0.3, labelcolor=INK, bbox_to_anchor=(0.0, 1.02))
+    return fig
+
+
 def wrap_(x):
     return (np.asarray(x) + np.pi) % (2 * np.pi) - np.pi
 
@@ -330,11 +367,11 @@ def main():
         L = TEXT[lang]
         out = os.path.join(ROOT, "docs", "figures", "" if lang == "es" else "en")
         os.makedirs(out, exist_ok=True)
-        for i, f in enumerate((fig1, fig2, fig3, fig4, fig5, fig6), 1):
+        for i, f in enumerate((fig1, fig2, fig3, fig4, fig5, fig6, fig7), 1):
             fig = f()
             fig.savefig(os.path.join(out, f"fig{i}.png"))
             plt.close(fig)
-        print(f"{lang}: 6 figuras en {os.path.normpath(out)}")
+        print(f"{lang}: 7 figuras en {os.path.normpath(out)}")
 
 
 if __name__ == "__main__":
