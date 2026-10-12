@@ -2191,6 +2191,30 @@ test; el nº que integra depende del criterio de agregación (mayoría 37, unán
 **Siguiente paso:** llevar estas cifras al borrador (`docs/preprint-discussion.md`: ítem «Trabajo futuro
 (pendiente)» de la línea ~737), a `docs/summary-en.md` y al README.
 
+## 2026-10-12 (2) — Robustez de la enumeración corregida (post hoc) y revisión final del repositorio
+
+**Qué se hizo:** análisis exploratorio, posterior a ver los resultados, añadido a `analyze_types_v3.py`
+(bloque `exploratory_post_hoc` de `results/types_analysis_v3.json`); `collect_results.py` reconstruyó
+`runs_summary.csv` (+189 filas de la enumeración); los lanzadores `launch_*.sh` (hasta ahora solo en
+`data/interim/`, fuera del repositorio) se versionaron en `scripts/` con rutas relativas.
+
+**Resultado / número clave:** el puesto de la real es 37, 36 y 37 por semilla individual (30 por la media
+de 3). Recuento de patrones que integran según la pendiente exigida: 37 (> 0.5 y > 0.7), 32 (> 0.8), 20
+(> 0.9); con > 0.8 la real (pendiente 0.74) no integra en ninguna semilla; el umbral de pérdida no cambia
+el recuento. Condicionado a Delta7 inhibidor (32 patrones): 30 integran y la real es el puesto 28 de 32; con
+Delta7 excitador integran 7 de 32 y el mejor llega a 0.058.
+
+**Lectura:** «la real no es especial» es robusta a semilla y umbrales; «la real integra» depende del
+umbral de pendiente. La tarea corregida selecciona el bit conocido (Delta7 inhibe) y nada más específico:
+fijado ese bit, los otros cinco casi no importan. El «p = puesto/64» es descriptivo, no un contraste.
+
+**Limitaciones:** análisis post hoc (no estaba en el criterio fijado el 2026-10-09); 3 semillas.
+
+**Siguiente paso (huecos para cerrar la lógica del estudio, en orden):** (1) repetir el aprendiz de signos
+libres (por arista y por 6 signos por tipo) sobre la tarea corregida: es lo que falta para responder la
+pregunta original; (2) 5-10 semillas y nula explícita; (3) hiperparámetros sin ayuda de la real;
+(4) variar el modelo; (5) verificar la bibliografía del posicionamiento.
+
 ## Plantilla para próximas entradas
 
 ```

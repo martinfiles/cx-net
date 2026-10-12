@@ -1,12 +1,11 @@
-# Resultados y discusión metodológica (borrador v2) — CX-Net
+# Resultados y discusión metodológica — CX-Net
 
-> Borrador de trabajo del preprint. Fuente primaria de datos y decisiones:
-> `docs/lab-notebook.md` (2026-09-16 a 2026-09-20). **Esta versión reescribe la
-> anterior** tras las entradas (4)-(13) del cuaderno: varias afirmaciones de la
-> v1 quedan retractadas (tabla de la sección 9). Enfoque: informe metodológico
-> y negativo. **Estado: exploratorio.** Los análisis de las secciones 6-7 usan una
-> corrida por configuración y solo algunos criterios se fijaron antes de ver los
-> resultados (entradas (10) y (12) del cuaderno). La revisión crítica interna está en
+> Borrador del informe. Fuente primaria de datos y decisiones: `docs/lab-notebook.md`
+> (2026-09-16 a 2026-10-12). Varias afirmaciones de versiones anteriores están retractadas
+> (tabla de la sección 9). Enfoque: informe metodológico y negativo. **Estado: exploratorio.**
+> Las enumeraciones de 64 patrones (sección 6 y sección 11, tarea corregida) usan 3 semillas por
+> patrón; el resto de análisis, una o pocas corridas. Solo algunos criterios se fijaron antes de
+> ver los resultados (se indica en cada caso). La revisión crítica interna está en
 > `docs/expert-review.md`.
 
 ## 1. Resumen
@@ -484,7 +483,7 @@ propia. El resultado es no concluyente.
 
 ## 7. Aprendibilidad
 
-Con signos por arista y parámetros por tipo entrenados a la vez desde un inicio
+Con la tarea anclada original (no se ha repetido con la tarea OU corregida de la sección 11), con signos por arista y parámetros por tipo entrenados a la vez desde un inicio
 neutro (ganancias 1, sesgos 0, signos ≈ N(0, 0.1); sin usar nada de los pasos
 anteriores), cuatro pilotos de una semilla (`ring_sign` ±1 × `sign_reg` 0.05 /
 0; 1000 épocas) dan held-out 0.458-0.561 y pendiente −0.10 a 0.00: convergen al
@@ -504,7 +503,11 @@ es evaluable.
 - **Un bit conocido.** Con el neurotransmisor función del tipo, el contraste de fondo es
   «Delta7 inhibe» (conocido) frente a las otras 63 combinaciones. Que la tarea no lo
   seleccione, con este modelo, dice que la tarea y el modelo no imponen esa
-  restricción, no que la biología no la imponga.
+  restricción, no que la biología no la imponga. Con la tarea OU corregida (sección 11) el
+  cuadro se matiza: Delta7 inhibidor es casi suficiente (30 de 32 patrones integran) y bastante
+  necesario (7 de 32 con Delta7 excitador), así que la tarea sí selecciona ese bit conocido;
+  pero, fijado ese bit, los otros cinco apenas importan (30 de 32 integran) y la real es el
+  puesto 28 de esos 32. La tarea recupera lo que ya sabíamos y nada más específico.
 - **Sesgo de selección a favor de la real.** Los hiperparámetros dinámicos se eligieron
   en zonas donde la asignación real funcionaba; eso favorecería a la real frente al resto
   de patrones. Que aun así quede en el puesto 14 (con una sola semilla, 22) refuerza el
@@ -612,6 +615,19 @@ Se retira la advertencia anterior; la cita es correcta y debe usarse en el posic
   (el lote de 16 ensayos de menor pérdida, `best_state`) es en sí misma una
   fuente de varianza entre semillas: no se comparó con seleccionar por media
   móvil (EMA) o con un conjunto de validación aparte.
+- **El «p» de los puestos no es un p-valor de contraste.** Es la fracción p = puesto/64 de la
+  real dentro de una enumeración exhaustiva: los 64 patrones no son una muestra aleatoria de una
+  nula, los hiperparámetros se eligieron con la real, y el puesto cambia con el criterio de
+  agregación y con la semilla (en la tarea corregida: puesto 30 por pérdida media de 3 semillas,
+  36-37 por semilla individual). Es un descriptivo del tamaño del conjunto de soluciones, no una
+  prueba de significación.
+- **Sensibilidad al umbral de «integra» (tarea corregida, post hoc).** El recuento depende sobre
+  todo del umbral de pendiente: 37 patrones integran con pendiente > 0.5 o > 0.7, 32 con > 0.8 y
+  20 con > 0.9; con > 0.8 la real (pendiente 0.74) deja de integrar en las 3 semillas. El umbral
+  de pérdida (0.538, 0.3 o 0.2) no cambia el recuento. La conclusión «la real no es especial» es
+  robusta a esos umbrales; «la real integra» no lo es.
+- **El aprendiz de signos libres no se ha repetido sobre la tarea corregida** (sección 7): la
+  pregunta original (H1) sigue sin evaluarse con la receta que sí converge para los patrones por tipo.
 - **Hiperparámetros dinámicos** (`recurrent_gain=2`, `tau=10`, `in_gain=10`,
   `cue_gain=10`) elegidos en zonas seleccionadas con ayuda de los signos reales
   (criterio A): grado de libertad del investigador, declarado. Más ≈30
@@ -654,6 +670,24 @@ Se retira la advertencia anterior; la cita es correcta y debe usarse en el posic
   ejecutaron con el Python del sistema (la pista evita el caso `(0,0)`).
 
 ## 11. Trabajo futuro
+
+Prioridades, de mayor a menor para cerrar la lógica del estudio:
+
+1. **Repetir H1 con la receta que converge.** El aprendiz de signos (por arista y por tipo) de la
+   sección 7 solo se probó sobre la tarea anclada original. Lanzarlo sobre la tarea OU corregida
+   (incluida la variante de 6 signos por tipo, comparable a la enumeración) es el experimento que
+   falta para responder la pregunta original; sin él, el informe establece que la tarea no
+   selecciona la química, no que un aprendiz no la encuentre con una buena tarea.
+2. **Más réplicas y un contraste formal.** 5-10 semillas para los patrones cercanos al umbral y
+   para la real, intervalos por patrón y una nula explícita (p. ej. patrones barajados por
+   arista con el mismo número de inhibidores), en vez de rangos de puestos.
+3. **Hiperparámetros sin ayuda de la real.** Reajustarlos por patrón (o con un criterio ciego a
+   la asignación) para descartar que el sesgo a favor de la real o en su contra explique el puesto.
+4. **Variar el modelo.** Tasas no negativas con basal explícita, `ring_sign` distinto de +1,
+   neuronas del anillo y cuerpo en abanico; y la comparación con modelos de anillo ajustados a mano.
+5. **Verificar la bibliografía** del posicionamiento (varias referencias no se han leído en texto completo).
+
+Lista detallada y tareas ya hechas:
 
 - Buscar un régimen dinámico donde la asignación real integre con tasas no negativas
   (sigmoide, rectificada estable o desviaciones con nivel basal explícito) y solo
@@ -709,13 +743,13 @@ Se retira la advertencia anterior; la cita es correcta y debe usarse en el posic
   referencia de ganancia ≈1.0 da pérdida ≈0), pero el descenso de gradiente con esta
   receta de hiperparámetros dinámicos (heredada de la tarea vieja, sin volver a
   ajustar) no la encuentra con ninguno de los tres programas de entrenamiento
-  probados. **El rediseño de tarea queda como una limitación abierta, no como un
+  probados. **En ese momento el rediseño de tarea era una limitación abierta, no un
   resultado**: cierra el hueco teórico que motivó el cambio, pero no se pudo usar para
   repetir ningún análisis de este informe (cuaderno, 2026-09-28 (6), 2026-09-29 y
   2026-09-29 (2)). Pendiente, sin intentar: una búsqueda de régimen (sin entrenar,
   como la de la sección 6) específica para esta tarea, u otra tasa de aprendizaje /
-  inicialización. La re-enumeración completa de los 64 patrones sobre la tarea nueva
-  sigue sin poder hacerse (≈192 corridas, y antes hace falta una receta que converja).
+  inicialización. (Superado el 2026-09-29: la tarea OU corregida de abajo sí converge y permitió
+  repetir la enumeración completa de los 64 patrones.)
   No se implementaron los "barridos de velocidad constante" como parte de la tarea de
   entrenamiento — `bump_check.py` ya los usa como diagnóstico aparte (sección 6).
 - **Tarea OU corregida (3ª revisión, 2026-09-29; `launch_taskv3.sh`, `task_v3_reference.py`,
@@ -750,6 +784,13 @@ PEN_b de la tarea antigua (20/32 vs 6/32) desaparece. Concordancia con el veredi
 (con la semilla 0 sola eran 41/64 y puesto 37, así que las cifras se mueven); el umbral de pérdida es
 laxo (los barajados por neurona dieron 0.35-0.46) y discrimina la pendiente; descriptivos por tipo sin
 test; hiperparámetros elegidos con la real y signo por tipo de origen, como en la sección 6.
+  **Análisis exploratorios posteriores a ver los resultados** (`results/types_analysis_v3.json`,
+  bloque `exploratory_post_hoc`): (i) el puesto de la real es 37, 36 y 37 por semilla individual
+  (30 por la media de las 3); (ii) el recuento depende de la pendiente exigida: 37 patrones con
+  > 0.5 o > 0.7, 32 con > 0.8, 20 con > 0.9, y con > 0.8 la real no integra en ninguna semilla; (iii)
+  condicionado a Delta7 inhibidor (32 patrones), 30 integran y la real es el puesto 28 de 32 por
+  pérdida; con Delta7 excitador integran 7 de 32 y el mejor alcanza 0.058, así que Delta7
+  inhibidor no es necesario para integrar bien.
 - **Trabajo futuro (pendiente):** explicar mecanísticamente por qué la recurrencia PEN↔PEN del NO es necesaria; reajustar hiperparámetros por grafo.
 - Atacar la aprendibilidad (currículo sobre T, otro inicio, tasas de aprendizaje
   por grupo de parámetros, más épocas).

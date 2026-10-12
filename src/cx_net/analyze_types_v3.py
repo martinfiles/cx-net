@@ -12,6 +12,10 @@ held-out < «recordar theta0» en esta tarea (`results/task_v3_reference.json`) 
 pendiente > 0.5; por patrón, voto de mayoría entre semillas. Solo se usan las
 semillas que estén completas para los 64 patrones.
 
+Además (exploratorio, POSTERIOR a ver los resultados; no forma parte del criterio fijado antes):
+puesto de la real por semilla, sensibilidad del recuento a los umbrales de «integra» y puesto de
+la real condicionado a Delta7 inhibidor (bit 0 de la máscara).
+
 Salida: results/types_analysis_v3.json
 """
 import json
@@ -56,6 +60,33 @@ def load_pattern(mask, seeds, memory):
     }
 
 
+def exploratory(res, seeds, memory):
+    """Análisis post hoc: robustez del veredicto a la semilla y a los umbrales."""
+    real = res[1]
+    per_seed = {}
+    for s in seeds:
+        loss = {x["mask"]: next(r for r in x["runs"] if r["seed"] == s)["increment_loss"] for x in res}
+        order = sorted(loss, key=loss.get)
+        per_seed[s] = {"real_rank": order.index(1) + 1,
+                       "n_integra": sum(next(r for r in x["runs"] if r["seed"] == s)["integra"] for x in res)}
+    sens = []
+    for loss_thr in (memory, 0.3, 0.2):
+        for slope_thr in (0.5, 0.7, 0.8, 0.9):
+            def ok(r):
+                return r["increment_loss"] < loss_thr and r["slope"] > slope_thr
+            sens.append({"loss_threshold": round(loss_thr, 3), "slope_threshold": slope_thr,
+                         "n_integra_majority": sum(2 * sum(ok(r) for r in x["runs"]) > len(seeds) for x in res),
+                         "real_seeds_ok": sum(ok(r) for r in real["runs"])})
+    d7_inh = sorted((x for x in res if x["mask"] & 1), key=lambda x: x["mean_increment_loss"])
+    d7_exc = [x for x in res if not x["mask"] & 1]
+    cond = {"n_d7_inhibitory": len(d7_inh),
+            "n_integra_d7_inhibitory": sum(x["integra_majority"] for x in d7_inh),
+            "real_rank_within_d7_inhibitory": next(i for i, x in enumerate(d7_inh, 1) if x["mask"] == 1),
+            "n_integra_d7_excitatory": sum(x["integra_majority"] for x in d7_exc),
+            "best_loss_d7_excitatory": min(x["mean_increment_loss"] for x in d7_exc)}
+    return {"per_seed": per_seed, "threshold_sensitivity": sens, "conditional_on_delta7": cond}
+
+
 def main():
     ref = json.load(open(os.path.join(RESULTS_DIR, "task_v3_reference.json")))
     memory = ref["ou_nueva"]["memorize_theta0"]["increment"]
@@ -96,8 +127,13 @@ def main():
           {t: (v["integra_exc"], v["integra_inh"]) for t, v in by_type.items()})
     print("concordancia con la tarea antigua:", table)
 
+    expl = exploratory(res, seeds, memory)
+    print("exploratorio (post hoc): puesto de la real por semilla:",
+          {k: v["real_rank"] for k, v in expl["per_seed"].items()},
+          "| condicionado a Delta7 inhibidor:", expl["conditional_on_delta7"])
+
     out = {"seeds": seeds, "memory_threshold": memory, "real_rank": rank, "n_integra_majority": n_maj,
-           "n_integra_all": n_all, "by_type": by_type, "agreement_with_old_task": table, "patterns": res}
+           "n_integra_all": n_all, "by_type": by_type, "agreement_with_old_task": table, "exploratory_post_hoc": expl, "patterns": res}
     json.dump(out, open(os.path.join(RESULTS_DIR, "types_analysis_v3.json"), "w"), indent=1)
 
 

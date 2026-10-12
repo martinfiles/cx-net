@@ -46,6 +46,103 @@
   "solo_nueva": 14,
   "ninguna": 22
  },
+ "exploratory_post_hoc": {
+  "per_seed": {
+   "0": {
+    "real_rank": 37,
+    "n_integra": 41
+   },
+   "1": {
+    "real_rank": 36,
+    "n_integra": 38
+   },
+   "2": {
+    "real_rank": 37,
+    "n_integra": 40
+   }
+  },
+  "threshold_sensitivity": [
+   {
+    "loss_threshold": 0.538,
+    "slope_threshold": 0.5,
+    "n_integra_majority": 37,
+    "real_seeds_ok": 3
+   },
+   {
+    "loss_threshold": 0.538,
+    "slope_threshold": 0.7,
+    "n_integra_majority": 37,
+    "real_seeds_ok": 3
+   },
+   {
+    "loss_threshold": 0.538,
+    "slope_threshold": 0.8,
+    "n_integra_majority": 32,
+    "real_seeds_ok": 0
+   },
+   {
+    "loss_threshold": 0.538,
+    "slope_threshold": 0.9,
+    "n_integra_majority": 20,
+    "real_seeds_ok": 0
+   },
+   {
+    "loss_threshold": 0.3,
+    "slope_threshold": 0.5,
+    "n_integra_majority": 37,
+    "real_seeds_ok": 3
+   },
+   {
+    "loss_threshold": 0.3,
+    "slope_threshold": 0.7,
+    "n_integra_majority": 37,
+    "real_seeds_ok": 3
+   },
+   {
+    "loss_threshold": 0.3,
+    "slope_threshold": 0.8,
+    "n_integra_majority": 32,
+    "real_seeds_ok": 0
+   },
+   {
+    "loss_threshold": 0.3,
+    "slope_threshold": 0.9,
+    "n_integra_majority": 20,
+    "real_seeds_ok": 0
+   },
+   {
+    "loss_threshold": 0.2,
+    "slope_threshold": 0.5,
+    "n_integra_majority": 37,
+    "real_seeds_ok": 3
+   },
+   {
+    "loss_threshold": 0.2,
+    "slope_threshold": 0.7,
+    "n_integra_majority": 37,
+    "real_seeds_ok": 3
+   },
+   {
+    "loss_threshold": 0.2,
+    "slope_threshold": 0.8,
+    "n_integra_majority": 32,
+    "real_seeds_ok": 0
+   },
+   {
+    "loss_threshold": 0.2,
+    "slope_threshold": 0.9,
+    "n_integra_majority": 20,
+    "real_seeds_ok": 0
+   }
+  ],
+  "conditional_on_delta7": {
+   "n_d7_inhibitory": 32,
+   "n_integra_d7_inhibitory": 30,
+   "real_rank_within_d7_inhibitory": 28,
+   "n_integra_d7_excitatory": 7,
+   "best_loss_d7_excitatory": 0.057962517254054546
+  }
+ },
  "patterns": [
   {
    "mask": 0,

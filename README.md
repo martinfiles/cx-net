@@ -8,8 +8,8 @@ Si se entrena una red neuronal cuya única restricción es la topología sinápt
 
 ## Estado
 
-Fase experimental cerrada (2026-09-20); redactando el preprint como informe
-metodológico y negativo.
+Experimentos cerrados el 2026-10-12; informe metodológico y negativo en redacción
+(exploratorio, sin revisión por pares).
 
 Resultado principal: **no hay evidencia de que un aprendiz de signos recupere el
 neurotransmisor real, y el diseño no permitía encontrarla.** Hallazgos: (1) la
@@ -40,21 +40,27 @@ patrones de signo: [`docs/explorer.html`](docs/explorer.html) (abrir localmente 
 ![Ningún signo por tipo basta](docs/figures/fig4.png)
 ![La solución con la química real mantiene Delta7 por debajo de la basal](docs/figures/fig5.png)
 ![Las redes que integran mueven un bump ancho, con ganancia sigmoidal](docs/figures/fig6.png)
+![Tarea corregida: 37 de 64 integran; la real, puesto 30](docs/figures/fig7.png)
+
+Las figuras 3 y 4 corresponden a la primera tarea anclada (28 de 64, puesto 14); la figura 7, a la tarea
+OU corregida (3ª revisión). Las dos llevan a la misma conclusión.
 
 ## Datos
 
 - Conectividad del subcircuito CX (PB, EB, FB, NO) vía [neuprint-python](https://github.com/connectome-neuprint/neuprint-python), tanto para el piloto en hemibrain como para `male-cns:v1.0` (ambos expuestos por neuprint.janelia.org).
 - Neurotransmisor real anotado por síntesis (Eckstein et al., 2024) — reservado como *ground truth* oculto, nunca visto durante el entrenamiento.
 
-## Roadmap
+## Fases
 
-| Fase | Descripción | Semanas |
+| Fase | Descripción | Estado |
 |---|---|---|
-| 1 | Extracción del grafo (sin signo) | 1–3 |
-| 2 | Modelo de signo libre (PyTorch + PyTorch Geometric) | 3–6 |
-| 3 | Controles estadísticos (modelo nulo, preserva grado) | 6–8 |
-| 4 | Evaluación y desglose por neuropilo/tipo celular | 8–10 |
-| 5 | Redacción y difusión (preprint + LinkedIn) | 10–12 |
+| 1 | Extracción del grafo (sin signo) | hecha |
+| 2 | Modelo de signo libre (PyTorch) | hecha |
+| 3 | Controles (nula, referencia trivial, 64 patrones por tipo) | hecha |
+| 4 | Evaluación y desglose por neuropilo/tipo celular | hecha |
+| 5 | Redacción y difusión (informe, web, LinkedIn) | en curso |
+
+Pendiente principal: repetir el aprendiz de signos libres sobre la tarea corregida (sección 11 del informe).
 
 ## Setup
 
@@ -93,6 +99,10 @@ llamando a `train()` con distintos argumentos; ver el cuaderno para las
 configuraciones exactas. **Entrenar siempre con el intérprete del `.venv`**: con
 torch 2.4.1 (Python del sistema) el gradiente de `atan2(0,0)` es `nan`.
 
+Los lanzadores de las corridas (`launch_*.sh`) están en [`scripts/`](scripts/) (se ejecutan desde cualquier
+directorio; escriben en `data/interim/`, fuera del repositorio). La enumeración sobre la tarea corregida es
+`scripts/launch_types_v3.sh` (189 corridas, reanudable; 14 procesos en paralelo, 1 hilo cada uno).
+
 Registro de decisiones y resultados: [`docs/lab-notebook.md`](docs/lab-notebook.md).
 
 ## Reproducibilidad
@@ -109,9 +119,12 @@ Registro de decisiones y resultados: [`docs/lab-notebook.md`](docs/lab-notebook.
   src.cx_net.collect_results` reconstruye `runs_summary.csv` y los JSON/CSV pequeños
   desde `data/interim/`; `python -m src.cx_net.analyze_types_3seeds` reconstruye
   `types_analysis_3seeds.json` y `types_explorer_3seeds.json` (la cifra principal,
-  28/64 y puesto 14, sección 6) a partir de las mismas corridas. Ninguno de los dos
+  28/64 y puesto 14, sección 6) a partir de las mismas corridas; `python -m
+  src.cx_net.analyze_types_v3` hace lo propio para la tarea corregida (37/64 y puesto 30,
+  sección 11, con un bloque exploratorio posterior de robustez). Ninguno de los dos
   requiere reentrenar: leen los `results_*.json` ya guardados en `data/interim/`.
-- **Entorno.** Fija tu versión de PyTorch: con `torch` 2.4.1 el gradiente de `atan2(0,0)`
+- **Entorno.** Versiones usadas: Python 3.11.9, torch 2.14.0, numpy 2.4.6, pandas 2.3.3,
+  matplotlib 3.11.2, neuprint-python 0.6.3 (ver `requirements.txt`). Fija tu versión de PyTorch: con `torch` 2.4.1 el gradiente de `atan2(0,0)`
   era `nan` (corregido en `task.decode_heading`; el entrenamiento por defecto reproduce
   exactamente `epoch 0/25` de `signreg05_seed0` en `torch` 2.4.1 y 2.14).
 - **Coste.** Cada entrenamiento de 600 épocas tarda ≈40-50 min en CPU con ~20 en
