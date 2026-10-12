@@ -1,6 +1,6 @@
 # Post de LinkedIn — borrador
 
-**Antes de publicar:** haz `git push` del repositorio (hay commits locales sin subir; ya apunta a github.com/martinfiles/cx-net), comprueba
+**Antes de publicar:** el repositorio ya está subido (github.com/martinfiles/cx-net) y la página del proyecto está en https://web-nine-beryl-72.vercel.app/cx-net (puedes poner ese enlace en el primer comentario); comprueba
 que el enlace funciona, y elige UNA imagen (recomendada: `docs/figures/fig3.png` o `fig6.png`; versión
 inglesa en `docs/figures/en/`). Idealmente, publica el preprint/Zenodo antes y enlaza ese DOI.
 
