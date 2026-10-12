@@ -51,7 +51,8 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
           velocity_process: str = "white", tau_v: float = 15.0, state_noise_std: float = 0.0,
           checkpoint_selection: str = "best_batch", curriculum_epochs: int = 0,
           curriculum_T_start: int | None = None, curriculum_tau_v_start: float | None = None,
-          loss_type: str = "circular") -> dict:
+          loss_type: str = "circular", type_sign_learner: bool = False,
+          type_sign_init: str = "neutral") -> dict:
     """
     ema_alpha / patience: el primer intento uso ReduceLROnPlateau directamente
     sobre la pérdida cruda de cada época, que es muy ruidosa (cada época usa
@@ -129,6 +130,10 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
     que ya se usaba para el scheduler de tasa de aprendizaje, no una métrica
     nueva), mucho menos ruidosa que un solo lote.
     """
+    if type_sign_learner and (not type_params or real_sign_control):
+        raise ValueError("type_sign_learner requiere type_params y no es compatible con real_sign_control")
+    if type_sign_init not in ("neutral", "random_binary", "real"):
+        raise ValueError(f"type_sign_init desconocido: {type_sign_init}")
     if curriculum_epochs > 0 and (curriculum_T_start is None or curriculum_tau_v_start is None):
         raise ValueError("curriculum_epochs > 0 requiere curriculum_T_start y curriculum_tau_v_start")
     torch.manual_seed(seed)
@@ -137,9 +142,21 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
 
     type_ids = torch.as_tensor(pd.factorize(nodes["type"])[0]) if type_params else None
     type_names = list(pd.factorize(nodes["type"])[1]) if type_params else None
+    type_sign_init_values = None
+    if type_sign_learner:
+        # columnas = pd.factorize(nodes["type"]); `type_names` da el nombre de cada una
+        gen = torch.Generator().manual_seed(10_000 + seed)
+        n_t = len(type_names)
+        if type_sign_init == "random_binary":
+            type_sign_init_values = torch.randint(0, 2, (n_t,), generator=gen).float() * 2 - 1
+        elif type_sign_init == "real":
+            type_sign_init_values = torch.tensor([-1.0 if t == "Delta7" else 1.0 for t in type_names])
+        else:
+            type_sign_init_values = torch.randn(n_t, generator=gen) * 0.1
     model = CXRingNetwork(graph["n_nodes"], graph["edge_index"], graph["synapse_weight"],
                            tau=tau, recurrent_gain=recurrent_gain, activation=activation,
-                           type_ids=type_ids, learn_type_params=type_params, learn_edge_gain=edge_gain)
+                           type_ids=type_ids, learn_type_params=type_params, learn_edge_gain=edge_gain,
+                           learn_type_sign=type_sign_learner, type_sign_init=type_sign_init_values)
     if real_sign_control:
         if not type_params:
             raise ValueError("real_sign_control sin type_params no entrena nada")
@@ -167,7 +184,7 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
             model.sign_param.copy_(torch.as_tensor(real_edge_sign, dtype=torch.float32) * 10.0)
         model.sign_param.requires_grad_(False)
         sign_reg = 0.0
-    trainable = ([] if real_sign_control else [model.sign_param]) + model.type_parameters()
+    trainable = ([] if (real_sign_control or type_sign_learner) else [model.sign_param]) + model.type_parameters()
     if edge_gain and edge_gain_lr is not None:
         # tasa de aprendizaje propia (menor) para las 9.160 ganancias por arista: con la misma tasa
         # que el resto la primera ronda destruyó la solución por tipo (entrada 2026-09-21)
@@ -264,7 +281,43 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
     torch.save(model.state_dict(), os.path.join(INTERIM_DIR, f"model_{label}.pt"))
 
     with torch.no_grad():
-        soft_sign = torch.tanh(model.sign_param)
+        soft_sign = torch.tanh(model.edge_sign_param())
+
+    learned_extra = {}
+    if type_params and not real_sign_control and anchor:
+        # Experimento del aprendiz de signos (2026-10-12): patron aprendido, acuerdo con el neurotransmisor
+        # anotado y evaluacion con los signos BINARIZADOS (+-1 duro), para no depender de magnitudes
+        # intermedias de tanh.
+        gt_nodes = attach_ground_truth(nodes, DATA_DIR)
+        real_node_sign = gt_nodes["expected_sign"].to_numpy()
+        src_np = graph["edge_index"][0].numpy()
+        learned_edge = signs.astype(float)
+        learned_edge[learned_edge == 0] = 1.0
+        learned_extra["agreement_with_real_edge_sign"] = float((learned_edge == real_node_sign[src_np]).mean())
+        node_types = np.array(list(nodes["type"]))
+        per_type = {}
+        for tname in sorted(set(node_types)):
+            sel = (node_types == tname)[src_np]
+            per_type[tname] = float((learned_edge[sel] < 0).mean()) if sel.any() else None
+        learned_extra["frac_inhibitory_by_source_type"] = per_type
+        if type_sign_learner:
+            mask = 0
+            for tname, frac in per_type.items():
+                if tname in TYPE_ORDER and frac is not None and frac > 0.5:
+                    mask |= 1 << TYPE_ORDER.index(tname)
+            learned_extra["type_sign_mask"] = mask
+            learned_extra["type_sign_param"] = model.type_sign_param.detach().tolist()
+        binar = CXRingNetwork(graph["n_nodes"], graph["edge_index"], graph["synapse_weight"],
+                              tau=tau, recurrent_gain=recurrent_gain, activation=activation,
+                              type_ids=type_ids, learn_type_params=type_params, learn_edge_gain=edge_gain)
+        binar.load_state_dict({k: v for k, v in model.state_dict().items() if k != "type_sign_param"}, strict=True)
+        with torch.no_grad():
+            binar.sign_param.copy_(torch.as_tensor(learned_edge, dtype=torch.float32) * 10.0)
+        bin_held = evaluate_on_trials(binar, nodes, held_out_trials, in_gain=in_gain, cue_gain=cue_gain,
+                                      state_noise_std=state_noise_std)
+        bin_diag = integration_diagnostics(binar, nodes, held_out_trials, in_gain=in_gain, cue_gain=cue_gain,
+                                           state_noise_std=state_noise_std)
+        learned_extra["binarized"] = {"held_out_loss": bin_held, "diagnostics": bin_diag}
 
     results = {
         "run_label": label,
@@ -316,6 +369,9 @@ def train(n_epochs: int = 300, T: int = 200, lr: float = 0.02, seed: int = 0,
         "frac_excitatory_learned": float((signs > 0).mean()),
         "mean_abs_sign": soft_sign.abs().mean().item(),
         "frac_polarized_gt_0.9": (soft_sign.abs() > 0.9).float().mean().item(),
+        "type_sign_learner": type_sign_learner,
+        "type_sign_init": type_sign_init if type_sign_learner else None,
+        "learned_sign_analysis": learned_extra or None,
     }
     with open(os.path.join(INTERIM_DIR, f"results_{label}.json"), "w") as f:
         json.dump({"results": results, "loss_history": loss_history}, f, indent=2)

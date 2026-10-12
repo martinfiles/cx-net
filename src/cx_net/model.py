@@ -18,7 +18,8 @@ class CXRingNetwork(nn.Module):
     def __init__(self, n_nodes: int, edge_index: torch.Tensor, synapse_weight: torch.Tensor,
                  tau: float = 5.0, dt: float = 1.0, recurrent_gain: float = 4.0,
                  activation: str = "tanh", type_ids: torch.Tensor | None = None,
-                 learn_type_params: bool = False, learn_edge_gain: bool = False):
+                 learn_type_params: bool = False, learn_edge_gain: bool = False,
+                 learn_type_sign: bool = False, type_sign_init: torch.Tensor | None = None):
         """`activation="tanh"` (defecto, reproduce todo lo anterior): tasas en
         (-1, 1); una neurona inhibidora con tasa negativa excitaría a sus
         dianas, lo que no es fisiológico. `activation="rectified"`:
@@ -86,12 +87,32 @@ class CXRingNetwork(nn.Module):
         if learn_edge_gain:
             self.log_edge_gain = nn.Parameter(torch.zeros(edge_index.shape[1]))
 
+        # `learn_type_sign=True` (2026-10-12, experimento del aprendiz de signos por tipo): el signo
+        # deja de ser libre por arista y pasa a ser UNO por tipo de neurona de origen (6 parametros,
+        # `tanh(type_sign_param)`), la misma parametrizacion que la enumeracion de 64 patrones pero
+        # aprendida en vez de fijada. `sign_param` queda sin uso (y sin gradiente). Con el defecto
+        # (False) el modelo y sus state_dict no cambian.
+        self.learn_type_sign = learn_type_sign
+        if learn_type_sign:
+            if not learn_type_params:
+                raise ValueError("learn_type_sign requiere learn_type_params (usa type_ids)")
+            init = type_sign_init if type_sign_init is not None else torch.randn(self.n_types) * 0.1
+            self.type_sign_param = nn.Parameter(init.clone().float())
+            self.sign_param.requires_grad_(False)
+
     def type_parameters(self) -> list:
         params = [self.log_pair_gain, self.type_bias, self.log_input_scale] if self.learn_type_params else []
-        return params + ([self.log_edge_gain] if self.learn_edge_gain else [])
+        params = params + ([self.log_edge_gain] if self.learn_edge_gain else [])
+        return params + ([self.type_sign_param] if self.learn_type_sign else [])
+
+    def edge_sign_param(self) -> torch.Tensor:
+        """Parametro de signo efectivo por arista (el de su tipo de origen si `learn_type_sign`)."""
+        if self.learn_type_sign:
+            return self.type_sign_param[self.type_ids[self.edge_src]]
+        return self.sign_param
 
     def effective_weight(self) -> torch.Tensor:
-        w = torch.tanh(self.sign_param) * self.synapse_weight * self.recurrent_gain
+        w = torch.tanh(self.edge_sign_param()) * self.synapse_weight * self.recurrent_gain
         if self.learn_type_params:
             w = w * torch.exp(torch.clamp(self.log_pair_gain, -5.0, 5.0))[self.edge_pair]
         if self.learn_edge_gain:
@@ -143,7 +164,7 @@ class CXRingNetwork(nn.Module):
     def learned_signs(self) -> torch.Tensor:
         """+1 / -1 por arista, para comparar más adelante con el neurotransmisor real."""
         with torch.no_grad():
-            return torch.sign(self.sign_param)
+            return torch.sign(self.edge_sign_param())
 
     def sign_confidence_penalty(self) -> torch.Tensor:
         """Término de regularización directa sobre el signo (no depende de la
@@ -152,4 +173,4 @@ class CXRingNetwork(nn.Module):
         tanh -- empuja cada arista hacia un signo confiado sin preferir cuál
         de los dos, así que la dirección la sigue decidiendo el gradiente de
         tarea; esto solo penaliza quedarse indeciso cerca de cero."""
-        return (1 - torch.tanh(self.sign_param) ** 2).mean()
+        return (1 - torch.tanh(self.edge_sign_param()) ** 2).mean()

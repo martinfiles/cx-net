@@ -2215,6 +2215,47 @@ libres (por arista y por 6 signos por tipo) sobre la tarea corregida: es lo que 
 pregunta original; (2) 5-10 semillas y nula explícita; (3) hiperparámetros sin ayuda de la real;
 (4) variar el modelo; (5) verificar la bibliografía del posicionamiento.
 
+## 2026-10-12 (3) — Aprendiz de signos sobre la tarea corregida (DISEÑO Y CRITERIO, fijados antes de ver resultados)
+
+**Qué se hace:** el experimento 1 del trabajo futuro: ¿recupera un aprendiz de signos la química real cuando la tarea sí
+converge? Receta idéntica a `launch_types_v3.sh` (800 épocas, `T=500`, `tau_v=50`, `max_av=0.04`, `state_noise_std=0.02`,
+`loss_type='increment'`, `checkpoint_selection='ema'`, `sign_reg=0`, ganancias/sesgos por tipo entrenables); solo cambia
+quién decide el signo. Código: `type_sign_learner` / `type_sign_init` en `train.py` y `model.py` (6 parámetros
+`tanh(type_sign_param)`, uno por tipo de origen, la misma parametrización que la enumeración de 64 patrones);
+`scripts/launch_signlearner.sh`; análisis en `src/cx_net/analyze_sign_learner.py` -> `results/sign_learner_v3.json`.
+Comprobado: con el defecto, `loss_first` de una corrida de la enumeración se reproduce exactamente.
+
+**Brazos (32 corridas, sin exclusiones):**
+- **A (primario):** 6 signos por tipo, inicio neutro N(0, 0.1), semillas 0-9.
+- **B (primario):** 6 signos por tipo, inicio binario ±1 aleatorio (un inicio distinto por semilla), semillas 0-9.
+- **C (descriptivo):** un signo por arista (9.160), inicio neutro, semillas 0-5.
+- **D (control de estabilidad):** 6 signos por tipo, inicio en la asignación real, semillas 0-5.
+
+**Medidas por corrida:** patrón aprendido = tipos cuyo signo final es negativo (máscara con los mismos bits que la
+enumeración); «integra» = pérdida incremental held-out < 0.538 y pendiente > 0.5, evaluado con el modelo continuo Y con los
+signos binarizados a ±1; acuerdo entre el signo aprendido por arista y el neurotransmisor anotado.
+
+**Criterio de lectura (fijado antes), sobre los brazos A y B por separado:**
+1. **La química real es recuperada:** el patrón aprendido es la máscara 1 (solo Delta7 inhibe) en ≥ 8 de 10 semillas y
+   esas corridas integran. Referencia de azar: 1/37 (elegir al azar entre los 37 patrones que integran en la enumeración);
+   se informa la cola binomial P(X ≥ k).
+2. **El signo no es identificable con esta tarea:** ≥ 7 de 10 corridas integran, pero la máscara 1 aparece en ≤ 2 de 10
+   y hay varias máscaras distintas. Se informa además cuántas tienen Delta7 inhibidor y cuántas son patrones que integran
+   en la enumeración.
+3. **Fallo de optimización (no informativo sobre identificabilidad):** < 5 de 10 corridas integran. Se declara como
+   límite del aprendiz, no como resultado sobre la química.
+4. Cualquier otro resultado se describe sin etiqueta, con las cifras.
+- **D:** fracción de semillas que terminan en la máscara 1 y siguen integrando (¿es la real un atractor estable?).
+- **C:** solo descriptivo (acuerdo con el signo real, fracción inhibidora por tipo de origen); sin umbrales.
+- Una corrida que falle por error técnico se repite con la misma semilla; las que no convergen cuentan como «no integra».
+
+**Riesgos declarados:** hiperparámetros dinámicos elegidos con la real; la parametrización `tanh` con inicio cercano a
+cero puede dar mesetas (el resultado más probable es el caso 3 o 4); un solo `ring_sign` (+1); 10 semillas.
+
+**Siguiente paso:** lanzar (`bash scripts/launch_signlearner.sh`, 16 procesos en paralelo, 1 hilo cada uno; solo CPU:
+el PyTorch instalado es CPU y la carga son 500 pasos secuenciales sobre 152 neuronas, que no se beneficia de GPU) y
+analizar con `analyze_sign_learner.py`.
+
 ## Plantilla para próximas entradas
 
 ```
