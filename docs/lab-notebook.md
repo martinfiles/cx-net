@@ -2289,6 +2289,14 @@ Datos: `results/sign_learner_v3.json` (`analyze_sign_learner.py`). Aplicado el c
 
 **Siguiente paso:** actualizar informe, resumen, README, web y post; las prioridades 2-5 del trabajo futuro siguen igual.
 
+## 2026-10-12 (5) — Cierre del estudio
+
+**Decisión:** se da por concluido el estudio como informe metodológico y negativo. No se lanza el experimento con una tarea que
+discrimine químicas (prioridad 3-4 del trabajo futuro): requiere diseñar una tarea nueva, con resultado incierto, y el
+hallazgo central (la tarea no selecciona la química; el aprendiz no la prefiere) ya está acotado y documentado.
+**Pendiente solo si se retoma o se quiere publicar:** verificar la bibliografía (referencias no leídas en texto completo),
+más réplicas con nula explícita y hiperparámetros ciegos a la real. Post de LinkedIn actualizado con el 0/20.
+
 ## Plantilla para próximas entradas
 
 ```

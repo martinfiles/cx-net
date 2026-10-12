@@ -8,7 +8,7 @@ Si se entrena una red neuronal cuya única restricción es la topología sinápt
 
 ## Estado
 
-Experimentos cerrados el 2026-10-12; informe metodológico y negativo en redacción
+Estudio concluido el 2026-10-12 como informe metodológico y negativo
 (exploratorio, sin revisión por pares).
 
 Resultado principal: **no hay evidencia de que un aprendiz de signos recupere el

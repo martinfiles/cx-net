@@ -17,6 +17,7 @@ Respuesta corta: **no.** Respuesta útil: por qué.
 🔹 Mi primera tarea era tan fácil que un decodificador sin cerebro ganaba a todos los modelos entrenados.
 🔹 Cuando la arreglé, aparece una solución que sí se orienta... pero no es especial: probé las 64 combinaciones posibles de "quién excita y quién inhibe" por tipo de neurona y 37 también consiguen orientarse (varias, mejor que la real). La real queda en el puesto 30 de 64: una más entre muchas.
 🔹 Lo repetí con una versión corregida de la tarea (y 189 entrenamientos) y la conclusión aguantó. Eso es lo que quiero que se vea: lo comprobé contra mí mismo.
+🔹 Y el experimento que faltaba: dejé que la red eligiera sola quién excita y quién inhibe. De 20 intentos, ninguno dio con la asignación real; y al empezar justo en ella, se alejó. La tarea simplemente no distingue una química de otra. Lo que no demuestra: que ningún método pueda lograrlo.
 🔹 Hubo hallazgos que tuve que retractar tras tres rondas de revisión externa. Están todos documentados.
 
 Por qué importa fuera de la neurociencia: si usas IA para "descubrir" estructura en un sistema (biología, finanzas, ingeniería), un buen control nulo te dice más que un resultado bonito. Aquí el control nulo fue probar todas las alternativas.
@@ -42,6 +43,7 @@ Short answer: **no.** Useful answer: why.
 🔹 My first task was so easy that a brainless constant decoder beat every trained model.
 🔹 Once fixed, a solution that does track heading appears... but it isn't special: I tried all 64 combinations of "which cell type excites, which inhibits", and 37 also manage to track heading (several better than the real one). The real assignment ranks 30th of 64: one among many.
 🔹 I repeated it on a corrected version of the task (189 training runs) and the conclusion held. That's the point: I checked it against myself.
+🔹 And the missing experiment: I let the network choose by itself who excites and who inhibits. Out of 20 attempts, none found the real assignment, and when I started it exactly there, it drifted away. The task simply doesn't tell one chemistry from another. What it doesn't show: that no method could do it.
 🔹 Some findings had to be retracted after three rounds of external review. All documented.
 
 Why it matters beyond neuroscience: if you use AI to "discover" structure in a system (biology, finance, engineering), a good null control tells you more than a pretty result. Here the null control was trying every alternative.
