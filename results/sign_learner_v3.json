@@ -1,0 +1,925 @@
+{
+ "memory_threshold": 0.5378509745001793,
+ "chance_real": 0.02702702702702703,
+ "arms": {
+  "A": {
+   "description": "6 signos por tipo, inicio neutro",
+   "n_runs": 10,
+   "n_integra": 7,
+   "n_bin_integra": 3,
+   "mean_agreement_with_real_edge_sign": 0.6763100436681223,
+   "runs": [
+    {
+     "arm": "A",
+     "seed": 0,
+     "increment_loss": 0.09341861326247454,
+     "slope": 0.8104813239885711,
+     "integra": true,
+     "bin_increment_loss": 0.29816439412534235,
+     "bin_slope": 0.38598527503065194,
+     "bin_integra": false,
+     "agreement_with_real_edge_sign": 0.5111353711790393,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 0.0,
+      "EPG": 0.0,
+      "EPGt": 0.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 1.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 24,
+     "type_sign_param": [
+      0.6145108342170715,
+      0.8126341700553894,
+      -1.9757273197174072,
+      1.822371006011963,
+      -1.3025195598602295,
+      1.8255311250686646
+     ]
+    },
+    {
+     "arm": "A",
+     "seed": 1,
+     "increment_loss": 0.11116612876454988,
+     "slope": 0.937954509532757,
+     "integra": true,
+     "bin_increment_loss": 0.22017857208848,
+     "bin_slope": 0.5124978243456235,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.9355895196506551,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 1.0,
+      "EPG": 0.0,
+      "EPGt": 0.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 0.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 9,
+     "type_sign_param": [
+      -1.3690234422683716,
+      0.7619407773017883,
+      1.3302701711654663,
+      1.177651286125183,
+      -2.986466646194458,
+      1.352158784866333
+     ]
+    },
+    {
+     "arm": "A",
+     "seed": 2,
+     "increment_loss": 0.04154138751327992,
+     "slope": 0.9580786309730143,
+     "integra": true,
+     "bin_increment_loss": 0.047605501891424255,
+     "bin_slope": 0.9922319247980482,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.8968340611353712,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 1.0,
+      "EPG": 0.0,
+      "EPGt": 0.0,
+      "PEG": 0.0,
+      "PEN_a(PEN1)": 0.0,
+      "PEN_b(PEN2)": 1.0
+     },
+     "mask": 33,
+     "type_sign_param": [
+      -1.2732826471328735,
+      0.5470917224884033,
+      1.619637370109558,
+      -2.0301826000213623,
+      1.8998117446899414,
+      1.3367767333984375
+     ]
+    },
+    {
+     "arm": "A",
+     "seed": 3,
+     "increment_loss": 0.06686364272609353,
+     "slope": 0.9574702810735977,
+     "integra": true,
+     "bin_increment_loss": 0.505515768378973,
+     "bin_slope": -0.06499561730219855,
+     "bin_integra": false,
+     "agreement_with_real_edge_sign": 0.8052401746724891,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 1.0,
+      "EPG": 0.0,
+      "EPGt": 1.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 1.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 29,
+     "type_sign_param": [
+      -1.040952444076538,
+      0.3150373101234436,
+      -2.020037889480591,
+      2.625211238861084,
+      -1.3208245038986206,
+      -1.6842366456985474
+     ]
+    },
+    {
+     "arm": "A",
+     "seed": 4,
+     "increment_loss": 0.4252659298479557,
+     "slope": 0.20186695146269165,
+     "integra": false,
+     "bin_increment_loss": 0.5016825812558333,
+     "bin_slope": 0.09444540803043568,
+     "bin_integra": false,
+     "agreement_with_real_edge_sign": 0.8862445414847162,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 1.0,
+      "EPG": 0.0,
+      "EPGt": 0.0,
+      "PEG": 0.0,
+      "PEN_a(PEN1)": 1.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 17,
+     "type_sign_param": [
+      -1.0447620153427124,
+      0.9900014996528625,
+      -1.2460612058639526,
+      1.608716368675232,
+      2.0254712104797363,
+      2.4095680713653564
+     ]
+    },
+    {
+     "arm": "A",
+     "seed": 5,
+     "increment_loss": 0.4277766445030769,
+     "slope": 0.21971382061939576,
+     "integra": false,
+     "bin_increment_loss": 0.49366362020373344,
+     "bin_slope": 0.15493151507164202,
+     "bin_integra": false,
+     "agreement_with_real_edge_sign": 0.11975982532751092,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 0.0,
+      "EPG": 1.0,
+      "EPGt": 0.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 1.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 26,
+     "type_sign_param": [
+      1.0404762029647827,
+      -0.48835328221321106,
+      -1.6047242879867554,
+      2.4165289402008057,
+      -2.356414794921875,
+      2.6170270442962646
+     ]
+    },
+    {
+     "arm": "A",
+     "seed": 6,
+     "increment_loss": 0.13940778026978176,
+     "slope": 0.7494088219037942,
+     "integra": true,
+     "bin_increment_loss": 0.36712902039289474,
+     "bin_slope": 0.24579988855253185,
+     "bin_integra": false,
+     "agreement_with_real_edge_sign": 0.5111353711790393,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 0.0,
+      "EPG": 0.0,
+      "EPGt": 0.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 1.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 24,
+     "type_sign_param": [
+      0.546225905418396,
+      0.45983049273490906,
+      -2.1914923191070557,
+      2.023111581802368,
+      -1.397830843925476,
+      0.8806842565536499
+     ]
+    },
+    {
+     "arm": "A",
+     "seed": 7,
+     "increment_loss": 0.4478470047314962,
+     "slope": -0.00483987748804378,
+     "integra": false,
+     "bin_increment_loss": 0.45899973511695863,
+     "bin_slope": -0.03850382684176811,
+     "bin_integra": false,
+     "agreement_with_real_edge_sign": 0.6893013100436681,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 0.0,
+      "EPG": 0.0,
+      "EPGt": 0.0,
+      "PEG": 0.0,
+      "PEN_a(PEN1)": 0.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 0,
+     "type_sign_param": [
+      1.1542928218841553,
+      1.0701292753219604,
+      1.5673394203186035,
+      1.278557300567627,
+      0.9500283002853394,
+      1.4171836376190186
+     ]
+    },
+    {
+     "arm": "A",
+     "seed": 8,
+     "increment_loss": 0.03110405712698897,
+     "slope": 0.9642182029135171,
+     "integra": true,
+     "bin_increment_loss": 0.032723071457197266,
+     "bin_slope": 0.9488133124272017,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.4888646288209607,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 1.0,
+      "EPG": 1.0,
+      "EPGt": 1.0,
+      "PEG": 0.0,
+      "PEN_a(PEN1)": 0.0,
+      "PEN_b(PEN2)": 1.0
+     },
+     "mask": 39,
+     "type_sign_param": [
+      -1.9268985986709595,
+      -1.065471887588501,
+      1.449501633644104,
+      -1.6354317665100098,
+      1.6339021921157837,
+      -1.5017763376235962
+     ]
+    },
+    {
+     "arm": "A",
+     "seed": 9,
+     "increment_loss": 0.06061419220641255,
+     "slope": 0.8802176057318356,
+     "integra": true,
+     "bin_increment_loss": 0.2510705550511678,
+     "bin_slope": 0.38192361863664975,
+     "bin_integra": false,
+     "agreement_with_real_edge_sign": 0.9189956331877729,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 1.0,
+      "EPG": 0.0,
+      "EPGt": 1.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 0.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 13,
+     "type_sign_param": [
+      -1.4810651540756226,
+      0.7643963098526001,
+      1.4434541463851929,
+      1.2139852046966553,
+      -2.6475844383239746,
+      -1.1136175394058228
+     ]
+    }
+   ],
+   "mask_counts": {
+    "24 (PEG+PENa)": 2,
+    "9 (D7+PEG)": 1,
+    "33 (D7+PENb)": 1,
+    "29 (D7+EPGt+PEG+PENa)": 1,
+    "17 (D7+PENa)": 1,
+    "26 (EPG+PEG+PENa)": 1,
+    "0 (ninguno)": 1,
+    "39 (D7+EPG+EPGt+PENb)": 1,
+    "13 (D7+EPGt+PEG)": 1
+   },
+   "n_real_mask": 0,
+   "n_d7_inhibitory": 6,
+   "n_mask_integrates_in_enumeration": 7,
+   "p_real_at_least_k_under_chance": 1.0000000000000007,
+   "n_real_mask_and_bin_integra": 0
+  },
+  "B": {
+   "description": "6 signos por tipo, inicio binario aleatorio",
+   "n_runs": 10,
+   "n_integra": 6,
+   "n_bin_integra": 6,
+   "mean_agreement_with_real_edge_sign": 0.4609497816593886,
+   "runs": [
+    {
+     "arm": "B",
+     "seed": 0,
+     "increment_loss": 0.04235332887619734,
+     "slope": 0.9805570312485278,
+     "integra": true,
+     "bin_increment_loss": 0.04572864522536595,
+     "bin_slope": 0.955132830644407,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.8324235807860262,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 1.0,
+      "EPG": 0.0,
+      "EPGt": 0.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 0.0,
+      "PEN_b(PEN2)": 1.0
+     },
+     "mask": 41,
+     "type_sign_param": [
+      -2.484384775161743,
+      1.5650368928909302,
+      1.2191437482833862,
+      -2.1775577068328857,
+      -2.1789658069610596,
+      0.7050619125366211
+     ]
+    },
+    {
+     "arm": "B",
+     "seed": 1,
+     "increment_loss": 0.37582581912477814,
+     "slope": 0.2019043803290787,
+     "integra": false,
+     "bin_increment_loss": 0.4088559081157049,
+     "bin_slope": 0.20758064052153785,
+     "bin_integra": false,
+     "agreement_with_real_edge_sign": 0.40796943231441046,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 0.0,
+      "EPG": 0.0,
+      "EPGt": 0.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 1.0,
+      "PEN_b(PEN2)": 1.0
+     },
+     "mask": 56,
+     "type_sign_param": [
+      0.4282989799976349,
+      1.0929068326950073,
+      -2.331805467605591,
+      -2.678297519683838,
+      -3.0674033164978027,
+      2.729182481765747
+     ]
+    },
+    {
+     "arm": "B",
+     "seed": 2,
+     "increment_loss": 0.5123020226756732,
+     "slope": 0.04304893155958786,
+     "integra": false,
+     "bin_increment_loss": 0.5507693509260814,
+     "bin_slope": 0.033365720184188125,
+     "bin_integra": false,
+     "agreement_with_real_edge_sign": 0.608296943231441,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 0.0,
+      "EPG": 0.0,
+      "EPGt": 1.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 0.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 12,
+     "type_sign_param": [
+      0.9322106242179871,
+      1.1265699863433838,
+      0.344797283411026,
+      1.590960144996643,
+      -1.4453673362731934,
+      -1.8425381183624268
+     ]
+    },
+    {
+     "arm": "B",
+     "seed": 3,
+     "increment_loss": 0.06247836497301857,
+     "slope": 0.8790656204906878,
+     "integra": true,
+     "bin_increment_loss": 0.07688608188182115,
+     "bin_slope": 0.8380479489878099,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.5051310043668122,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 0.0,
+      "EPG": 0.0,
+      "EPGt": 1.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 0.0,
+      "PEN_b(PEN2)": 1.0
+     },
+     "mask": 44,
+     "type_sign_param": [
+      1.3352876901626587,
+      1.2756155729293823,
+      2.1089513301849365,
+      -2.9048428535461426,
+      -3.7544212341308594,
+      -2.210916042327881
+     ]
+    },
+    {
+     "arm": "B",
+     "seed": 4,
+     "increment_loss": 0.04402264971286059,
+     "slope": 0.9644006971140335,
+     "integra": true,
+     "bin_increment_loss": 0.04940569465979934,
+     "bin_slope": 0.8941860844968218,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.10316593886462883,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 0.0,
+      "EPG": 1.0,
+      "EPGt": 1.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 1.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 30,
+     "type_sign_param": [
+      1.658334732055664,
+      -1.43044912815094,
+      -2.6118886470794678,
+      3.0239570140838623,
+      -2.3670525550842285,
+      -2.2329676151275635
+     ]
+    },
+    {
+     "arm": "B",
+     "seed": 5,
+     "increment_loss": 0.056277372408658266,
+     "slope": 0.9363963734553302,
+     "integra": true,
+     "bin_increment_loss": 0.10378170553594827,
+     "bin_slope": 0.7459693198136578,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.8324235807860262,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 1.0,
+      "EPG": 0.0,
+      "EPGt": 0.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 0.0,
+      "PEN_b(PEN2)": 1.0
+     },
+     "mask": 41,
+     "type_sign_param": [
+      -2.1177520751953125,
+      0.9790365695953369,
+      2.2468698024749756,
+      -2.0257742404937744,
+      -3.539572238922119,
+      2.0594003200531006
+     ]
+    },
+    {
+     "arm": "B",
+     "seed": 6,
+     "increment_loss": 0.052526345817993085,
+     "slope": 0.8706672943757123,
+     "integra": true,
+     "bin_increment_loss": 0.058482327746848264,
+     "bin_slope": 0.8811209058823163,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.4244541484716157,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 1.0,
+      "EPG": 1.0,
+      "EPGt": 1.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 0.0,
+      "PEN_b(PEN2)": 1.0
+     },
+     "mask": 47,
+     "type_sign_param": [
+      -2.076307773590088,
+      -1.3945993185043335,
+      1.0593515634536743,
+      -2.698117971420288,
+      -2.802175998687744,
+      -2.599820852279663
+     ]
+    },
+    {
+     "arm": "B",
+     "seed": 7,
+     "increment_loss": 0.4206672842303912,
+     "slope": 0.1970070046132541,
+     "integra": false,
+     "bin_increment_loss": 0.4599080793559551,
+     "bin_slope": 0.06878477794322367,
+     "bin_integra": false,
+     "agreement_with_real_edge_sign": 0.23351528384279477,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 0.0,
+      "EPG": 1.0,
+      "EPGt": 0.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 0.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 10,
+     "type_sign_param": [
+      0.6224878430366516,
+      -0.4649087190628052,
+      2.1340818405151367,
+      1.3327960968017578,
+      -1.5198819637298584,
+      3.319807529449463
+     ]
+    },
+    {
+     "arm": "B",
+     "seed": 8,
+     "increment_loss": 0.07471430239578088,
+     "slope": 0.8823385662217287,
+     "integra": true,
+     "bin_increment_loss": 0.09679946952189009,
+     "bin_slope": 0.7619555712402616,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.1675764192139738,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 0.0,
+      "EPG": 1.0,
+      "EPGt": 1.0,
+      "PEG": 0.0,
+      "PEN_a(PEN1)": 1.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 22,
+     "type_sign_param": [
+      1.4025765657424927,
+      -1.2666429281234741,
+      -2.743814706802368,
+      3.0202958583831787,
+      3.248087167739868,
+      -1.7812598943710327
+     ]
+    },
+    {
+     "arm": "B",
+     "seed": 9,
+     "increment_loss": 0.5731691335638364,
+     "slope": -0.046402992267032525,
+     "integra": false,
+     "bin_increment_loss": 0.5727425942818324,
+     "bin_slope": -0.04645537360076786,
+     "bin_integra": false,
+     "agreement_with_real_edge_sign": 0.4945414847161572,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 0.0,
+      "EPG": 0.0,
+      "EPGt": 1.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 1.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 28,
+     "type_sign_param": [
+      1.361964464187622,
+      1.6160298585891724,
+      -0.045517370104789734,
+      1.9168387651443481,
+      -0.2881559431552887,
+      -1.9406365156173706
+     ]
+    }
+   ],
+   "mask_counts": {
+    "41 (D7+PEG+PENb)": 2,
+    "56 (PEG+PENa+PENb)": 1,
+    "12 (EPGt+PEG)": 1,
+    "44 (EPGt+PEG+PENb)": 1,
+    "30 (EPG+EPGt+PEG+PENa)": 1,
+    "47 (D7+EPG+EPGt+PEG+PENb)": 1,
+    "10 (EPG+PEG)": 1,
+    "22 (EPG+EPGt+PENa)": 1,
+    "28 (EPGt+PEG+PENa)": 1
+   },
+   "n_real_mask": 0,
+   "n_d7_inhibitory": 3,
+   "n_mask_integrates_in_enumeration": 4,
+   "p_real_at_least_k_under_chance": 1.0000000000000007,
+   "n_real_mask_and_bin_integra": 0
+  },
+  "C": {
+   "description": "un signo por arista, inicio neutro",
+   "n_runs": 6,
+   "n_integra": 4,
+   "n_bin_integra": 4,
+   "mean_agreement_with_real_edge_sign": 0.5055858806404657,
+   "runs": [
+    {
+     "arm": "C",
+     "seed": 0,
+     "increment_loss": 0.11431128572051724,
+     "slope": 0.7689089329069911,
+     "integra": true,
+     "bin_increment_loss": 0.1412494280685981,
+     "bin_slope": 0.7042387507173401,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.5092794759825328,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 0.5520028109627547,
+      "EPG": 0.5294281729428173,
+      "EPGt": 0.5197368421052632,
+      "PEG": 0.4559322033898305,
+      "PEN_a(PEN1)": 0.5028790786948176,
+      "PEN_b(PEN2)": 0.47619047619047616
+     }
+    },
+    {
+     "arm": "C",
+     "seed": 1,
+     "increment_loss": 0.15688882016887268,
+     "slope": 0.4414637602626471,
+     "integra": false,
+     "bin_increment_loss": 0.24247584889332455,
+     "bin_slope": 0.3293275847423238,
+     "bin_integra": false,
+     "agreement_with_real_edge_sign": 0.5073144104803493,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 0.5920590302178497,
+      "EPG": 0.5422594142259414,
+      "EPGt": 0.7697368421052632,
+      "PEG": 0.5186440677966102,
+      "PEN_a(PEN1)": 0.4846449136276392,
+      "PEN_b(PEN2)": 0.5079365079365079
+     }
+    },
+    {
+     "arm": "C",
+     "seed": 2,
+     "increment_loss": 0.15970039190724492,
+     "slope": 0.4580728381094044,
+     "integra": false,
+     "bin_increment_loss": 0.18438750201215345,
+     "bin_slope": 0.4638843937150153,
+     "bin_integra": false,
+     "agreement_with_real_edge_sign": 0.528056768558952,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 0.5277582572030921,
+      "EPG": 0.4655509065550907,
+      "EPGt": 0.5263157894736842,
+      "PEG": 0.5050847457627119,
+      "PEN_a(PEN1)": 0.4510556621880998,
+      "PEN_b(PEN2)": 0.4888888888888889
+     }
+    },
+    {
+     "arm": "C",
+     "seed": 3,
+     "increment_loss": 0.10807919880996147,
+     "slope": 0.7946517201874926,
+     "integra": true,
+     "bin_increment_loss": 0.12167114776869616,
+     "bin_slope": 0.7860161083412925,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.5177947598253275,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 0.6057624736472241,
+      "EPG": 0.5216178521617852,
+      "EPGt": 0.5986842105263158,
+      "PEG": 0.5067796610169492,
+      "PEN_a(PEN1)": 0.5844529750479847,
+      "PEN_b(PEN2)": 0.4507936507936508
+     }
+    },
+    {
+     "arm": "C",
+     "seed": 4,
+     "increment_loss": 0.09874375894044836,
+     "slope": 0.5828390995101118,
+     "integra": true,
+     "bin_increment_loss": 0.18032580303649107,
+     "bin_slope": 0.5302394804045403,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.5201965065502183,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 0.567814476458187,
+      "EPG": 0.5221757322175732,
+      "EPGt": 0.5855263157894737,
+      "PEG": 0.49322033898305084,
+      "PEN_a(PEN1)": 0.5134357005758158,
+      "PEN_b(PEN2)": 0.4
+     }
+    },
+    {
+     "arm": "C",
+     "seed": 5,
+     "increment_loss": 0.18477080408483743,
+     "slope": 0.6114720293454243,
+     "integra": true,
+     "bin_increment_loss": 0.1950287077575922,
+     "bin_slope": 0.627640955410784,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.45087336244541487,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 0.38334504567814476,
+      "EPG": 0.5436541143654114,
+      "EPGt": 0.6447368421052632,
+      "PEG": 0.5508474576271186,
+      "PEN_a(PEN1)": 0.43186180422264875,
+      "PEN_b(PEN2)": 0.4793650793650794
+     }
+    }
+   ]
+  },
+  "D": {
+   "description": "6 signos por tipo, inicio en la real",
+   "n_runs": 6,
+   "n_integra": 6,
+   "n_bin_integra": 6,
+   "mean_agreement_with_real_edge_sign": 0.9217612809315866,
+   "runs": [
+    {
+     "arm": "D",
+     "seed": 0,
+     "increment_loss": 0.07347280892233053,
+     "slope": 0.9159252971384535,
+     "integra": true,
+     "bin_increment_loss": 0.12667387475570044,
+     "bin_slope": 0.6420579296851734,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.9189956331877729,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 1.0,
+      "EPG": 0.0,
+      "EPGt": 1.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 0.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 13,
+     "type_sign_param": [
+      -2.2626888751983643,
+      1.1007438898086548,
+      1.3583885431289673,
+      2.1997230052948,
+      -2.6801202297210693,
+      -2.8789875507354736
+     ]
+    },
+    {
+     "arm": "D",
+     "seed": 1,
+     "increment_loss": 0.053464685659855606,
+     "slope": 0.8950520449071144,
+     "integra": true,
+     "bin_increment_loss": 0.07889630986998479,
+     "bin_slope": 0.7498738722472549,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.9189956331877729,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 1.0,
+      "EPG": 0.0,
+      "EPGt": 1.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 0.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 13,
+     "type_sign_param": [
+      -2.058669328689575,
+      1.5918105840682983,
+      1.75019109249115,
+      2.317161798477173,
+      -2.920860767364502,
+      -1.4126067161560059
+     ]
+    },
+    {
+     "arm": "D",
+     "seed": 2,
+     "increment_loss": 0.07000099929670493,
+     "slope": 0.9459975017365035,
+     "integra": true,
+     "bin_increment_loss": 0.0882282649477323,
+     "bin_slope": 0.7951291154656416,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.9355895196506551,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 1.0,
+      "EPG": 0.0,
+      "EPGt": 0.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 0.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 9,
+     "type_sign_param": [
+      -1.6594563722610474,
+      1.3582483530044556,
+      1.2778599262237549,
+      2.552236557006836,
+      -2.5861361026763916,
+      1.4804322719573975
+     ]
+    },
+    {
+     "arm": "D",
+     "seed": 3,
+     "increment_loss": 0.06334495389213164,
+     "slope": 0.8853581640306465,
+     "integra": true,
+     "bin_increment_loss": 0.13170270882546903,
+     "bin_slope": 0.6395907843614268,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.9189956331877729,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 1.0,
+      "EPG": 0.0,
+      "EPGt": 1.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 0.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 13,
+     "type_sign_param": [
+      -2.072845935821533,
+      1.412489414215088,
+      1.3712619543075562,
+      2.138921022415161,
+      -2.793659210205078,
+      -1.8463845252990723
+     ]
+    },
+    {
+     "arm": "D",
+     "seed": 4,
+     "increment_loss": 0.06212469724317392,
+     "slope": 0.9188050242372282,
+     "integra": true,
+     "bin_increment_loss": 0.09784210721651714,
+     "bin_slope": 0.6995426970232231,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.9189956331877729,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 1.0,
+      "EPG": 0.0,
+      "EPGt": 1.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 0.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 13,
+     "type_sign_param": [
+      -1.7487834692001343,
+      1.7851046323776245,
+      0.7917742133140564,
+      2.528026819229126,
+      -2.935094118118286,
+      -2.0725319385528564
+     ]
+    },
+    {
+     "arm": "D",
+     "seed": 5,
+     "increment_loss": 0.049256741628050806,
+     "slope": 0.9501855819708829,
+     "integra": true,
+     "bin_increment_loss": 0.059738420570890106,
+     "bin_slope": 0.8612817167383272,
+     "bin_integra": true,
+     "agreement_with_real_edge_sign": 0.9189956331877729,
+     "frac_inhibitory_by_source_type": {
+      "Delta7": 1.0,
+      "EPG": 0.0,
+      "EPGt": 1.0,
+      "PEG": 1.0,
+      "PEN_a(PEN1)": 0.0,
+      "PEN_b(PEN2)": 0.0
+     },
+     "mask": 13,
+     "type_sign_param": [
+      -1.7676507234573364,
+      1.9976866245269775,
+      1.907789945602417,
+      2.3510775566101074,
+      -2.8245911598205566,
+      -2.7585365772247314
+     ]
+    }
+   ],
+   "mask_counts": {
+    "13 (D7+EPGt+PEG)": 5,
+    "9 (D7+PEG)": 1
+   },
+   "n_real_mask": 0,
+   "n_d7_inhibitory": 6,
+   "n_mask_integrates_in_enumeration": 6,
+   "p_real_at_least_k_under_chance": 1.0000000000000002,
+   "n_real_mask_and_bin_integra": 0
+  }
+ }
+}

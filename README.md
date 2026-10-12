@@ -21,7 +21,7 @@ solución que integra el rumbo, pero no es específica de la química real (28 d
 64 patrones de signo por tipo la alcanzan, con 3 semillas; la real, puesto 14; con la tarea de
 velocidad corregida, 37 de 64 y puesto 30) y usa tasas con
 signo (desviaciones de una basal nula) que hacen el signo poco identificable; (4) un aprendiz de signos genérico no la
-encuentra; (5) en este subcircuito el neurotransmisor es función exacta del tipo
+encuentra (ni sobre la tarea corregida: 0/20 corridas con 6 signos por tipo la recuperan y, arrancando en ella, se aleja); (5) en este subcircuito el neurotransmisor es función exacta del tipo
 celular (Delta7 = glutamato, resto = acetilcolina). Detalle y retractaciones en
 [`docs/preprint-discussion.md`](docs/preprint-discussion.md) y
 [`docs/lab-notebook.md`](docs/lab-notebook.md).
@@ -60,7 +60,8 @@ OU corregida (3ª revisión). Las dos llevan a la misma conclusión.
 | 4 | Evaluación y desglose por neuropilo/tipo celular | hecha |
 | 5 | Redacción y difusión (informe, web, LinkedIn) | en curso |
 
-Pendiente principal: repetir el aprendiz de signos libres sobre la tarea corregida (sección 11 del informe).
+Hecho el 2026-10-12: el aprendiz de signos sobre la tarea corregida (32 corridas, `results/sign_learner_v3.json`) no recupera la real
+(0/20). Pendiente: más réplicas y nula explícita, hiperparámetros ciegos a la real, variar el modelo y verificar la bibliografía (sección 11 del informe).
 
 ## Setup
 

@@ -54,7 +54,13 @@ initial phase without integrating) and a slope > 0.5 between decoded and true he
    do not apply.
 
 A generic sign learner, trained from a neutral initialisation, does not find the integrating
-solution either (four pilots, held-out 0.458–0.561).
+solution either (four pilots, held-out 0.458–0.561). On the corrected task (preregistered,
+32 runs, none excluded) a learner with one sign per cell type integrates in 6-7 of 10 seeds but
+recovers the real assignment in **0 of 20** runs (chance reference 1/37), landing on 9 different
+patterns per arm; a per-edge learner agrees with the real signs at chance level (0.51); and
+started *at* the real assignment all 6 runs keep integrating but drift away from it (Delta7
+stays inhibitory). So this task does not make the learner prefer the real chemistry, consistent
+with 37 of 64 patterns integrating; it does not show that no learner could find it.
 
 ## What is and is not claimed
 
@@ -172,4 +178,4 @@ neurotransmitter predictions. Figures: [`figures/en/`](figures/en/). Interactive
 - **Same conclusion on the corrected task.** All 64 sign patterns by cell type x 3 seeds (189 runs, none excluded; `src/cx_net/analyze_types_v3.py`, `results/types_analysis_v3.json`). Criterion fixed beforehand: "integrates" = held-out increment loss < 0.538 (remembering the initial phase) and slope > 0.5, majority vote over 3 seeds. **37/64 patterns integrate by majority (32/64 in all 3 seeds); the real assignment (increment loss 0.121, slope 0.74, integrates in 3/3) ranks 30th of 64 (p = 0.47).** 29 patterns beat it, with slopes around 0.95 against 0.74, so the real network is a more compressive integrator.
 - **By type** (of 32 patterns, number that integrate with the type excitatory / inhibitory): Delta7 7/30, EPG 20/17, EPGt 19/18, PEG 18/19, PEN_a 15/22, PEN_b 18/19. Only Delta7 separates (inhibitory is nearly sufficient, not necessary); the PEN_b contrast seen on the old task (20/32 vs 6/32) disappears. Agreement with the old-task verdict: 23 integrate in both, 5 only on the old task, 14 only on the new one, 22 on neither.
 - **Robustness (post hoc).** The real assignment ranks 37th, 36th and 37th in single seeds (30th by the 3-seed mean), so the rank is a descriptive, not a p-value. The count depends on the slope threshold: 37 patterns with slope > 0.5 or > 0.7, 32 with > 0.8 and 20 with > 0.9; at > 0.8 the real assignment (slope 0.74) no longer integrates in any seed, so "the real one is not special" is robust but "the real one integrates" is not. Given Delta7 inhibitory (32 patterns), 30 integrate and the real one ranks 28th of 32; with Delta7 excitatory 7 of 32 integrate and the best reaches 0.058. The task therefore selects the one known bit (Delta7 inhibits) and nothing more specific.
-- **Caveats.** Three seeds (seed 0 alone gave 41/64 and rank 37, so the figures move); the free-sign learner of the original question has not been re-run on the corrected task; the loss threshold is loose and the slope does the discriminating; per-type descriptives are untested; hyperparameters were chosen with the real assignment.
+- **Caveats.** Three seeds (seed 0 alone gave 41/64 and rank 37, so the figures move); the sign-learner result (0/20) depends on hyperparameters chosen with the real assignment and on an 'integrates' threshold whose binarised/continuous reading changes the formal label (not the 0/20); the loss threshold is loose and the slope does the discriminating; per-type descriptives are untested; hyperparameters were chosen with the real assignment.

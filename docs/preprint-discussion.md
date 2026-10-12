@@ -495,6 +495,17 @@ currículo, otro inicio, otra tasa de aprendizaje ni más épocas. Al no aprende
 aprendiz ninguna solución que integre, H1 (que converja a la química real) no
 es evaluable.
 
+**Repetición sobre la tarea OU corregida (2026-10-12, preregistrada; `results/sign_learner_v3.json`).** Con la receta que sí
+converge (800 épocas, pérdida incremental), un aprendiz de 6 signos por tipo (los mismos 6 parámetros que la enumeración) integra
+en 7/10 semillas con inicio neutro (3/10 si se binarizan los signos a ±1) y en 6/10 con inicio binario aleatorio, pero
+**recupera la asignación real en 0/20** (patrón «solo Delta7 inhibe»; azar de referencia 1/37). Aprende 9 patrones distintos en 10
+corridas por brazo, con Delta7 inhibidor en 6/10 y 3/10. Con un signo por arista (6 semillas) el acuerdo con el signo real es
+0.51 (azar). Arrancando en la real, las 6 corridas siguen integrando pero ninguna conserva ese patrón (5 derivan a «Delta7 + EPGt +
+PEG inhiben», 1 a «Delta7 + PEG»; Delta7 sigue inhibidor): la real no es un atractor. Lectura: con esta tarea el gradiente no
+prefiere la química real, de acuerdo con que 37 de 64 patrones integran; no es una prueba de que ningún aprendiz pueda encontrarla.
+La etiqueta formal del criterio preregistrado depende de si «integra» exige también la versión binarizada (caso «no identificable»
+con el modelo continuo; caso «fallo de optimización» para A si se exigen ambos; B queda sin etiqueta); lo sólido es el 0/20.
+
 ## 8. Interpretación
 
 - **H1 tal como se formuló no está ni confirmada ni refutada**: el aprendiz no
@@ -626,8 +637,10 @@ Se retira la advertencia anterior; la cita es correcta y debe usarse en el posic
   20 con > 0.9; con > 0.8 la real (pendiente 0.74) deja de integrar en las 3 semillas. El umbral
   de pérdida (0.538, 0.3 o 0.2) no cambia el recuento. La conclusión «la real no es especial» es
   robusta a esos umbrales; «la real integra» no lo es.
-- **El aprendiz de signos libres no se ha repetido sobre la tarea corregida** (sección 7): la
-  pregunta original (H1) sigue sin evaluarse con la receta que sí converge para los patrones por tipo.
+- **El aprendiz de signos sobre la tarea corregida** (sección 7) se probó con 6 signos por tipo (20 corridas) y por arista
+  (6); sigue sin explorarse otro `ring_sign`, otras tasas de aprendizaje, más épocas ni hiperparámetros ciegos a la real, y
+  los hiperparámetros dinámicos se eligieron con la real; 10 semillas por brazo, sin cálculo de potencia. La etiqueta del
+  criterio preregistrado depende de una ambigüedad declarada (continuo frente a binarizado).
 - **Hiperparámetros dinámicos** (`recurrent_gain=2`, `tau=10`, `in_gain=10`,
   `cue_gain=10`) elegidos en zonas seleccionadas con ayuda de los signos reales
   (criterio A): grado de libertad del investigador, declarado. Más ≈30
@@ -673,11 +686,9 @@ Se retira la advertencia anterior; la cita es correcta y debe usarse en el posic
 
 Prioridades, de mayor a menor para cerrar la lógica del estudio:
 
-1. **Repetir H1 con la receta que converge.** El aprendiz de signos (por arista y por tipo) de la
-   sección 7 solo se probó sobre la tarea anclada original. Lanzarlo sobre la tarea OU corregida
-   (incluida la variante de 6 signos por tipo, comparable a la enumeración) es el experimento que
-   falta para responder la pregunta original; sin él, el informe establece que la tarea no
-   selecciona la química, no que un aprendiz no la encuentre con una buena tarea.
+1. **(Hecho el 2026-10-12, sección 7.)** El aprendiz de signos sobre la tarea OU corregida no recupera la real (0/20 con
+   6 signos por tipo) y la real no es un atractor (D). Queda abierto separar «la tarea no lo selecciona» de «el aprendiz no
+   lo encuentra»: requeriría otra tarea o un criterio que sí discrimine químicas (prioridad 3 y 4).
 2. **Más réplicas y un contraste formal.** 5-10 semillas para los patrones cercanos al umbral y
    para la real, intervalos por patrón y una nula explícita (p. ej. patrones barajados por
    arista con el mismo número de inhibidores), en vez de rangos de puestos.

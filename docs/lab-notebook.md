@@ -2256,6 +2256,39 @@ cero puede dar mesetas (el resultado más probable es el caso 3 o 4); un solo `r
 el PyTorch instalado es CPU y la carga son 500 pasos secuenciales sobre 152 neuronas, que no se beneficia de GPU) y
 analizar con `analyze_sign_learner.py`.
 
+## 2026-10-12 (4) — Aprendiz de signos sobre la tarea corregida: RESULTADO (32 corridas, ninguna excluida)
+
+Datos: `results/sign_learner_v3.json` (`analyze_sign_learner.py`). Aplicado el criterio de la entrada (3), sin cambios.
+
+| brazo | integran (continuo / binarizado ±1) | patrón == real | Delta7 inhibidor | patrones distintos | acuerdo con el signo real por arista |
+|---|---|---|---|---|---|
+| A (6 signos por tipo, inicio neutro) | 7/10 / 3/10 | **0/10** | 6/10 | 9 en 10 corridas | 0.68 |
+| B (6 signos por tipo, inicio binario aleatorio) | 6/10 / 6/10 | **0/10** | 3/10 | 9 en 10 corridas | 0.46 |
+| C (un signo por arista, inicio neutro) | 4/6 / 4/6 | n/a | n/a | n/a | 0.51 (≈ azar) |
+| D (6 signos por tipo, inicio en la real) | 6/6 / 6/6 | **0/6** | 6/6 | 2 (máscara 13 en 5, máscara 9 en 1) | 0.92 |
+
+**Lectura con el criterio preregistrado:**
+- La química real **no se recupera** en ninguna de las 20 corridas A+B (0/20; cola binomial con azar 1/37: P(X ≥ 0) = 1,
+  es decir, tampoco hay un solo acierto). Ningún patrón domina: 9 máscaras distintas en 10 corridas en cada brazo.
+- **Etiqueta formal, con una ambigüedad que declaro:** el criterio dice que «integra» se evalúa con el modelo continuo Y con
+  los signos binarizados, sin decir si hacen falta ambos. Con el continuo, A cumple el caso 2 (7/10 integran, real 0/10, varias
+  máscaras: «no identificable»). Con ambos a la vez, A tiene 3/10 y cae en el caso 3 (fallo de optimización). B (6/10 en ambos
+  modos) no entra en ningún caso: queda sin etiqueta. No elijo la lectura que más convenga: la conclusión sólida es solo
+  «0/20 recuperan la real», que no depende de la etiqueta.
+- **No se puede concluir** que el gradiente no *pueda* encontrar la real, sino que, con esta receta y esta tarea, no la prefiere:
+  coherente con que 37 de 64 patrones integran y la real es el puesto 30 (el aprendiz cae en uno de muchos óptimos equivalentes).
+- **D (control de estabilidad):** arrancando en la real, las 6 corridas siguen integrando pero **ninguna conserva la máscara 1**:
+  5 derivan a 13 (Delta7 + EPGt + PEG inhiben) y 1 a 9 (Delta7 + PEG). Delta7 sigue siendo inhibidor en 6/6 (el único bit que
+  conocemos). La real no es un atractor del entrenamiento: añadir inhibidores en otros tipos no empeora la tarea.
+- **C:** acuerdo con el signo real ≈ 0.51, indistinguible de asignar signos al azar (el 0.92 de D es casi todo el inicio).
+- Tres corridas de A (semillas 4, 5, 7) y cuatro de B (1, 2, 7, 9) no integran (pérdida incremental 0.38-0.57, pendiente ≈0-0.2:
+  el óptimo local «memoria sin integrar»); se cuentan como «no integra» (criterio fijado). Ninguna se excluyó.
+
+**Límites:** hiperparámetros dinámicos elegidos con la real; un solo `ring_sign`; 10 semillas por brazo; potencia no calculada;
+«integra» es un umbral binario arbitrario.
+
+**Siguiente paso:** actualizar informe, resumen, README, web y post; las prioridades 2-5 del trabajo futuro siguen igual.
+
 ## Plantilla para próximas entradas
 
 ```
